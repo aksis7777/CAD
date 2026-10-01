@@ -89,7 +89,7 @@ public sealed class DesktopWindowTests
             var tabHeaders = window.GetVisualDescendants().OfType<TabItem>().Select(x => x.Header?.ToString()).ToArray();
             Assert.Contains("Карточка объекта", tabHeaders);
             Assert.Contains("Состав и расчёт", tabHeaders);
-            Assert.Contains("Импорт", tabHeaders);
+            Assert.Contains("Отчёт импорта", tabHeaders);
             Assert.Contains("Фоновые задачи", tabHeaders);
             Assert.True(window.Bounds.Width >= 1120);
             Assert.True(window.Bounds.Height >= 700);

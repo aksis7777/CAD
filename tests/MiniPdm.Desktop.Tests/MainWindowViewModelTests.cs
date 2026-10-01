@@ -7,6 +7,7 @@ using MiniPdm.Contracts.Modules.Versions.DtoModels;
 using MiniPdm.Desktop.Services;
 using MiniPdm.Desktop.Services.Abstractions;
 using MiniPdm.Desktop.Modules.Import.ViewModels;
+using MiniPdm.Desktop.Services.ImportFolderPickers;
 using MiniPdm.Desktop.ViewModels;
 using Xunit;
 
@@ -119,6 +120,26 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(2, client.ReportCount);
     }
 
+    [Fact]
+    public async Task BrowserPackageLeaseSurvivesUnknownOutcomeAndIsDeletedAfterConfirmedRetry()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"mini-pdm-lease-{Guid.NewGuid():N}.a3d");
+        await File.WriteAllBytesAsync(path, [1, 2, 3]);
+        var client = new FakeClient { ImportOutcomeUnknown = true };
+        using var viewModel = new ImportViewModel(client, () => Task.CompletedTask);
+        var package = new SelectedImportPackage([path], new DeleteFileLease(path));
+
+        await viewModel.ImportPackageAsync(package);
+
+        Assert.True(File.Exists(path));
+        Assert.NotNull(viewModel.PendingImportId);
+        client.ReportAvailable = true;
+        await viewModel.RetryCommand.ExecuteAsync();
+
+        Assert.False(File.Exists(path));
+        Assert.Null(viewModel.PendingImportId);
+    }
+
     private static async Task WaitUntilAsync(Func<bool> condition)
     {
         var limit = DateTime.UtcNow.AddSeconds(3);
@@ -146,6 +167,14 @@ public sealed class MainWindowViewModelTests
     {
         var id = Guid.NewGuid();
         return new ObjectVersionDto(id, number, state, name, "Steel", 1m, null, false);
+    }
+
+    private sealed class DeleteFileLease(string path) : IDisposable
+    {
+        public void Dispose()
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
     }
 
     private sealed class FakeClient : IPdmApiClient

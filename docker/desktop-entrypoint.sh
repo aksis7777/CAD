@@ -6,16 +6,12 @@ web_pid=
 vnc_pid=
 wm_pid=
 xvfb_pid=
+nginx_pid=
 cleanup() {
-  kill "${app_pid:-}" "${web_pid:-}" "${vnc_pid:-}" "${wm_pid:-}" "${xvfb_pid:-}" 2>/dev/null || true
+  kill "${app_pid:-}" "${web_pid:-}" "${vnc_pid:-}" "${wm_pid:-}" "${xvfb_pid:-}" "${nginx_pid:-}" 2>/dev/null || true
   wait 2>/dev/null || true
 }
 trap cleanup EXIT INT TERM
-
-case "${PDM_BROWSER_API_PORT:-5000}" in
-  ''|*[!0-9]*) echo "PDM_BROWSER_API_PORT must be a numeric port" >&2; exit 1 ;;
-esac
-printf 'window.PDM_API_PORT = "%s";\n' "${PDM_BROWSER_API_PORT:-5000}" > /usr/share/novnc/pdm-config.js
 
 Xvfb :0 -screen 0 1600x1000x24 -ac +extension GLX +render -noreset &
 xvfb_pid=$!
@@ -33,10 +29,13 @@ fluxbox -display :0 >/tmp/fluxbox.log 2>&1 &
 wm_pid=$!
 x11vnc -display :0 -forever -shared -localhost -rfbport 5900 -nopw -quiet &
 vnc_pid=$!
-websockify --web=/usr/share/novnc 0.0.0.0:6080 127.0.0.1:5900 >/tmp/websockify.log 2>&1 &
+websockify 127.0.0.1:6081 127.0.0.1:5900 >/tmp/websockify.log 2>&1 &
 web_pid=$!
 
 dotnet MiniPdm.Desktop.dll &
 app_pid=$!
+
+nginx -g 'daemon off;' &
+nginx_pid=$!
 
 wait "$app_pid"

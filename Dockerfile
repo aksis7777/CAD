@@ -60,7 +60,7 @@ RUN --mount=type=secret,id=proxy_ca,required=false \
       cp /run/secrets/proxy_ca /usr/local/share/ca-certificates/build-proxy.crt && update-ca-certificates; \
     fi && \
     apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl dbus-x11 fluxbox fonts-dejavu-core libatspi2.0-0 libfontconfig1 \
+      ca-certificates curl dbus-x11 fluxbox fonts-dejavu-core libatspi2.0-0 libfontconfig1 nginx python3 \
       libfreetype6 libice6 libsm6 libx11-6 libxcomposite1 libxcursor1 \
       libxdamage1 libxext6 libxfixes3 libxi6 libxkbcommon0 libxrandr2 \
       libxrender1 novnc websockify x11-utils x11vnc xvfb \
@@ -71,8 +71,11 @@ RUN --mount=type=secret,id=proxy_ca,required=false \
 WORKDIR /app
 COPY --from=build /out/desktop/ ./
 COPY docker/desktop-entrypoint.sh /usr/local/bin/desktop-entrypoint
-COPY docker/browser/index.html /usr/share/novnc/index.html
-COPY docker/browser/pdm-home.css /usr/share/novnc/pdm-home.css
-RUN chmod +x /usr/local/bin/desktop-entrypoint && mkdir -p /cad-imports
+COPY docker/browser/nginx.conf /etc/nginx/nginx.conf
+COPY docker/browser/pdm-picker.js /usr/share/novnc/pdm-picker.js
+COPY docker/browser/pdm-picker.css /usr/share/novnc/pdm-picker.css
+COPY docker/browser/inject-picker.py /usr/local/bin/inject-picker
+RUN chmod +x /usr/local/bin/desktop-entrypoint /usr/local/bin/inject-picker && \
+    /usr/local/bin/inject-picker /usr/share/novnc/vnc.html
 EXPOSE 6080
 ENTRYPOINT ["/usr/local/bin/desktop-entrypoint"]

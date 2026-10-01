@@ -5,6 +5,7 @@ using MiniPdm.Contracts.Modules.Import.DtoModels;
 using MiniPdm.Desktop.Services;
 using MiniPdm.Desktop.Services.Abstractions;
 using MiniPdm.Desktop.ViewModels;
+using MiniPdm.Desktop.Services.ImportFolderPickers;
 
 namespace MiniPdm.Desktop.Modules.Import.ViewModels;
 
@@ -22,6 +23,7 @@ public sealed class ImportViewModel : INotifyPropertyChanged, IDisposable
     private string _statusText = string.Empty;
     private Guid? _pendingImportId;
     private string[] _pendingFiles = [];
+    private IDisposable? _pendingLease;
 
     public ImportViewModel(IPdmApiClient client, Func<Task> afterImport)
     {
@@ -47,17 +49,24 @@ public sealed class ImportViewModel : INotifyPropertyChanged, IDisposable
     public Guid? PendingImportId => _pendingImportId;
 
     public async Task ImportFilesAsync(IReadOnlyList<string> paths)
+        => await ImportPackageAsync(new SelectedImportPackage(paths));
+
+    public async Task ImportPackageAsync(SelectedImportPackage package)
     {
-        if (IsBusy) { StatusText = "Предыдущая операция ещё выполняется."; return; }
+        ArgumentNullException.ThrowIfNull(package);
+        if (_disposed) { package.Dispose(); return; }
+        if (IsBusy) { package.Dispose(); StatusText = "Предыдущая операция ещё выполняется."; return; }
         if (_pendingImportId.HasValue)
         {
+            package.Dispose();
             StatusText = $"Пакет {_pendingImportId} не подтверждён. Повторите проверку или явно откажитесь от его повтора.";
             return;
         }
-        var files = paths.Where(x => Path.GetExtension(x).Equals(".a3d", StringComparison.OrdinalIgnoreCase)
+        var files = package.FilePaths.Where(x => Path.GetExtension(x).Equals(".a3d", StringComparison.OrdinalIgnoreCase)
             || Path.GetExtension(x).Equals(".m3d", StringComparison.OrdinalIgnoreCase)).ToArray();
-        if (files.Length == 0) { StatusText = "В папке не найдены файлы .a3d или .m3d."; return; }
+        if (files.Length == 0) { package.Dispose(); StatusText = "В папке не найдены файлы .a3d или .m3d."; return; }
         _pendingFiles = files;
+        _pendingLease = package;
         _pendingImportId = Guid.NewGuid();
         RefreshCommands();
         await RetryAsync();
@@ -109,7 +118,12 @@ public sealed class ImportViewModel : INotifyPropertyChanged, IDisposable
                 StatusText = $"Запрос отменён клиентом. Исход пакета {_pendingImportId} неизвестен; проверьте отчёт и повторите с тем же ID.";
         }
         catch (Exception ex) { StatusText = $"Не удалось проверить пакет {importId}: {ex.Message}"; }
-        finally { if (ReferenceEquals(_activeOperation, operation)) _activeOperation = null; IsBusy = false; }
+        finally
+        {
+            if (ReferenceEquals(_activeOperation, operation)) _activeOperation = null;
+            if (_disposed) ReleasePendingPackage();
+            IsBusy = false;
+        }
     }
 
     private async Task RefreshCatalogAsync(Guid importId)
@@ -123,6 +137,7 @@ public sealed class ImportViewModel : INotifyPropertyChanged, IDisposable
         var id = _pendingImportId;
         _pendingImportId = null;
         _pendingFiles = [];
+        ReleasePendingPackage();
         StatusText = id is null ? string.Empty : $"Повтор пакета {id} отменён оператором. Теперь можно выбрать новый пакет.";
         RefreshCommands();
         return Task.CompletedTask;
@@ -145,8 +160,11 @@ public sealed class ImportViewModel : INotifyPropertyChanged, IDisposable
     {
         _pendingImportId = null;
         _pendingFiles = [];
+        ReleasePendingPackage();
         RefreshCommands();
     }
+
+    private void ReleasePendingPackage() => Interlocked.Exchange(ref _pendingLease, null)?.Dispose();
 
     private void HandleError(Exception exception) => StatusText = exception.Message;
     private void RefreshCommands()
@@ -173,6 +191,7 @@ public sealed class ImportViewModel : INotifyPropertyChanged, IDisposable
         _disposed = true;
         _lifetime.Cancel();
         _activeOperation?.Cancel();
+        if (_activeOperation is null) ReleasePendingPackage();
         _lifetime.Dispose();
     }
 }

@@ -14,13 +14,12 @@
   </Window.Styles>
   <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="14" RowSpacing="10">
     <Border Grid.Row="0" Classes="card" Padding="10">
-      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
         <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
           <TextBlock Text="Мини-PDM" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
           <TextBlock Text="{Binding StatusText}" Classes="muted" VerticalAlignment="Center"/>
         </StackPanel>
-        <TextBlock Grid.Column="1" Text="{Binding Import.StatusText}" Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="360"/>
-        <Button Grid.Column="2" Content="Импортировать папку…" Classes="primary" Click="PickImportFolder" IsEnabled="{Binding Import.CanStartNewImport}"/>
+        <Button x:Name="ImportFolderButton" Grid.Column="1" Content="Импортировать папку…" Classes="primary" Click="PickImportFolder" IsEnabled="{Binding Import.CanStartNewImport}"/>
       </Grid>
     </Border>
 
@@ -57,7 +56,7 @@
         </Grid>
       </Border>
 
-      <TabControl Grid.Column="1">
+      <TabControl x:Name="MainTabs" Grid.Column="1">
         <TabItem Header="Карточка объекта">
           <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel Spacing="10" Margin="12">
@@ -172,15 +171,15 @@
           </Grid>
         </TabItem>
 
-        <TabItem Header="Импорт" DataContext="{Binding Import}">
+        <TabItem x:Name="ImportReportTab" Header="Отчёт импорта" DataContext="{Binding Import}">
           <Grid RowDefinitions="Auto,*" Margin="12" RowSpacing="8">
             <TextBlock Text="Отчёт импорта" Classes="heading"/>
             <StackPanel Grid.Row="1" Spacing="8">
               <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap"/>
               <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button Content="Проверить / повторить с тем же ID" Command="{Binding RetryCommand}"/>
+                <Button Content="Проверить / повторить с тем же ID" Command="{Binding RetryCommand}" IsVisible="{Binding HasPendingImport}"/>
                 <Button Content="Отказаться от повтора этого пакета" Command="{Binding AbandonPendingCommand}" IsVisible="{Binding HasPendingImport}"/>
-                <Button Content="Отменить запрос" Command="{Binding CancelCommand}" IsEnabled="{Binding IsBusy}"/>
+                <Button Content="Отменить запрос" Command="{Binding CancelCommand}" IsVisible="{Binding IsBusy}" IsEnabled="{Binding IsBusy}"/>
               </StackPanel>
               <ListBox ItemsSource="{Binding Files}" MaxHeight="650">
               <ListBox.ItemTemplate>

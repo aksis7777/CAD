@@ -32,8 +32,6 @@ services:
     environment:
       PDM_CONNECTION_STRING: Host=db;Port=5432;Database=${POSTGRES_DB:-mini_pdm};Username=${POSTGRES_USER:-mini_pdm};Password=${POSTGRES_PASSWORD:-mini_pdm_local}
       ImportStorage__DataRoot: /var/lib/minipdm/source-files
-    ports:
-      - "127.0.0.1:${PDM_API_PORT:-5000}:8080"
     volumes:
       - source-files:/var/lib/minipdm/source-files
     depends_on:
@@ -53,11 +51,9 @@ services:
       target: desktop
     environment:
       PDM_API_BASE_URL: http://api:8080
-      PDM_BROWSER_API_PORT: ${PDM_API_PORT:-5000}
+      PDM_BROWSER_PICKER: "true"
     ports:
       - "127.0.0.1:${PDM_DESKTOP_PORT:-8080}:6080"
-    volumes:
-      - ./cad-imports:/cad-imports
     depends_on:
       api:
         condition: service_healthy
