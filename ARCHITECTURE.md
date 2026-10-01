@@ -112,6 +112,14 @@ Import Service проверяет входные документы и сост�
 
 Файловая Saga использует временные upload-попытки и папки продвижения к постоянным исходникам. Подтверждённый rollback компенсируется; при неясном результате commit сверяется журнал через свежий DbContext под блокировкой. `ImportSourceRecovery` возвращает число реально удалённых папок и диагностические ошибки, сохраняет файлы при неизвестном исходе сверки и пропускает активные lease. API регистрирует его как задачу `import-source-recovery` с начальным интервалом 1440 минут. Запуск при старте, расписание и ручной запуск координируются одним singleton `IHostedService`; состояние и расписание хранятся в PostgreSQL. `GET /api/background-tasks`, `PUT /api/background-tasks/{taskId}/schedule` и `POST /api/background-tasks/{taskId}/run` предоставляют управление. Успешные исходники и историю автоматически не удаляют.
 
+## Локальный запуск контейнеров
+
+Корневой `Dockerfile` имеет отдельные цели API, EF Core migration bundle и Avalonia Desktop. Образы строятся под архитектуру текущего Docker Engine; migration bundle использует установленную в runtime .NET 10 без фиксированного RID. `docker-compose.yml` задаёт последовательность: PostgreSQL проходит health check, одноразовый migration service применяет все ожидающие миграции, API становится healthy, после чего запускается Desktop.
+
+Desktop сохраняет Avalonia-приложение, но для headless Docker Engine получает X display через Xvfb и доступен браузеру через noVNC. API и noVNC опубликованы только на loopback хоста (порты 5000 и 8080 по умолчанию); PostgreSQL остаётся доступен только внутри Compose network. PostgreSQL data и API source files сохраняются в отдельных named volumes. Host-каталог `cad-imports` подключён в Desktop как `/cad-imports`, чтобы оконный picker мог выбирать CAD-файлы с компьютера пользователя.
+
+На проверке Compose конфигурация разобрана успешно; framework-dependent migration bundle построен, применил три миграции к свежей PostgreSQL 17 из Compose и при повторном запуске не изменил схему. Полную сборку контейнерных образов в проверочной среде завершить не удалось: скачивание Docker image layers отклонено registry с HTTP 403.
+
 ## EF Core и конкурентность
 
 EF Core маппит модель через Fluent API в `MiniPdm.Storage/Configurations`; `PdmDbContext` и `Migrations` расположены в корне проекта Storage. Миграция создаётся сравнением модели с snapshot (`dotnet ef migrations add`), ревьюится и применяется через `dotnet ef database update`. В репозитории находятся `InitialCreate`, `AddImportJournalAndStandardName` и `AddBackgroundTasks`. Физическое имя PostgreSQL-схемы ещё не выбрано; используется техническая схема `public` по умолчанию.

@@ -2,6 +2,22 @@
 
 Мини-PDM на .NET 10: API на ASP.NET Core Controllers и MediatR, PostgreSQL через EF Core, Desktop на Avalonia/MVVM. Реализованы CAD-импорт, поиск и карточка объектов, версии и состав, расчёты массы/спецификации и страница управления фоновой очисткой. Desktop обращается к API по HTTP и показывает `SourceReference` как серверную ссылку; загрузка и открытие исходного файла из Desktop пока не реализованы.
 
+## Быстрый запуск через Docker Compose
+
+Установите Docker Desktop и клонируйте репозиторий. Из его папки выполните одну команду:
+
+```sh
+docker compose up -d --build
+```
+
+Первый запуск собирает образы, поднимает PostgreSQL, автоматически применяет EF Core миграции, затем запускает API и Desktop. Сборка может занять несколько минут. Откройте Desktop в браузере: <http://localhost:8080/vnc.html?autoconnect=true&resize=scale>. API доступен по <http://localhost:5000>, проверка состояния — <http://localhost:5000/health>.
+
+Проверка Compose-конфигурации и migration bundle прошла; bundle применил три миграции к свежей PostgreSQL 17, повторный запуск не менял схему. Полную сборку образов проверить не удалось: Docker Registry вернул HTTP 403 при скачивании слоёв.
+
+Для импорта распакуйте файлы CAD в папку `cad-imports` в репозитории. В окне Desktop откройте выбор файлов и укажите каталог `/cad-imports` — это папка с Mac, подключённая к контейнеру. База и сохранённые исходники остаются в Docker volumes после перезапуска. Чтобы изменить порты или пароль локальной базы, скопируйте `.env.example` в `.env` и отредактируйте значения. Поменяйте пароль `POSTGRES_PASSWORD` перед использованием вне своего компьютера.
+
+Проверить состояние и логи можно командами `docker compose ps` и `docker compose logs -f api desktop migrations`. Остановить приложение: `docker compose down`. Команда `docker compose down -v` удаляет volumes с базой и исходниками.
+
 ## Сборка и тесты
 
 Требуется .NET SDK 10.0.100 или новее в feature band 10. `global.json` разрешает SDK 10.0.401 и последующие feature band версии .NET 10.
@@ -40,7 +56,7 @@ dotnet ef database update --project src/MiniPdm.Storage --startup-project src/Mi
 
 При создании объекта сначала сохраните его с `CurrentVersionId = null`, затем добавьте его версии и в той же явной транзакции назначьте текущую версию. Составной FK проверяет, что указатель ведёт на версию этого же объекта.
 
-### Запуск API и Desktop
+### Запуск API и Desktop без Docker
 
 Настройте `PDM_CONNECTION_STRING` (либо ASP.NET configuration `ConnectionStrings:PdmDatabase`), затем примените миграции и запустите API на адресе, который использует Desktop:
 

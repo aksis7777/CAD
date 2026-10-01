@@ -3,3 +3,9 @@
 **/TestResults/
 .avalonia-build-tasks
 .vs/
+/.env
+/.env.*
+!/.env.example
+/.DS_Store
+/cad-imports/*
+!/cad-imports/.gitkeep
