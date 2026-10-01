@@ -18,6 +18,14 @@ docker compose up -d --build
 
 Импорт запускается кнопкой «Импортировать папку» в Avalonia. В Docker-режиме появится небольшой диалог поверх того же окна: нажмите «Выбрать папку на компьютере», чтобы открыть системный выбор папки Mac. Браузер отправляет `.a3d` и `.m3d` файлы, включая вложенные папки, встроенному picker bridge; отчёт и повторы отображаются в Avalonia. Переносить набор в репозиторий или контейнер не требуется. Повторяющиеся имена CAD-файлов запрещены, поскольку сборки ссылаются на детали по имени. Ограничения: максимум 1000 CAD-файлов, 8 MiB на файл и 64 MiB на запрос. База и сохранённые исходники остаются в Docker volumes после перезапуска. Чтобы изменить порт Desktop или пароль локальной базы, скопируйте `.env.example` в `.env` и отредактируйте значения. `PDM_DESKTOP_PORT` меняет порт noVNC. Поменяйте пароль `POSTGRES_PASSWORD` перед использованием вне своего компьютера.
 
+Если диалог выбора папки перестал появляться, перезапустите Desktop-контейнер и обновите страницу браузера:
+
+```sh
+docker compose up -d --build --no-deps desktop
+```
+
+Это пересобирает и перезапускает только Desktop; базу и сохранённые CAD-файлы удалять не нужно.
+
 Проверить состояние и логи можно командами `docker compose ps` и `docker compose logs -f api desktop migrations`. Остановить приложение: `docker compose down`. Команда `docker compose down -v` удаляет volumes с базой и исходниками.
 
 ## Сборка и тесты
@@ -34,7 +42,15 @@ Storage-тесты используют SQLite в памяти и не треб�
 
 Отдельный проект интеграционных тестов PostgreSQL `tests/MiniPdm.Postgres.Tests` не входит в solution и запускается отдельно. Для него задайте `PDM_TEST_POSTGRES_CONNECTION`, указывающий на выделенную тестовую PostgreSQL-базу с применёнными миграциями. Транзакционные тесты чтения откатывают свои транзакции; тесты конкурентной записи создают случайные собственные объекты и в `finally` удаляют только созданные ими объекты, версии, связи и журнал импорта. Тесты не очищают таблицы, не удаляют чужие данные и не запускают миграции.
 
-`dotnet build MiniPdm.sln` завершился с 0 warnings и 0 errors. Прошли все 129 тестов solution: 79 Modules, 33 Storage и 17 Desktop. Ещё 11 тестов PostgreSQL suite прошли на заполненной временной БД — всего 140 без пропусков. EF Core `has-pending-model-changes` подтвердил, что после `AddBackgroundTasks` новых миграций нет. Avalonia shell и редактор проверены headlessly. Browser picker extension прошёл Chromium-сценарий с подменённым noVNC DOM и реальными Kestrel bridge, ImportViewModel, API и свежей PostgreSQL: 35 принятых, 10 отклонённых, одно предупреждение и 45 строк отчёта; временные staging-файлы удалены. Полный графический noVNC запуск в Docker и native GUI с display server здесь не запускались.
+`dotnet build MiniPdm.sln` завершился с 0 warnings и 0 errors. Прошли все 129 тестов solution: 79 Modules, 33 Storage и 17 Desktop. Ещё 11 тестов PostgreSQL suite прошли на заполненной временной БД — всего 140 без пропусков. EF Core `has-pending-model-changes` подтвердил, что после `AddBackgroundTasks` новых миграций нет. Avalonia shell и редактор проверены headlessly. Browser picker extension прошёл Chromium-сценарий с подменённым noVNC DOM и реальными Kestrel bridge, ImportViewModel, API и свежей PostgreSQL: 35 принятых, 10 отклонённых, одно предупреждение и 45 строк отчёта; временные staging-файлы удалены. Изолированные Chromium-регрессии проверяют восстановление polling на `pagehide/pageshow` с `persisted=true`, защиту от устаревшего ответа, таймауты зависшего HTTP-запроса и чтения JSON, полноэкранный noVNC и cancel/retry/upload. Полный графический noVNC запуск в Docker и native GUI с display server здесь не запускались; пользовательский Mac не воспроизводился.
+
+Изолированные проверки browser picker можно повторить без запуска API или Compose, если Node.js, Playwright и Chromium уже доступны:
+
+```sh
+NODE_PATH=/path/to/preinstalled/node_modules node --test tests/browser/pdm-picker-lifecycle.test.cjs
+```
+
+Тест поднимает временный локальный HTTP bridge fixture и использует Chromium по пути `/usr/bin/chromium`.
 
 Все три миграции, включая `AddBackgroundTasks`, применены и проверены на временной PostgreSQL 17. Background HTTP и selected-version BOM сценарии также проверены там; постоянная пользовательская база не использовалась.
 

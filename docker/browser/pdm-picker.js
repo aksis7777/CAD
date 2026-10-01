@@ -5,10 +5,12 @@
   const maxFileBytes = 8 * 1024 * 1024;
   const maxRequestBytes = 64 * 1024 * 1024;
   const acceptedExtensions = new Set([".a3d", ".m3d"]);
+  const pendingTimeoutMs = 10000;
   const encoder = new TextEncoder();
   let activeRequest = null;
   let uploading = false;
-  let disposed = false;
+  let pollAbortController = null;
+  let pollGeneration = 0;
 
   const input = document.createElement("input");
   input.type = "file";
@@ -38,7 +40,12 @@
         <button id="pdm-picker-cancel" class="secondary" type="button">Отмена</button>
       </div>
     </div>`;
-  document.body.append(overlay);
+  function placeOverlay() {
+    const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
+    const parent = fullscreenElement || document.body;
+    if (overlay.parentElement !== parent) parent.append(overlay);
+  }
+  placeOverlay();
 
   const status = overlay.querySelector("#pdm-picker-status");
   overlay.querySelector("#pdm-picker-instructions").textContent = supportsDirectorySelection
@@ -95,10 +102,14 @@
       if (!response.ok && response.status !== 204) throw new Error(`Не удалось отменить выбор папки (HTTP ${response.status}).`);
       if (activeRequest?.nonce === request.nonce) {
         activeRequest = null;
+        setBusy(false);
         overlay.hidden = true;
       }
     } catch (error) {
-      showError(error instanceof Error ? error.message : "Не удалось отменить выбор папки.");
+      if (activeRequest?.nonce === request.nonce) {
+        showError(error instanceof Error ? error.message : "Не удалось отменить выбор папки.");
+        setBusy(false);
+      }
     }
   }
 
@@ -157,6 +168,7 @@
       }
       if (activeRequest?.nonce === request.nonce) {
         activeRequest = null;
+        setBusy(false);
         overlay.hidden = true;
       }
     } catch (error) {
@@ -169,19 +181,62 @@
     }
   }
 
-  async function delay(ms) {
-    return new Promise(resolve => window.setTimeout(resolve, ms));
+  function delay(ms, signal) {
+    return new Promise(resolve => {
+      if (signal.aborted) return resolve();
+      const timer = window.setTimeout(done, ms);
+      function done() {
+        window.clearTimeout(timer);
+        signal.removeEventListener("abort", done);
+        resolve();
+      }
+      signal.addEventListener("abort", done, { once: true });
+    });
   }
 
-  async function pollPending() {
-    while (!disposed) {
+  async function fetchPending(signal) {
+    const controller = new AbortController();
+    let timeoutId;
+    let rejectOnAbort;
+    const aborted = new Promise((_, reject) => { rejectOnAbort = reject; });
+    const abortWithError = () => {
+      controller.abort();
+      rejectOnAbort(new Error("Pending picker request was aborted."));
+    };
+    signal.addEventListener("abort", abortWithError, { once: true });
+    const timedOut = new Promise((_, reject) => {
+      timeoutId = window.setTimeout(() => {
+        controller.abort();
+        reject(new Error("Pending picker request timed out."));
+      }, pendingTimeoutMs);
+    });
+    const pending = (async () => {
+      const response = await fetch("/pdm-picker/pending", {
+        cache: "no-store",
+        headers: { "Accept": "application/json" },
+        signal: controller.signal
+      });
+      return { response, request: response.status === 200 ? await response.json() : null };
+    })();
+    try {
+      return await Promise.race([pending, timedOut, aborted]);
+    } finally {
+      window.clearTimeout(timeoutId);
+      signal.removeEventListener("abort", abortWithError);
+    }
+  }
+
+  async function pollPending(controller, generation) {
+    const signal = controller.signal;
+    const current = () => !signal.aborted && generation === pollGeneration;
+    while (current()) {
       try {
-        const response = await fetch("/pdm-picker/pending", { cache: "no-store", headers: { "Accept": "application/json" } });
+        const { response, request } = await fetchPending(signal);
+        if (!current()) return;
         if (response.status === 200) {
-          const request = await response.json();
           if (request && typeof request.requestId === "string" && typeof request.nonce === "string" && typeof request.expiresAt === "string") {
             if (uploading && activeRequest?.nonce !== request.nonce) {
-              await delay(500);
+              await delay(500, signal);
               continue;
             }
             if (Date.parse(request.expiresAt) > Date.now()) showRequest(request);
@@ -190,21 +245,39 @@
               overlay.hidden = true;
             }
           }
-          await delay(500);
+          await delay(500, signal);
         } else if (response.status === 204) {
           if (activeRequest && !uploading) {
             activeRequest = null;
             overlay.hidden = true;
           }
-          await delay(500);
+          await delay(500, signal);
         } else {
-          await delay(1200);
+          await delay(1200, signal);
         }
       } catch {
+        if (!current()) return;
         // A transient proxy restart or dropped poll must not discard the pending picker request.
-        await delay(1200);
+        await delay(1200, signal);
       }
     }
+  }
+
+  function startPolling() {
+    if (pollAbortController) return;
+    pollAbortController = new AbortController();
+    const controller = pollAbortController;
+    const generation = ++pollGeneration;
+    void pollPending(controller, generation).finally(() => {
+      if (pollAbortController === controller) pollAbortController = null;
+    });
+  }
+
+  function stopPolling() {
+    if (!pollAbortController) return;
+    ++pollGeneration;
+    pollAbortController.abort();
+    pollAbortController = null;
   }
 
   chooseButton.addEventListener("click", () => {
@@ -214,6 +287,9 @@
   });
   cancelButton.addEventListener("click", cancelRequest);
   input.addEventListener("change", () => uploadFiles(input.files));
-  window.addEventListener("pagehide", () => { disposed = true; }, { once: true });
-  pollPending();
+  document.addEventListener("fullscreenchange", placeOverlay);
+  document.addEventListener("webkitfullscreenchange", placeOverlay);
+  window.addEventListener("pagehide", stopPolling);
+  window.addEventListener("pageshow", startPolling);
+  startPolling();
 })();
