@@ -30,6 +30,8 @@ builder.Services.AddSingleton(new BackgroundTaskDefinition(
 builder.Services.AddControllers().AddPdmModules();
 
 var app = builder.Build();
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.MapControllers();
 app.Run();
 

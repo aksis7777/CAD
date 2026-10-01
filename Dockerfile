@@ -71,6 +71,8 @@ RUN --mount=type=secret,id=proxy_ca,required=false \
 WORKDIR /app
 COPY --from=build /out/desktop/ ./
 COPY docker/desktop-entrypoint.sh /usr/local/bin/desktop-entrypoint
+COPY docker/browser/index.html /usr/share/novnc/index.html
+COPY docker/browser/pdm-home.css /usr/share/novnc/pdm-home.css
 RUN chmod +x /usr/local/bin/desktop-entrypoint && mkdir -p /cad-imports
 EXPOSE 6080
 ENTRYPOINT ["/usr/local/bin/desktop-entrypoint"]

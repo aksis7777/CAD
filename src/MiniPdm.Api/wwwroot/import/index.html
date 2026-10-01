@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Импорт CAD-файлов в Mini-PDM">
+  <title>Импорт CAD — Mini-PDM</title>
+  <link rel="stylesheet" href="/import/styles.css">
+  <script src="/import/import.js" defer></script>
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <span class="back-link">Mini-PDM</span>
+      <span class="eyebrow">Импорт CAD</span>
+      <h1>Загрузить папку с чертежами</h1>
+      <p class="intro">Выберите папку на Mac. Браузер передаст серверу файлы <code>.a3d</code> и <code>.m3d</code>, включая файлы во вложенных папках. Сервер использует имена файлов для связей между деталями, поэтому одинаковые имена будут отклонены.</p>
+    </header>
+
+    <section class="card" aria-labelledby="select-title">
+      <div class="section-heading">
+        <span class="step">1</span>
+        <div>
+          <h2 id="select-title">Выберите файлы</h2>
+          <p>До 1000 файлов, 8 МиБ каждый, 64 МиБ всего. Учитывается и общий объём данных для передачи.</p>
+        </div>
+      </div>
+      <div class="pickers" id="pickers">
+        <button id="folder-picker-button" class="button button-primary" type="button">Выбрать папку</button>
+        <input id="folder-input" type="file" webkitdirectory directory multiple hidden>
+        <button id="files-picker-button" class="button button-secondary" type="button">Выбрать файлы</button>
+        <input id="files-input" type="file" accept=".a3d,.m3d" multiple hidden>
+      </div>
+      <p class="helper">На Mac можно выбрать папку целиком. Если браузер не показывает папки, используйте «Выбрать файлы».</p>
+      <div id="selection" class="selection" aria-live="polite">Папка ещё не выбрана.</div>
+      <div class="actions">
+        <button id="upload-button" class="button button-primary" type="button" disabled>Загрузить и импортировать</button>
+        <button id="clear-button" class="button button-quiet" type="button" hidden>Очистить выбор</button>
+      </div>
+    </section>
+
+    <section id="status-card" class="card status-card" aria-labelledby="status-title" hidden>
+      <div class="section-heading">
+        <span class="step">2</span>
+        <div>
+          <h2 id="status-title">Результат импорта</h2>
+          <p id="status-text" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+      <div id="report-summary" class="summary" hidden></div>
+      <div id="unknown-actions" class="actions" hidden>
+        <button id="retry-button" class="button button-primary" type="button">Повторить тот же запрос</button>
+        <button id="check-button" class="button button-secondary" type="button">Проверить результат</button>
+        <button id="abandon-button" class="button button-quiet" type="button">Начать новый импорт</button>
+      </div>
+      <div id="report-table-wrap" class="table-wrap" hidden>
+        <table>
+          <thead><tr><th>Файл</th><th>Результат</th><th>Подробности</th></tr></thead>
+          <tbody id="report-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <p>Повтор после сетевой ошибки использует тот же идентификатор операции, поэтому завершённый импорт не выполнится второй раз.</p>
+    </footer>
+  </main>
+</body>
+</html>

@@ -12,6 +12,11 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
+case "${PDM_BROWSER_API_PORT:-5000}" in
+  ''|*[!0-9]*) echo "PDM_BROWSER_API_PORT must be a numeric port" >&2; exit 1 ;;
+esac
+printf 'window.PDM_API_PORT = "%s";\n' "${PDM_BROWSER_API_PORT:-5000}" > /usr/share/novnc/pdm-config.js
+
 Xvfb :0 -screen 0 1600x1000x24 -ac +extension GLX +render -noreset &
 xvfb_pid=$!
 attempt=0

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mini-PDM</title>
+  <link rel="stylesheet" href="/pdm-home.css">
+  <script src="/pdm-config.js"></script>
+</head>
+<body>
+  <main class="panel">
+    <div class="brand">Mini-PDM</div>
+    <h1>Рабочее место</h1>
+    <p class="lead">Импортируйте CAD-папку с этого компьютера или откройте окно настольного приложения.</p>
+    <nav class="links" aria-label="Разделы Mini-PDM">
+      <a id="import-link" class="link primary" href="#">Импортировать папку с Mac</a>
+      <a class="link secondary" href="/vnc.html?autoconnect=true&amp;resize=scale">Открыть настольное приложение</a>
+    </nav>
+    <p class="note">В окне импорта нажмите «Выбрать папку» и укажите каталог на Mac. Переносить его в контейнер не нужно.</p>
+  </main>
+  <script>
+    const api = new URL(window.location.href);
+    api.hostname = window.location.hostname;
+    api.port = String(window.PDM_API_PORT || 5000);
+    api.pathname = "/import/";
+    api.search = "";
+    api.hash = "";
+    document.querySelector("#import-link").href = api.toString();
+  </script>
+</body>
+</html>
