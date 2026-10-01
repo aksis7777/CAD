@@ -1,0 +1,5 @@
+**/bin/
+**/obj/
+**/TestResults/
+.avalonia-build-tasks
+.vs/

@@ -1,0 +1,212 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MiniPdm.Desktop.Modules.Composition.ViewModels"
+        xmlns:views="using:MiniPdm.Desktop.Modules.BackgroundTasks.Views"
+        x:Class="MiniPdm.Desktop.MainWindow"
+        Title="Мини-PDM"
+        Width="1480" Height="920" MinWidth="1120" MinHeight="700"
+        Background="#F4F6F8">
+  <Window.Styles>
+    <Style Selector="TextBlock.heading"><Setter Property="FontSize" Value="18"/><Setter Property="FontWeight" Value="SemiBold"/></Style>
+    <Style Selector="TextBlock.muted"><Setter Property="Foreground" Value="#64748B"/></Style>
+    <Style Selector="Border.card"><Setter Property="Background" Value="White"/><Setter Property="BorderBrush" Value="#DCE3EA"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="8"/><Setter Property="Padding" Value="12"/></Style>
+    <Style Selector="Button.primary"><Setter Property="Background" Value="#155E75"/><Setter Property="Foreground" Value="White"/></Style>
+  </Window.Styles>
+  <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="14" RowSpacing="10">
+    <Border Grid.Row="0" Classes="card" Padding="10">
+      <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+        <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">
+          <TextBlock Text="Мини-PDM" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+          <TextBlock Text="{Binding StatusText}" Classes="muted" VerticalAlignment="Center"/>
+        </StackPanel>
+        <TextBlock Grid.Column="1" Text="{Binding Import.StatusText}" Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="360"/>
+        <Button Grid.Column="2" Content="Импортировать папку…" Classes="primary" Click="PickImportFolder" IsEnabled="{Binding Import.CanStartNewImport}"/>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBox Width="440" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Watermark="Поиск по обозначению или наименованию" KeyDown="SearchKeyDown"/>
+        <Button Content="Найти" Command="{Binding RefreshCommand}"/>
+        <Button Content="Обновить выбранный объект" Command="{Binding RefreshSelectedCommand}"/>
+      </StackPanel>
+      <TextBlock Grid.Column="1" Text="{Binding MessageText}" Foreground="#9A3412" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="700"/>
+    </Grid>
+
+    <Grid Grid.Row="2" ColumnDefinitions="350,*" ColumnSpacing="10">
+      <Border Grid.Column="0" Classes="card">
+        <Grid RowDefinitions="Auto,*,Auto">
+          <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <TextBlock Text="Объекты" Classes="heading" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding Objects.Count}" Classes="muted" VerticalAlignment="Center"/>
+          </StackPanel>
+          <ListBox Grid.Row="1" ItemsSource="{Binding Objects}" SelectedItem="{Binding SelectedObject, Mode=TwoWay}" IsEnabled="{Binding !IsBusy}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Spacing="2" Margin="2,5">
+                  <TextBlock Text="{Binding Designation}" FontWeight="SemiBold"/>
+                  <TextBlock Text="{Binding Name}" TextWrapping="Wrap"/>
+                  <TextBlock Classes="muted" FontSize="11">
+                    <Run Text="{Binding Type}"/><Run Text=" · "/><Run Text="{Binding State}"/><Run Text=" · v"/><Run Text="{Binding VersionNumber}"/>
+                  </TextBlock>
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <Button Grid.Row="2" Content="Загрузить ещё" Command="{Binding LoadMoreCommand}" HorizontalAlignment="Stretch" Margin="0,8,0,0"/>
+        </Grid>
+      </Border>
+
+      <TabControl Grid.Column="1">
+        <TabItem Header="Карточка объекта">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="10" Margin="12">
+              <Border Classes="card">
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                  <StackPanel Spacing="3">
+                    <TextBlock Text="{Binding SelectedObjectLabel}" Classes="heading" TextWrapping="Wrap"/>
+                    <TextBlock Classes="muted" TextWrapping="Wrap">
+                      <Run Text="{Binding SelectedCardType}"/><Run Text=" · "/><Run Text="{Binding CurrentVersionLabel}"/>
+                    </TextBlock>
+                    <TextBlock Text="{Binding SelectedSourceReference}" Classes="muted" FontSize="11" TextWrapping="Wrap"/>
+                  </StackPanel>
+                  <ComboBox Grid.Column="1" Width="250" ItemsSource="{Binding HistoryVersions}" SelectedItem="{Binding SelectedHistoryVersion, Mode=TwoWay}" DisplayMemberBinding="{Binding Version}" IsEnabled="{Binding !IsBusy}"/>
+                  <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="{Binding SelectedVersionLabel}" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                  <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="8" Margin="0,10,0,0">
+                    <Button Content="Создать рабочую версию" Command="{Binding CloneCommand}"/>
+                    <Button Content="Утвердить" Command="{Binding ApproveCommand}" IsVisible="{Binding CanApprove}"/>
+                    <Button Content="Аннулировать" Command="{Binding CancelVersionCommand}" IsVisible="{Binding CanCancel}"/>
+                  </StackPanel>
+                </Grid>
+              </Border>
+              <Border Classes="card">
+                <StackPanel Spacing="9">
+                  <TextBlock Text="Атрибуты выбранной версии" Classes="heading"/>
+                  <TextBlock Text="Наименование стандартного изделия" Classes="muted" IsVisible="{Binding IsStandardPart}"/>
+                  <TextBlock Text="{Binding SelectedObjectName}" FontWeight="SemiBold" IsVisible="{Binding IsStandardPart}"/>
+                  <StackPanel Spacing="5" IsVisible="{Binding CanEditName}"><TextBlock Text="Наименование" Classes="muted"/><TextBox Text="{Binding NameText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditAttributes}"/></StackPanel>
+                  <StackPanel Spacing="5" IsVisible="{Binding CanEditMaterial}"><TextBlock Text="Материал" Classes="muted"/><TextBox Text="{Binding MaterialText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditAttributes}"/></StackPanel>
+                  <StackPanel Spacing="5" IsVisible="{Binding CanEditMass}"><TextBlock Text="Масса, кг" Classes="muted"/><TextBox Text="{Binding MassText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditAttributes}" Watermark="Например, 1,25"/></StackPanel>
+                  <TextBlock Text="Масса сборки вычисляется по текущему составу." Classes="muted" IsVisible="{Binding IsAssembly}"/>
+                  <Button Content="Сохранить атрибуты" Command="{Binding SaveAttributesCommand}" HorizontalAlignment="Left"/>
+                  <TextBlock Text="После конфликта обновите карточку и проверьте сохранённые значения перед повторной отправкой." TextWrapping="Wrap" Foreground="#9A3412" IsVisible="{Binding IsReviewRequired}"/>
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="Состав и расчёт">
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="10">
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+              <StackPanel Spacing="8">
+                <TextBlock Text="Действующий состав" Classes="heading"/>
+                <TreeView ItemsSource="{Binding Composition.TreeRoots}" SelectedItem="{Binding Composition.SelectedTreeNode, Mode=TwoWay}" IsEnabled="{Binding !IsBusy}">
+                  <TreeView.DataTemplates>
+                    <TreeDataTemplate DataType="{x:Type vm:TreeOccurrenceViewModel}" ItemsSource="{Binding Children}">
+                      <TextBlock Text="{Binding Label}" TextWrapping="Wrap"/>
+                    </TreeDataTemplate>
+                  </TreeView.DataTemplates>
+                </TreeView>
+                <Border x:Name="CompositionEditor" Classes="card" IsVisible="{Binding IsAssembly}" IsEnabled="{Binding CanEditCompositionUi}">
+                  <StackPanel Spacing="7">
+                    <TextBlock Text="Редактируемый состав версии" Classes="heading"/>
+                    <TextBlock Text="{Binding SelectedVersionLabel}" FontWeight="SemiBold"/>
+                    <TextBlock Text="Выберите дочерние объекты и задайте целые количества. Сохранение заменяет состав целиком." Classes="muted" TextWrapping="Wrap"/>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <TextBox Width="220" Text="{Binding ChildSearchText, UpdateSourceTrigger=PropertyChanged}" Watermark="Поиск компонента"/>
+                      <Button Content="Искать" Command="{Binding SearchChildrenCommand}"/>
+                    </StackPanel>
+                    <ListBox Height="110" ItemsSource="{Binding Composition.ChildResults}" SelectedItem="{Binding Composition.SelectedChild, Mode=TwoWay}">
+                      <ListBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}"/></DataTemplate></ListBox.ItemTemplate>
+                    </ListBox>
+                    <Button Content="Добавить выбранный компонент" Command="{Binding Composition.AddChildCommand}" HorizontalAlignment="Left"/>
+                    <ListBox Height="180" ItemsSource="{Binding Composition.Components}" SelectedItem="{Binding Composition.SelectedComponent, Mode=TwoWay}">
+                      <ListBox.ItemTemplate>
+                        <DataTemplate>
+                          <Grid ColumnDefinitions="*,100" Margin="0,3">
+                            <TextBlock Text="{Binding Label}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            <TextBox Grid.Column="1" Text="{Binding QuantityText, Mode=TwoWay}" Watermark="Количество"/>
+                          </Grid>
+                        </DataTemplate>
+                      </ListBox.ItemTemplate>
+                    </ListBox>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Button Content="Удалить строку" Command="{Binding Composition.RemoveChildCommand}"/>
+                      <Button Content="Сохранить состав" Command="{Binding SaveCompositionCommand}" Classes="primary"/>
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+              <StackPanel Spacing="8">
+                <TextBlock Text="Расчёт действующего состава" Classes="heading"/>
+                <Border Classes="card">
+                  <StackPanel>
+                    <TextBlock Text="Итоговая масса, кг" Classes="muted"/>
+                    <TextBlock Text="{Binding Composition.TotalMassKg}" FontSize="25" FontWeight="Bold"/>
+                    <TextBlock Text="Расчёт неполон: см. диагностику ниже." Foreground="#9A3412" IsVisible="{Binding !Composition.CalculationComplete}"/>
+                  </StackPanel>
+                </Border>
+                <TextBlock Text="Диагностика" Classes="heading"/>
+                <ItemsControl ItemsSource="{Binding Composition.Diagnostics}">
+                  <ItemsControl.ItemTemplate><DataTemplate><Border Classes="card" Margin="0,2"><TextBlock Text="{Binding Message}" TextWrapping="Wrap"/></Border></DataTemplate></ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="Спецификация" Classes="heading"/>
+                <ItemsControl ItemsSource="{Binding Composition.Specification}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Classes="card" Margin="0,2">
+                        <StackPanel Spacing="3">
+                          <TextBlock Text="{Binding Designation}" FontWeight="SemiBold"/>
+                          <TextBlock Text="{Binding Name}" TextWrapping="Wrap"/>
+                          <TextBlock Classes="muted" FontSize="11"><Run Text="Кол-во: "/><Run Text="{Binding Quantity}"/><Run Text=" · кг: "/><Run Text="{Binding TotalMassKg}"/></TextBlock>
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </ScrollViewer>
+          </Grid>
+        </TabItem>
+
+        <TabItem Header="Импорт" DataContext="{Binding Import}">
+          <Grid RowDefinitions="Auto,*" Margin="12" RowSpacing="8">
+            <TextBlock Text="Отчёт импорта" Classes="heading"/>
+            <StackPanel Grid.Row="1" Spacing="8">
+              <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap"/>
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="Проверить / повторить с тем же ID" Command="{Binding RetryCommand}"/>
+                <Button Content="Отказаться от повтора этого пакета" Command="{Binding AbandonPendingCommand}" IsVisible="{Binding HasPendingImport}"/>
+                <Button Content="Отменить запрос" Command="{Binding CancelCommand}" IsEnabled="{Binding IsBusy}"/>
+              </StackPanel>
+              <ListBox ItemsSource="{Binding Files}" MaxHeight="650">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="card" Margin="0,3">
+                    <StackPanel Spacing="3">
+                      <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"/>
+                      <TextBlock Text="{Binding Status}"/>
+                      <TextBlock Text="{Binding Action}" Classes="muted"/>
+                      <TextBlock Text="{Binding Reason}" Foreground="#B91C1C" TextWrapping="Wrap"/>
+                      <ItemsControl ItemsSource="{Binding Warnings}"><ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding .}" Foreground="#9A3412" TextWrapping="Wrap"/></DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+              </ListBox>
+            </StackPanel>
+          </Grid>
+        </TabItem>
+        <TabItem Header="Фоновые задачи">
+          <views:BackgroundTasksView DataContext="{Binding BackgroundTasks}"/>
+        </TabItem>
+      </TabControl>
+    </Grid>
+    <Border Grid.Row="3" Classes="card" Padding="8">
+      <TextBlock Text="Рабочие массы отображаются в килограммах. Состав дерева и расчёт показывают действующую версию." Classes="muted"/>
+    </Border>
+  </Grid>
+</Window>
