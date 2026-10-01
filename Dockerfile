@@ -52,13 +52,15 @@ ENTRYPOINT ["./efbundle"]
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble AS desktop
 ENV DEBIAN_FRONTEND=noninteractive \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
     DISPLAY=:0
 RUN --mount=type=secret,id=proxy_ca,required=false \
     if [ -f /run/secrets/proxy_ca ] && [ -s /run/secrets/proxy_ca ]; then \
       cp /run/secrets/proxy_ca /usr/local/share/ca-certificates/build-proxy.crt && update-ca-certificates; \
     fi && \
     apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates curl dbus-x11 fluxbox libatspi2.0-0 libfontconfig1 \
+      ca-certificates curl dbus-x11 fluxbox fonts-dejavu-core libatspi2.0-0 libfontconfig1 \
       libfreetype6 libice6 libsm6 libx11-6 libxcomposite1 libxcursor1 \
       libxdamage1 libxext6 libxfixes3 libxi6 libxkbcommon0 libxrandr2 \
       libxrender1 novnc websockify x11-utils x11vnc xvfb \
