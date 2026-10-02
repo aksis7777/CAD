@@ -13,6 +13,7 @@ using MiniPdm.Contracts.Modules.Calculations.DtoModels;
 using MiniPdm.Contracts.Modules.Composition.DtoModels;
 using MiniPdm.Contracts.Modules.Import.DtoModels;
 using MiniPdm.Contracts.Modules.Objects.DtoModels;
+using MiniPdm.Contracts.Modules.Versions.DtoModels;
 using MiniPdm.Desktop;
 using MiniPdm.Desktop.Services;
 using MiniPdm.Desktop.Services.ImportFolderPickers;
@@ -270,6 +271,41 @@ public sealed class DesktopWindowTests
         }
     }
 
+    [AvaloniaFact]
+    public async Task ApprovingVersionKeepsTheSameObjectSelected()
+    {
+        var handler = new DesktopApiHandler { CurrentAssemblyState = "InWork" };
+        using var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://localhost:5000/") };
+        using var viewModel = new MainWindowViewModel(new PdmApiClient(httpClient));
+        var window = new MainWindow { DataContext = viewModel, Width = 1480, Height = 920 };
+
+        try
+        {
+            window.Show();
+            await WaitUntilAsync(() => viewModel.Objects.Count == 3 && !viewModel.IsBusy,
+                "Object search did not finish in time.");
+            var objectList = window.GetVisualDescendants().OfType<ListBox>()
+                .Single(list => ReferenceEquals(list.ItemsSource, viewModel.Objects));
+            objectList.SelectedItem = viewModel.Objects.Single(item => item.Id == AssemblyId);
+            await WaitUntilAsync(() => viewModel.SelectedObject?.Id == AssemblyId
+                && viewModel.SelectedVersion?.State == "InWork" && !viewModel.IsBusy,
+                "The editable assembly did not finish loading.");
+
+            await viewModel.ApproveCommand.ExecuteAsync();
+            await WaitUntilAsync(() => !viewModel.IsBusy && viewModel.SelectedVersion?.State == "Approved",
+                "Approval did not finish.");
+            Dispatcher.UIThread.RunJobs();
+            window.UpdateLayout();
+
+            Assert.Equal(AssemblyId, viewModel.SelectedObject?.Id);
+            Assert.Equal(AssemblyId, Assert.IsType<ObjectSearchItemDto>(objectList.SelectedItem).Id);
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
     private static async Task WaitUntilAsync(Func<bool> condition, string failureMessage)
     {
         var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
@@ -317,6 +353,7 @@ public sealed class DesktopWindowTests
         private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
         public List<Guid> ImportIds { get; } = [];
         public int ImportFailuresRemaining { get; set; }
+        public string CurrentAssemblyState { get; set; } = "Approved";
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
@@ -346,10 +383,17 @@ public sealed class DesktopWindowTests
                 }
             }
 
+            if (request.Method == HttpMethod.Put && path == $"/api/objects/{AssemblyId:D}/versions/2/state")
+            {
+                CurrentAssemblyState = "Approved";
+                return Ok(new VersionMutationDto(AssemblyId, CurrentVersionId, 2, CurrentAssemblyState,
+                    CurrentVersionId, ConcurrencyToken, []));
+            }
+
             if (request.Method == HttpMethod.Get && path == "/api/objects")
                 return Ok(new ObjectSearchPageDto(
                 [
-                    new(AssemblyId, "Assembly", "АБВГ.123456.001", "Main assembly", CurrentVersionId, 2, "Approved", null, ConcurrencyToken, false),
+                    new(AssemblyId, "Assembly", "АБВГ.123456.001", "Main assembly", CurrentVersionId, 2, CurrentAssemblyState, null, ConcurrencyToken, false),
                     new(HistoricalChildId, "Part", "АБВГ.123456.002", "Historical part", null, null, null, null, Guid.NewGuid(), true),
                     new(CurrentChildId, "StandardPart", null, "Current fastener", null, null, null, null, Guid.NewGuid(), true)
                 ], 0, 50, false));
@@ -389,17 +433,17 @@ public sealed class DesktopWindowTests
             });
         }
 
-        private static ObjectCardDto CreateCard(bool historical)
+        private ObjectCardDto CreateCard(bool historical)
         {
             var selectedId = historical ? HistoricalVersionId : CurrentVersionId;
             var versionNumber = historical ? 1 : 2;
-            var selectedState = historical ? "InWork" : "Approved";
+            var selectedState = historical ? "InWork" : CurrentAssemblyState;
             return new ObjectCardDto(AssemblyId, "Assembly", "АБВГ.123456.001", "Main assembly", CurrentVersionId,
                 ConcurrencyToken,
                 new ObjectVersionDto(selectedId, versionNumber, selectedState,
                     historical ? "Historical name" : "Current name", null, null, null, !historical),
                 [
-                    new ObjectVersionSummaryDto(CurrentVersionId, 2, "Approved", true),
+                    new ObjectVersionSummaryDto(CurrentVersionId, 2, CurrentAssemblyState, true),
                     new ObjectVersionSummaryDto(HistoricalVersionId, 1, "InWork", false)
                 ], null, null);
         }

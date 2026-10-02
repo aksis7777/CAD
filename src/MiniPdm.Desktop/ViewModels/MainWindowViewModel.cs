@@ -41,6 +41,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IDisposable
     private bool _isConnected;
     private CancellationTokenSource? _selectionCts;
     private bool _suppressHistoryLoad;
+    private bool _suppressObjectSelectionLoad;
     private bool _requiresReview;
     private Guid? _compositionConcurrencyToken;
 
@@ -126,6 +127,7 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IDisposable
             if (!Set(ref _selectedObject, value)) return;
             Notify(nameof(SelectedObjectLabel));
             Notify(nameof(SelectedObjectName));
+            if (_suppressObjectSelectionLoad) return;
             IsReviewRequired = false;
             Composition.CanEdit = false;
             _ = LoadSelectedObjectAsync();
@@ -438,7 +440,21 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IDisposable
             if (row is not null)
             {
                 var oldRow = Objects.FirstOrDefault(x => x.Id == objectId);
-                if (oldRow is not null) Objects[Objects.IndexOf(oldRow)] = row;
+                if (oldRow is not null)
+                {
+                    var index = Objects.IndexOf(oldRow);
+                    if (index >= 0)
+                    {
+                        var preserveSelection = SelectedObject?.Id == objectId;
+                        _suppressObjectSelectionLoad = true;
+                        try
+                        {
+                            Objects[index] = row;
+                            if (preserveSelection) SelectedObject = row;
+                        }
+                        finally { _suppressObjectSelectionLoad = false; }
+                    }
+                }
             }
         }
         if (refreshComposition)
