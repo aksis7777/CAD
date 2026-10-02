@@ -8,7 +8,11 @@ using Npgsql;
 
 namespace MiniPdm.Modules.Composition.Services;
 
-/// <summary>Reads a composition tree through one PostgreSQL recursive CTE.</summary>
+/// <summary>
+/// Читает дерево состава одним рекурсивным запросом PostgreSQL.
+/// Для каждого вхождения возвращает путь, количество и данные текущей версии.
+/// </summary>
+/// <param name="context">Контекст базы данных для выполнения запроса.</param>
 public sealed class CompositionReadService(PdmDbContext context)
 {
     private const string Sql = """
@@ -65,12 +69,25 @@ public sealed class CompositionReadService(PdmDbContext context)
         ORDER BY cardinality("ObjectPath"), "ObjectPath"
         """;
 
+    /// <summary>
+    /// Получает дерево состава корневого объекта и преобразует его в API DTO.
+    /// </summary>
+    /// <param name="rootObjectId">Идентификатор корневого объекта.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    /// <returns>Дерево состава либо <see langword="null"/>, если корневой объект отсутствует.</returns>
     public async Task<CompositionTreeDto?> GetCompositionAsync(Guid rootObjectId, CancellationToken cancellationToken)
     {
         var occurrences = await ReadAsync(rootObjectId, cancellationToken);
         return occurrences.Count == 0 ? null : MapTreeDto(rootObjectId, occurrences);
     }
 
+    /// <summary>
+    /// Преобразует строки вхождений в узлы публичного дерева состава.
+    /// Для отсутствующих текущих версий и циклов добавляет диагностические сведения.
+    /// </summary>
+    /// <param name="rootObjectId">Идентификатор корневого объекта.</param>
+    /// <param name="occurrences">Прочитанные вхождения в порядке обхода дерева.</param>
+    /// <returns>Дерево состава с узлами и диагностиками.</returns>
     public static CompositionTreeDto MapTreeDto(Guid rootObjectId, IReadOnlyList<CompositionOccurrence> occurrences)
     {
         var nodes = occurrences.Select(occurrence =>
@@ -110,6 +127,13 @@ public sealed class CompositionReadService(PdmDbContext context)
         _ => throw new ArgumentOutOfRangeException(nameof(state), state, "Unknown version state.")
     };
 
+    /// <summary>
+    /// Читает строки дерева состава без преобразования в публичный DTO.
+    /// Метод используется расчётами, которым нужны исходные пути и атрибуты объектов.
+    /// </summary>
+    /// <param name="rootObjectId">Идентификатор корневого объекта.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    /// <returns>Упорядоченный список вхождений дерева, включая корневое.</returns>
     public async Task<IReadOnlyList<CompositionOccurrence>> ReadAsync(Guid rootObjectId, CancellationToken cancellationToken)
     {
         var rows = await context.Database.SqlQueryRaw<CompositionRow>(Sql, new NpgsqlParameter("rootObjectId", rootObjectId))
@@ -134,18 +158,54 @@ public sealed class CompositionReadService(PdmDbContext context)
     // EF Core maps this private result type directly from the SQL projection; enum values are converted client-side.
     private sealed class CompositionRow
     {
-        public Guid ObjectId { get; set; }
+        public Guid ObjectId
+        {
+            get; set;
+        }
         public Guid[] ObjectPath { get; set; } = [];
-        public Guid[]? ParentPath { get; set; }
-        public int LocalQuantity { get; set; }
-        public int TypeValue { get; set; }
-        public string? Designation { get; set; }
-        public string? Name { get; set; }
-        public string? Material { get; set; }
-        public Guid? VersionId { get; set; }
-        public int? VersionNumber { get; set; }
-        public int? StateValue { get; set; }
-        public decimal? UnitMassKg { get; set; }
-        public bool IsCycle { get; set; }
+        public Guid[]? ParentPath
+        {
+            get; set;
+        }
+        public int LocalQuantity
+        {
+            get; set;
+        }
+        public int TypeValue
+        {
+            get; set;
+        }
+        public string? Designation
+        {
+            get; set;
+        }
+        public string? Name
+        {
+            get; set;
+        }
+        public string? Material
+        {
+            get; set;
+        }
+        public Guid? VersionId
+        {
+            get; set;
+        }
+        public int? VersionNumber
+        {
+            get; set;
+        }
+        public int? StateValue
+        {
+            get; set;
+        }
+        public decimal? UnitMassKg
+        {
+            get; set;
+        }
+        public bool IsCycle
+        {
+            get; set;
+        }
     }
 }

@@ -6,8 +6,14 @@ using Xunit;
 
 namespace MiniPdm.Modules.Tests;
 
+/// <summary>
+/// Проверяет построение представления состава изделия и диагностику циклов и отсутствующих версий.
+/// </summary>
 public sealed class CompositionQueryTests
 {
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «MapsDistinctOccurrencePathsInDiamond».
+    /// </summary>
     [Fact]
     public void MapsDistinctOccurrencePathsInDiamond()
     {
@@ -33,6 +39,9 @@ public sealed class CompositionQueryTests
         Assert.All(leafNodes, node => Assert.Equal("Part", node.Type));
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «MapsRootOnlyComposition».
+    /// </summary>
     [Fact]
     public void MapsRootOnlyComposition()
     {
@@ -42,6 +51,9 @@ public sealed class CompositionQueryTests
         Assert.Single(tree.Nodes);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «MapsNodeWithoutCurrentVersionWithDiagnostic».
+    /// </summary>
     [Fact]
     public void MapsNodeWithoutCurrentVersionWithDiagnostic()
     {
@@ -61,6 +73,9 @@ public sealed class CompositionQueryTests
         Assert.Equal("Missing version", node.Name);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «MapsCycleWithTheOccurrencePath».
+    /// </summary>
     [Fact]
     public void MapsCycleWithTheOccurrencePath()
     {

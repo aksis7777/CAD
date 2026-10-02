@@ -9,6 +9,9 @@ using MiniPdm.Desktop.ViewModels;
 
 namespace MiniPdm.Desktop.Modules.BackgroundTasks.ViewModels;
 
+/// <summary>
+/// Предоставляет состояние и команды управления фоновыми задачами сервера.
+/// </summary>
 public sealed class BackgroundTasksViewModel : INotifyPropertyChanged, IDisposable
 {
     private readonly IPdmApiClient _client;
@@ -23,6 +26,12 @@ public sealed class BackgroundTasksViewModel : INotifyPropertyChanged, IDisposab
     private bool _isBusy;
     private bool _disposed;
 
+    /// <summary>
+    /// Создаёт модель представления и сразу запрашивает список задач.
+    /// </summary>
+    /// <param name="client">Клиент для чтения и изменения задач API.</param>
+    /// <param name="pollInterval">Пауза между проверками запущенной задачи; по умолчанию одна секунда.</param>
+    /// <param name="maxPollCount">Максимальное количество проверок после запуска.</param>
     public BackgroundTasksViewModel(IPdmApiClient client, TimeSpan? pollInterval = null, int maxPollCount = 20)
     {
         _client = client;
@@ -37,35 +46,113 @@ public sealed class BackgroundTasksViewModel : INotifyPropertyChanged, IDisposab
         _ = RefreshAsync();
     }
 
+    /// <summary>
+    /// Возникает при изменении свойства модели представления.
+    /// </summary>
     public event PropertyChangedEventHandler? PropertyChanged;
-    public ObservableCollection<BackgroundTaskDto> Tasks { get; } = [];
-    public AsyncCommand RefreshCommand { get; }
-    public AsyncCommand SaveScheduleCommand { get; }
-    public AsyncCommand RunCommand { get; }
-    public TimeSpan PollInterval { get; }
-    public int MaxPollCount { get; }
 
+    /// <summary>
+    /// Возвращает задачи, отображаемые в списке.
+    /// </summary>
+    public ObservableCollection<BackgroundTaskDto> Tasks { get; } = [];
+
+    /// <summary>
+    /// Возвращает команду загрузки списка задач.
+    /// </summary>
+    public AsyncCommand RefreshCommand
+    {
+        get;
+    }
+
+    /// <summary>
+    /// Возвращает команду сохранения расписания выбранной задачи.
+    /// </summary>
+    public AsyncCommand SaveScheduleCommand
+    {
+        get;
+    }
+
+    /// <summary>
+    /// Возвращает команду немедленного запуска выбранной задачи.
+    /// </summary>
+    public AsyncCommand RunCommand
+    {
+        get;
+    }
+
+    /// <summary>
+    /// Возвращает интервал между проверками состояния выполняемой задачи.
+    /// </summary>
+    public TimeSpan PollInterval
+    {
+        get;
+    }
+
+    /// <summary>
+    /// Возвращает максимальное количество проверок состояния после запуска.
+    /// </summary>
+    public int MaxPollCount
+    {
+        get;
+    }
+
+    /// <summary>
+    /// Получает или задаёт выбранную задачу и синхронизирует текст интервала с её расписанием.
+    /// </summary>
     public BackgroundTaskDto? SelectedTask
     {
         get => _selectedTask;
         set
         {
-            if (!Set(ref _selectedTask, value)) return;
+            if (!Set(ref _selectedTask, value))
+                return;
             IntervalMinutesText = value?.IntervalMinutes.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             RefreshCommands();
         }
     }
 
+    /// <summary>
+    /// Получает или задаёт редактируемый интервал расписания в минутах.
+    /// </summary>
     public string IntervalMinutesText
     {
         get => _intervalMinutesText;
-        set { if (Set(ref _intervalMinutesText, value)) RefreshCommands(); }
+        set
+        {
+            if (Set(ref _intervalMinutesText, value))
+                RefreshCommands();
+        }
     }
 
-    public string StatusText { get => _statusText; private set => Set(ref _statusText, value); }
-    public bool IsBusy { get => _isBusy; private set { if (Set(ref _isBusy, value)) RefreshCommands(); } }
+    /// <summary>
+    /// Возвращает текст текущего состояния операций с задачами.
+    /// </summary>
+    public string StatusText
+    {
+        get => _statusText; private set => Set(ref _statusText, value);
+    }
+
+    /// <summary>
+    /// Показывает, выполняется ли сетевое действие.
+    /// </summary>
+    public bool IsBusy
+    {
+        get => _isBusy; private set
+        {
+            if (Set(ref _isBusy, value))
+                RefreshCommands();
+        }
+    }
+
+    /// <summary>
+    /// Показывает, можно ли редактировать расписание выбранной задачи.
+    /// </summary>
     public bool IsScheduleEditable => !IsBusy && SelectedTask is not null;
 
+    /// <summary>
+    /// Загружает актуальный список задач и сохраняет выбор по идентификатору.
+    /// </summary>
+    /// <returns>Асинхронная операция загрузки.</returns>
     public async Task RefreshAsync()
     {
         await RunBusyAsync(async () =>
@@ -73,17 +160,25 @@ public sealed class BackgroundTasksViewModel : INotifyPropertyChanged, IDisposab
             var selectedId = SelectedTask?.Id;
             var rows = await _client.GetBackgroundTasksAsync(_lifetime.Token);
             Tasks.Clear();
-            foreach (var row in rows) Tasks.Add(row);
+            foreach (var row in rows)
+                Tasks.Add(row);
             SelectedTask = selectedId is null ? Tasks.FirstOrDefault() : Tasks.FirstOrDefault(x => x.Id == selectedId) ?? Tasks.FirstOrDefault();
             StatusText = $"Загружено задач: {Tasks.Count}.";
         });
     }
 
+    /// <summary>
+    /// Отменяет текущую последовательность опроса запущенной задачи.
+    /// </summary>
     public void CancelActivePolling() => _polling?.Cancel();
 
+    /// <summary>
+    /// Отменяет выполняемые запросы и освобождает связанные ресурсы.
+    /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+            return;
         _disposed = true;
         _lifetime.Cancel();
         _lifetime.Dispose();
@@ -97,7 +192,8 @@ public sealed class BackgroundTasksViewModel : INotifyPropertyChanged, IDisposab
 
     private async Task SaveScheduleAsync()
     {
-        if (SelectedTask is null || !int.TryParse(IntervalMinutesText, NumberStyles.None, CultureInfo.InvariantCulture, out var minutes)) return;
+        if (SelectedTask is null || !int.TryParse(IntervalMinutesText, NumberStyles.None, CultureInfo.InvariantCulture, out var minutes))
+            return;
         var id = SelectedTask.Id;
         await RunBusyAsync(async () =>
         {
@@ -110,7 +206,8 @@ public sealed class BackgroundTasksViewModel : INotifyPropertyChanged, IDisposab
 
     private async Task RunAsync()
     {
-        if (SelectedTask is null) return;
+        if (SelectedTask is null)
+            return;
         var id = SelectedTask.Id;
         var lifetimeToken = _lifetime.Token;
         await RunBusyAsync(async () =>
@@ -125,7 +222,8 @@ public sealed class BackgroundTasksViewModel : INotifyPropertyChanged, IDisposab
                 {
                     await Task.Delay(PollInterval, cts.Token);
                     var rows = await _client.GetBackgroundTasksAsync(cts.Token);
-                    foreach (var row in rows) Upsert(row);
+                    foreach (var row in rows)
+                        Upsert(row);
                     var current = Tasks.FirstOrDefault(x => x.Id == id);
                     if (current is not null)
                     {
@@ -138,7 +236,8 @@ public sealed class BackgroundTasksViewModel : INotifyPropertyChanged, IDisposab
                     }
                 }
                 var final = Tasks.FirstOrDefault(x => x.Id == id);
-                if (final is not null) SelectedTask = final;
+                if (final is not null)
+                    SelectedTask = final;
                 StatusText = "Задача ещё выполняется. Обновите состояние позже.";
             }
             finally { if (ReferenceEquals(_polling, cts)) _polling = null; }
@@ -151,15 +250,27 @@ public sealed class BackgroundTasksViewModel : INotifyPropertyChanged, IDisposab
     private void Upsert(BackgroundTaskDto task)
     {
         var index = -1;
-        for (var i = 0; i < Tasks.Count; i++) if (Tasks[i].Id == task.Id) { index = i; break; }
-        if (index < 0) Tasks.Add(task); else Tasks[index] = task;
+        for (var i = 0; i < Tasks.Count; i++)
+            if (Tasks[i].Id == task.Id)
+            {
+                index = i;
+                break;
+            }
+        if (index < 0)
+            Tasks.Add(task);
+        else
+            Tasks[index] = task;
     }
 
     private async Task RunBusyAsync(Func<Task> action)
     {
-        if (IsBusy) return;
+        if (IsBusy)
+            return;
         IsBusy = true;
-        try { await action(); }
+        try
+        {
+            await action();
+        }
         catch (OperationCanceledException) when (_lifetime.IsCancellationRequested) { }
         catch (PdmApiException ex) { StatusText = ex.Message; }
         catch (Exception ex) { StatusText = ex.Message; }
@@ -177,10 +288,12 @@ public sealed class BackgroundTasksViewModel : INotifyPropertyChanged, IDisposab
 
     private bool Set<T>(ref T field, T value, [CallerMemberName] string? name = null)
     {
-        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        if (EqualityComparer<T>.Default.Equals(field, value))
+            return false;
         field = value;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        if (name is nameof(IsBusy) or nameof(SelectedTask)) PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsScheduleEditable)));
+        if (name is nameof(IsBusy) or nameof(SelectedTask))
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsScheduleEditable)));
         return true;
     }
 }

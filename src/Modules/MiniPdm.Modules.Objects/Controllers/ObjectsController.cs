@@ -11,40 +11,77 @@ using MiniPdm.Modules.Versions.Services;
 
 namespace MiniPdm.Modules.Objects.Controllers;
 
+/// <summary>
+/// Предоставляет HTTP-операции поиска объектов, чтения карточек и редактирования версий.
+/// Запросы и команды выполняются через MediatR.
+/// </summary>
+/// <param name="sender">Посредник для отправки запросов и команд.</param>
 [ApiController]
 [Route("api/objects")]
 public sealed class ObjectsController(ISender sender) : ControllerBase
 {
+    /// <summary>
+    /// Ищет объекты по строке и возвращает страницу результатов.
+    /// </summary>
+    /// <param name="search">Подстрока поиска; при отсутствии используется пустая строка.</param>
+    /// <param name="offset">Смещение страницы от начала результатов.</param>
+    /// <param name="limit">Число результатов на странице от 1 до 100.</param>
+    /// <param name="cancellationToken">Токен отмены HTTP-запроса.</param>
+    /// <returns>Страница объектов или ошибка при недопустимых параметрах.</returns>
     [HttpGet]
     public async Task<IActionResult> Search([FromQuery] string? search = null, [FromQuery] int offset = 0, [FromQuery] int limit = 50,
         CancellationToken cancellationToken = default)
     {
         search ??= string.Empty;
-        if (search.Length > 512) return BadRequest("Search must be at most 512 characters.");
-        if (offset < 0) return BadRequest("Offset must be nonnegative.");
-        if (limit is < 1 or > 100) return BadRequest("Limit must be between 1 and 100.");
+        if (search.Length > 512)
+            return BadRequest("Search must be at most 512 characters.");
+        if (offset < 0)
+            return BadRequest("Offset must be nonnegative.");
+        if (limit is < 1 or > 100)
+            return BadRequest("Limit must be between 1 and 100.");
 
         return Ok(await sender.Send(new SearchObjectsQuery(search, offset, limit), cancellationToken));
     }
 
+    /// <summary>
+    /// Возвращает карточку объекта и при необходимости историческую версию.
+    /// </summary>
+    /// <param name="objectId">Идентификатор объекта.</param>
+    /// <param name="version">Номер версии для просмотра или <see langword="null"/> для текущей версии.</param>
+    /// <param name="cancellationToken">Токен отмены HTTP-запроса.</param>
+    /// <returns>Карточка объекта, ошибка запроса или статус отсутствующего объекта/версии.</returns>
     [HttpGet("{objectId:guid}")]
     public async Task<IActionResult> Get(Guid objectId, [FromQuery] int? version = null, CancellationToken cancellationToken = default)
     {
-        if (objectId == Guid.Empty) return BadRequest("Object ID must not be empty.");
-        if (version is <= 0) return BadRequest("Version must be positive.");
+        if (objectId == Guid.Empty)
+            return BadRequest("Object ID must not be empty.");
+        if (version is <= 0)
+            return BadRequest("Version must be positive.");
 
         var result = await sender.Send(new GetObjectQuery(objectId, version), cancellationToken);
         return result is null ? NotFound() : Ok(result);
     }
 
+    /// <summary>
+    /// Обновляет атрибуты выбранной версии объекта.
+    /// </summary>
+    /// <param name="objectId">Идентификатор объекта.</param>
+    /// <param name="version">Положительный номер изменяемой версии.</param>
+    /// <param name="request">Тело с новыми атрибутами и ожидаемым токеном конкурентности.</param>
+    /// <param name="cancellationToken">Токен отмены HTTP-запроса.</param>
+    /// <returns>Результат мутации или соответствующий HTTP-ответ при ошибке, конфликте либо неизвестном результате записи.</returns>
     [HttpPut("{objectId:guid}/versions/{version:int}/attributes")]
     public async Task<IActionResult> UpdateVersionAttributes(Guid objectId, int version,
         [FromBody] UpdateVersionAttributesRequestDto? request, CancellationToken cancellationToken = default)
     {
-        if (objectId == Guid.Empty) return BadRequest("Object ID must not be empty.");
-        if (version <= 0) return BadRequest("Version must be positive.");
-        if (request is null) return BadRequest("A request body is required.");
-        if (request.ExpectedConcurrencyToken == Guid.Empty) return BadRequest("Expected concurrency token must not be empty.");
+        if (objectId == Guid.Empty)
+            return BadRequest("Object ID must not be empty.");
+        if (version <= 0)
+            return BadRequest("Version must be positive.");
+        if (request is null)
+            return BadRequest("A request body is required.");
+        if (request.ExpectedConcurrencyToken == Guid.Empty)
+            return BadRequest("Expected concurrency token must not be empty.");
 
         VersionMutationResult result;
         try

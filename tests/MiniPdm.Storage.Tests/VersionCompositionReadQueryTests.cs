@@ -11,8 +11,15 @@ using Xunit;
 
 namespace MiniPdm.Storage.Tests;
 
+/// <summary>
+/// Проверяет чтение исторического и отменённого состава версии одним запросом без отслеживания.
+/// </summary>
 public sealed class VersionCompositionReadQueryTests
 {
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «ReadsSelectedHistoricalOrCancelledBomInOneNoTrackingQueryAndRetainsEmptyVersions».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task ReadsSelectedHistoricalOrCancelledBomInOneNoTrackingQueryAndRetainsEmptyVersions()
     {
@@ -83,8 +90,15 @@ public sealed class VersionCompositionReadQueryTests
     private sealed class Fixture : IAsyncDisposable
     {
         private readonly SqliteConnection _connection;
-        private Fixture(SqliteConnection connection, PdmDbContext context) { _connection = connection; Context = context; }
-        public PdmDbContext Context { get; }
+        private Fixture(SqliteConnection connection, PdmDbContext context)
+        {
+            _connection = connection;
+            Context = context;
+        }
+        public PdmDbContext Context
+        {
+            get;
+        }
 
         public static async Task<Fixture> OpenAsync(DbCommandInterceptor interceptor)
         {
@@ -105,7 +119,14 @@ public sealed class VersionCompositionReadQueryTests
 
     private sealed class SelectCountingInterceptor : DbCommandInterceptor
     {
-        public int SelectCount { get; private set; }
+        public int SelectCount
+        {
+            get; private set;
+        }
+
+        /// <summary>
+        /// Проверяет ожидаемое поведение сценария «Reset».
+        /// </summary>
         public void Reset() => SelectCount = 0;
 
         public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command,

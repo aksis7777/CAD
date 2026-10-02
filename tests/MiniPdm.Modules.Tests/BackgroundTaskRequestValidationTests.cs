@@ -4,8 +4,14 @@ using Xunit;
 
 namespace MiniPdm.Modules.Tests;
 
+/// <summary>
+/// Проверяет ограничения интервала в публичном запросе изменения расписания.
+/// </summary>
 public sealed class BackgroundTaskRequestValidationTests
 {
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Schedule_interval_range_is_attached_to_record_constructor_parameter».
+    /// </summary>
     [Fact]
     public void Schedule_interval_range_is_attached_to_record_constructor_parameter()
     {

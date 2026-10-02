@@ -11,13 +11,31 @@ using MiniPdm.Modules.Import.DtoModels.Database;
 
 namespace MiniPdm.Modules.Import.Services;
 
+/// <summary>
+/// Хранит подготовленные изменения импорта до преобразования в транзакционный план записи.
+/// </summary>
+/// <param name="validator">Результаты проверки входных файлов.</param>
+/// <param name="newObjects">Создаваемые PDM-объекты.</param>
+/// <param name="newVersions">Создаваемые версии.</param>
+/// <param name="currentVersions">Новые назначения текущих версий.</param>
+/// <param name="targets">Связь файлов с целевыми объектами.</param>
+/// <param name="removedLinks">Удаляемые связи состава.</param>
 internal sealed class ImportPackagePlan(ImportPackageValidator validator, IReadOnlyList<PdmObject> newObjects,
     IReadOnlyList<ObjectVersion> newVersions, IReadOnlyList<CurrentVersionAssignment> currentVersions,
     IReadOnlyDictionary<ImportPackageValidator.FileEntry, PdmObject> targets, IReadOnlyList<BomLink> removedLinks)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    /// <summary>
+    /// Строки отчёта по всем файлам пакета.
+    /// </summary>
     public IReadOnlyList<ImportFileResultDto> Files => validator.Files.Select(x => x.ToDto()).ToArray();
 
+    /// <summary>
+    /// Добавляет ссылки на сохранённые файлы и формирует план записи с сериализованным отчётом.
+    /// </summary>
+    /// <param name="importId">Идентификатор операции импорта.</param>
+    /// <param name="sourceStorage">Хранилище для построения ссылок принятых файлов.</param>
+    /// <returns>Полный план изменений для транзакции базы данных.</returns>
     public ImportWritePlan ToWritePlan(Guid importId, IImportSourceStorage sourceStorage)
     {
         foreach (var entry in validator.Files.Where(x => x.Accepted && x.Action is not ImportFileAction.Unchanged))
@@ -26,7 +44,8 @@ internal sealed class ImportPackagePlan(ImportPackageValidator validator, IReadO
             var version = newVersions.SingleOrDefault(x => x.ObjectId == objectId)
                 ?? currentVersions.SingleOrDefault(x => x.Object.Id == objectId)?.Version
                 ?? targets[entry].CurrentVersion;
-            if (version is not null) version.SourceReference = sourceStorage.GetSourceReference(importId, entry.FileName);
+            if (version is not null)
+                version.SourceReference = sourceStorage.GetSourceReference(importId, entry.FileName);
         }
         var report = new ImportReportDto(importId, Files);
         return new ImportWritePlan(newObjects, newVersions, currentVersions,
@@ -36,6 +55,12 @@ internal sealed class ImportPackagePlan(ImportPackageValidator validator, IReadO
 
 internal static class ImportPackagePlanner
 {
+    /// <summary>
+    /// Строит изменения объектов и версий по проверенному пакету и снимку базы данных.
+    /// </summary>
+    /// <param name="validator">Проверенные файлы и их связи.</param>
+    /// <param name="snapshot">Найденные объекты и текущий граф состава.</param>
+    /// <returns>План создания, обновления и назначения версий.</returns>
     public static ImportPackagePlan Prepare(ImportPackageValidator validator, ImportSnapshot snapshot)
     {
         var files = validator.Files;
@@ -91,15 +116,18 @@ internal static class ImportPackagePlanner
             foreach (var pair in compositions)
             {
                 graph.RemoveWhere(x => x.ParentId == pair.Key.Id);
-                foreach (var child in pair.Value.Keys) graph.Add(new CompositionGraphEdge(pair.Key.Id, child));
+                foreach (var child in pair.Value.Keys)
+                    graph.Add(new CompositionGraphEdge(pair.Key.Id, child));
             }
             var cycleNodes = CompositionGraph.FindCycleNodes(graph);
-            if (cycleNodes.Count == 0) break;
+            if (cycleNodes.Count == 0)
+                break;
             var candidates = files.Where(x => x.Accepted && x.Document?.Type == PdmObjectType.Assembly
                     && targetObjects.TryGetValue(x, out var obj) && cycleNodes.Contains(obj.Id)).ToArray();
             if (candidates.Length == 0)
                 throw new InvalidOperationException("The current database composition graph already contains a cycle; import is blocked.");
-            foreach (var file in candidates) Reject(file, "The proposed active composition would create a cycle.");
+            foreach (var file in candidates)
+                Reject(file, "The proposed active composition would create a cycle.");
             CascadePackageRejections(files, byFile);
         }
 
@@ -175,7 +203,8 @@ internal static class ImportPackagePlanner
                 }
                 composition[childObject.Id] = count;
             }
-            if (file.Accepted) result[targetObjects[file]] = composition;
+            if (file.Accepted)
+                result[targetObjects[file]] = composition;
         }
         return result;
     }
@@ -188,13 +217,13 @@ internal static class ImportPackagePlanner
         {
             changed = false;
             foreach (var file in files.Where(x => x.Accepted && x.Document?.Type == PdmObjectType.Assembly))
-            foreach (var component in file.ComponentCounts.Keys)
-                if (!byFile.TryGetValue(component, out var child) || !child.Accepted)
-                {
-                    Reject(file, $"Component file '{component}' was rejected or could not be resolved.");
-                    changed = true;
-                    break;
-                }
+                foreach (var component in file.ComponentCounts.Keys)
+                    if (!byFile.TryGetValue(component, out var child) || !child.Accepted)
+                    {
+                        Reject(file, $"Component file '{component}' was rejected or could not be resolved.");
+                        changed = true;
+                        break;
+                    }
         } while (changed);
     }
 
@@ -215,8 +244,10 @@ internal static class ImportPackagePlanner
         foreach (var pair in desired)
         {
             var link = version.Components.SingleOrDefault(x => x.ChildObjectId == pair.Key);
-            if (link is null) version.Components.Add(new BomLink { ParentVersionId = version.Id, ChildObjectId = pair.Key, Quantity = pair.Value });
-            else link.Quantity = pair.Value;
+            if (link is null)
+                version.Components.Add(new BomLink { ParentVersionId = version.Id, ChildObjectId = pair.Key, Quantity = pair.Value });
+            else
+                link.Quantity = pair.Value;
         }
     }
 

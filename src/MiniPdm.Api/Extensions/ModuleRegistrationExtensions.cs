@@ -9,8 +9,16 @@ using MiniPdm.Modules.Versions.Extensions;
 
 namespace MiniPdm.Api.Extensions;
 
+/// <summary>
+/// Содержит методы подключения модулей Mini-PDM к веб-приложению.
+/// </summary>
 public static class ModuleRegistrationExtensions
 {
+    /// <summary>
+    /// Регистрирует сервисы и контроллеры функциональных модулей Mini-PDM.
+    /// </summary>
+    /// <param name="mvc">Конфигурация MVC, к которой подключаются модули.</param>
+    /// <returns>Та же конфигурация MVC с зарегистрированными сервисами и частями приложения.</returns>
     public static IMvcBuilder AddPdmModules(this IMvcBuilder mvc)
     {
         mvc.Services.AddImportModule();

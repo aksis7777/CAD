@@ -11,12 +11,30 @@ using Microsoft.Extensions.Logging;
 
 namespace MiniPdm.Desktop.Services.ImportFolderPickers;
 
-/// <summary>Loopback-only file handoff used by the noVNC browser when the native picker cannot see Mac files.</summary>
+/// <summary>
+/// Принимает выбранные в браузере CAD-файлы через локальный HTTP-мост, когда системный диалог
+/// недоступен для удалённой рабочей среды.
+/// </summary>
 public sealed class BrowserImportFolderPicker : IAsyncDisposable
 {
+    /// <summary>
+    /// Имя HTTP-заголовка с одноразовым токеном авторизации загрузки.
+    /// </summary>
     public const string TokenHeader = "X-Pdm-Picker-Token";
+
+    /// <summary>
+    /// Максимальный размер тела одного HTTP-запроса в байтах.
+    /// </summary>
     public const long MaxRequestBytes = 64L * 1024 * 1024;
+
+    /// <summary>
+    /// Максимальный размер одного файла в байтах.
+    /// </summary>
     public const long MaxFileBytes = 8L * 1024 * 1024;
+
+    /// <summary>
+    /// Максимальное число файлов в одном пакете.
+    /// </summary>
     public const int MaxFiles = 1000;
     private static readonly TimeSpan RequestLifetime = TimeSpan.FromMinutes(5);
     private readonly object _sync = new();
@@ -28,13 +46,27 @@ public sealed class BrowserImportFolderPicker : IAsyncDisposable
     private int _activeUploads;
     private TaskCompletionSource _uploadsIdle = CompletedSignal();
 
+    /// <summary>
+    /// Создаёт мост и задаёт порт локального HTTP-сервера.
+    /// </summary>
+    /// <param name="port">Свободный TCP-порт в диапазоне от 1 до 65535.</param>
     public BrowserImportFolderPicker(int port = 6070) => _port = port is > 0 and <= 65535
         ? port : throw new ArgumentOutOfRangeException(nameof(port));
+
+    /// <summary>
+    /// Возвращает порт, на котором работает локальный мост.
+    /// </summary>
     public int Port => _port;
 
+    /// <summary>
+    /// Запускает локальный HTTP-сервер для запросов браузера.
+    /// </summary>
+    /// <param name="cancellationToken">Токен отмены запуска.</param>
+    /// <returns>Асинхронная операция запуска сервера.</returns>
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
-        if (_application is not null) return;
+        if (_application is not null)
+            return;
         Directory.CreateDirectory(_tempRoot);
         var builder = WebApplication.CreateSlimBuilder();
         builder.Logging.SetMinimumLevel(LogLevel.Warning);
@@ -58,6 +90,11 @@ public sealed class BrowserImportFolderPicker : IAsyncDisposable
         _application = app;
     }
 
+    /// <summary>
+    /// Ожидает выбор файлов в браузере и возвращает временно сохранённый пакет.
+    /// </summary>
+    /// <param name="cancellationToken">Токен отмены ожидания выбора.</param>
+    /// <returns>Пакет файлов либо <see langword="null"/>, если выбор отменён браузером.</returns>
     public async Task<SelectedImportPackage?> PickAsync(CancellationToken cancellationToken = default)
     {
         PendingRequest request;
@@ -67,8 +104,10 @@ public sealed class BrowserImportFolderPicker : IAsyncDisposable
             lock (_sync)
             {
                 ObjectDisposedException.ThrowIf(_disposed, this);
-                if (_application is null) throw new InvalidOperationException("Browser picker bridge is not running.");
-                if (_pending is not null) throw new InvalidOperationException("A browser folder selection is already pending.");
+                if (_application is null)
+                    throw new InvalidOperationException("Browser picker bridge is not running.");
+                if (_pending is not null)
+                    throw new InvalidOperationException("A browser folder selection is already pending.");
                 if (_activeUploads == 0)
                 {
                     request = new PendingRequest();
@@ -100,12 +139,15 @@ public sealed class BrowserImportFolderPicker : IAsyncDisposable
 
     private Task<IResult> GetPendingAsync(HttpContext context)
     {
-        if (!IsLocalSameOrigin(context)) return Task.FromResult<IResult>(Results.StatusCode(StatusCodes.Status403Forbidden));
+        if (!IsLocalSameOrigin(context))
+            return Task.FromResult<IResult>(Results.StatusCode(StatusCodes.Status403Forbidden));
         PendingRequest? request;
-        lock (_sync) request = _pending;
+        lock (_sync)
+            request = _pending;
         context.Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
         context.Response.Headers.Pragma = "no-cache";
-        if (request is null || request.Completion.Task.IsCompleted) return Task.FromResult<IResult>(Results.NoContent());
+        if (request is null || request.Completion.Task.IsCompleted)
+            return Task.FromResult<IResult>(Results.NoContent());
         return Task.FromResult<IResult>(Results.Json(new
         {
             requestId = request.Id,
@@ -117,13 +159,22 @@ public sealed class BrowserImportFolderPicker : IAsyncDisposable
     private async Task<IResult> UploadAsync(HttpContext context, Guid requestId)
     {
         var request = GetAuthorizedRequest(context, requestId);
-        if (request is null || !IsLocalSameOrigin(context)) return Results.StatusCode(StatusCodes.Status403Forbidden);
-        if (!context.Request.HasFormContentType) return Results.BadRequest(new { error = "Expected multipart/form-data." });
+        if (request is null || !IsLocalSameOrigin(context))
+            return Results.StatusCode(StatusCodes.Status403Forbidden);
+        if (!context.Request.HasFormContentType)
+            return Results.BadRequest(new
+            {
+                error = "Expected multipart/form-data."
+            });
         lock (_sync)
         {
             if (!ReferenceEquals(_pending, request) || !request.TryBeginUpload())
-                return Results.Conflict(new { error = "An upload for this selection is already running or complete." });
-            if (_activeUploads++ == 0) _uploadsIdle = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                return Results.Conflict(new
+                {
+                    error = "An upload for this selection is already running or complete."
+                });
+            if (_activeUploads++ == 0)
+                _uploadsIdle = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
         var packageDirectory = Path.Combine(_tempRoot, Guid.NewGuid().ToString("N"));
@@ -134,7 +185,11 @@ public sealed class BrowserImportFolderPicker : IAsyncDisposable
         try
         {
             var form = await context.Request.ReadFormAsync(uploadToken);
-            if (form.Files.Count is < 1 or > MaxFiles) return Results.BadRequest(new { error = $"Select between 1 and {MaxFiles} files." });
+            if (form.Files.Count is < 1 or > MaxFiles)
+                return Results.BadRequest(new
+                {
+                    error = $"Select between 1 and {MaxFiles} files."
+                });
 
             var names = new HashSet<string>(StringComparer.Ordinal);
             var paths = new List<string>(form.Files.Count);
@@ -143,8 +198,15 @@ public sealed class BrowserImportFolderPicker : IAsyncDisposable
             {
                 var name = file.FileName;
                 if (!IsFlatFileName(name) || !Supported(name) || !names.Add(name))
-                    return Results.BadRequest(new { error = "File names must be unique flat .a3d/.m3d names without control characters." });
-                if (file.Length > MaxFileBytes) return Results.BadRequest(new { error = $"File '{name}' exceeds the 8 MiB per-file limit." });
+                    return Results.BadRequest(new
+                    {
+                        error = "File names must be unique flat .a3d/.m3d names without control characters."
+                    });
+                if (file.Length > MaxFileBytes)
+                    return Results.BadRequest(new
+                    {
+                        error = $"File '{name}' exceeds the 8 MiB per-file limit."
+                    });
 
                 var path = Path.Combine(packageDirectory, name);
                 await using var source = file.OpenReadStream();
@@ -154,63 +216,91 @@ public sealed class BrowserImportFolderPicker : IAsyncDisposable
                 while (true)
                 {
                     var read = await source.ReadAsync(buffer, uploadToken);
-                    if (read == 0) break;
+                    if (read == 0)
+                        break;
                     fileBytes += read;
                     totalBytes += read;
                     if (fileBytes > MaxFileBytes || totalBytes > MaxRequestBytes)
-                        return Results.BadRequest(new { error = "Uploaded file data exceeded the configured size limit." });
+                        return Results.BadRequest(new
+                        {
+                            error = "Uploaded file data exceeded the configured size limit."
+                        });
                     await destination.WriteAsync(buffer.AsMemory(0, read), uploadToken);
                 }
-                if (fileBytes != file.Length) return Results.BadRequest(new { error = $"File '{name}' was incomplete." });
+                if (fileBytes != file.Length)
+                    return Results.BadRequest(new
+                    {
+                        error = $"File '{name}' was incomplete."
+                    });
                 paths.Add(path);
             }
 
             lock (_sync)
             {
                 if (!ReferenceEquals(_pending, request) || !request.TryCompleteUpload())
-                    return Results.Conflict(new { error = "The folder selection has expired or was canceled." });
+                    return Results.Conflict(new
+                    {
+                        error = "The folder selection has expired or was canceled."
+                    });
 
                 var package = new SelectedImportPackage(paths.OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase).ToArray(),
                     new TempDirectoryLease(packageDirectory));
                 if (!request.Completion.TrySetResult(package))
                 {
                     package.Dispose();
-                    return Results.Conflict(new { error = "The folder selection has expired or was canceled." });
+                    return Results.Conflict(new
+                    {
+                        error = "The folder selection has expired or was canceled."
+                    });
                 }
                 _pending = null;
                 published = true;
             }
-            return Results.Ok(new { uploaded = paths.Count });
+            return Results.Ok(new
+            {
+                uploaded = paths.Count
+            });
         }
         catch (OperationCanceledException) when (uploadToken.IsCancellationRequested)
         {
             return context.RequestAborted.IsCancellationRequested
                 ? Results.StatusCode(499)
-                : Results.Conflict(new { error = "The folder selection was canceled or expired." });
+                : Results.Conflict(new
+                {
+                    error = "The folder selection was canceled or expired."
+                });
         }
         catch (InvalidDataException ex)
         {
-            return Results.BadRequest(new { error = ex.Message });
+            return Results.BadRequest(new
+            {
+                error = ex.Message
+            });
         }
         finally
         {
             request.EndUpload();
-            if (!published) TryDeleteDirectory(packageDirectory);
+            if (!published)
+                TryDeleteDirectory(packageDirectory);
             lock (_sync)
             {
-                if (--_activeUploads == 0) _uploadsIdle.TrySetResult();
+                if (--_activeUploads == 0)
+                    _uploadsIdle.TrySetResult();
             }
         }
     }
 
     private IResult CancelAsync(HttpContext context, Guid requestId)
     {
-        if (!IsLocalSameOrigin(context)) return Results.StatusCode(StatusCodes.Status403Forbidden);
+        if (!IsLocalSameOrigin(context))
+            return Results.StatusCode(StatusCodes.Status403Forbidden);
         var request = GetAuthorizedRequest(context, requestId);
-        if (request is null) return Results.NotFound();
+        if (request is null)
+            return Results.NotFound();
         lock (_sync)
         {
-            if (!ReferenceEquals(_pending, request)) return Results.NotFound();
+            if (!ReferenceEquals(_pending, request))
+                return Results.NotFound();
             _pending = null;
         }
         request.CancelUpload();
@@ -234,10 +324,12 @@ public sealed class BrowserImportFolderPicker : IAsyncDisposable
     private static bool IsLocalSameOrigin(HttpContext context)
     {
         var host = context.Request.Host.Host.Trim('[', ']');
-        if (!IsLoopbackName(host)) return false;
+        if (!IsLoopbackName(host))
+            return false;
         if (!context.Request.Headers.TryGetValue("Origin", out var originHeader) || string.IsNullOrWhiteSpace(originHeader))
             return true;
-        if (!Uri.TryCreate(originHeader.ToString(), UriKind.Absolute, out var origin)) return false;
+        if (!Uri.TryCreate(originHeader.ToString(), UriKind.Absolute, out var origin))
+            return false;
         var hostPort = context.Request.Host.Port ?? (context.Request.IsHttps ? 443 : 80);
         return string.Equals(origin.Host.Trim('[', ']'), host, StringComparison.OrdinalIgnoreCase)
             && origin.Port == hostPort
@@ -265,7 +357,8 @@ public sealed class BrowserImportFolderPicker : IAsyncDisposable
     {
         lock (_sync)
         {
-            if (!ReferenceEquals(_pending, request)) return;
+            if (!ReferenceEquals(_pending, request))
+                return;
             _pending = null;
             request.CancelUpload();
             request.Completion.TrySetCanceled(cancellationToken);
@@ -274,17 +367,26 @@ public sealed class BrowserImportFolderPicker : IAsyncDisposable
 
     private static void TryDeleteDirectory(string path)
     {
-        try { if (Directory.Exists(path)) Directory.Delete(path, recursive: true); }
+        try
+        {
+            if (Directory.Exists(path))
+                Directory.Delete(path, recursive: true);
+        }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
     }
 
+    /// <summary>
+    /// Останавливает мост, отменяет незавершённый выбор и удаляет временные данные.
+    /// </summary>
+    /// <returns>Асинхронная операция освобождения ресурсов.</returns>
     public async ValueTask DisposeAsync()
     {
         PendingRequest? pending;
         lock (_sync)
         {
-            if (_disposed) return;
+            if (_disposed)
+                return;
             _disposed = true;
             pending = _pending;
             _pending = null;
@@ -310,7 +412,11 @@ public sealed class BrowserImportFolderPicker : IAsyncDisposable
 
     private static void TryDeleteEmptyDirectory(string path)
     {
-        try { if (Directory.Exists(path)) Directory.Delete(path, recursive: false); }
+        try
+        {
+            if (Directory.Exists(path))
+                Directory.Delete(path, recursive: false);
+        }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
     }
@@ -320,23 +426,77 @@ public sealed class BrowserImportFolderPicker : IAsyncDisposable
         private int _uploading;
         private int _completed;
         private readonly CancellationTokenSource _uploadCancellation = new();
+
+        /// <summary>
+        /// Создаёт запрос выбора с уникальным идентификатором, токеном и сроком действия.
+        /// </summary>
         public PendingRequest()
         {
             Id = Guid.NewGuid();
             Nonce = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
             ExpiresAt = DateTimeOffset.UtcNow.Add(RequestLifetime);
         }
-        public Guid Id { get; }
-        public string Nonce { get; }
-        public DateTimeOffset ExpiresAt { get; }
+
+        /// <summary>
+        /// Возвращает идентификатор ожидающего выбора.
+        /// </summary>
+        public Guid Id
+        {
+            get;
+        }
+
+        /// <summary>
+        /// Возвращает одноразовый токен для авторизации загрузки.
+        /// </summary>
+        public string Nonce
+        {
+            get;
+        }
+
+        /// <summary>
+        /// Возвращает срок окончания выбора в формате UTC.
+        /// </summary>
+        public DateTimeOffset ExpiresAt
+        {
+            get;
+        }
+
+        /// <summary>
+        /// Возвращает токен отмены текущей загрузки.
+        /// </summary>
         public CancellationToken CancellationToken => _uploadCancellation.Token;
+
+        /// <summary>
+        /// Возвращает задачу завершения выбора и передачи пакета вызывающему коду.
+        /// </summary>
         public TaskCompletionSource<SelectedImportPackage?> Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        /// <summary>
+        /// Атомарно начинает загрузку, если запрос ещё не был завершён или занят загрузкой.
+        /// </summary>
+        /// <returns><see langword="true"/>, если загрузка начата.</returns>
         public bool TryBeginUpload() => Volatile.Read(ref _completed) == 0 && Interlocked.CompareExchange(ref _uploading, 1, 0) == 0;
+
+        /// <summary>
+        /// Отмечает завершение текущей попытки загрузки.
+        /// </summary>
         public void EndUpload() => Volatile.Write(ref _uploading, 0);
+
+        /// <summary>
+        /// Атомарно помечает запрос как завершённый.
+        /// </summary>
+        /// <returns><see langword="true"/>, если именно этот вызов завершил запрос.</returns>
         public bool TryCompleteUpload() => Interlocked.CompareExchange(ref _completed, 1, 0) == 0;
+
+        /// <summary>
+        /// Отменяет текущую загрузку, если она выполняется.
+        /// </summary>
         public void CancelUpload()
         {
-            try { _uploadCancellation.Cancel(); }
+            try
+            {
+                _uploadCancellation.Cancel();
+            }
             catch (ObjectDisposedException) { }
         }
     }
@@ -344,10 +504,15 @@ public sealed class BrowserImportFolderPicker : IAsyncDisposable
     private sealed class TempDirectoryLease(string path) : IDisposable
     {
         private string? _path = path;
+
+        /// <summary>
+        /// Удаляет принадлежащую пакету временную папку; повторные вызовы безопасны.
+        /// </summary>
         public void Dispose()
         {
             var owned = Interlocked.Exchange(ref _path, null);
-            if (owned is not null) TryDeleteDirectory(owned);
+            if (owned is not null)
+                TryDeleteDirectory(owned);
         }
     }
 }

@@ -10,8 +10,14 @@ using Xunit;
 
 namespace MiniPdm.Storage.Tests;
 
+/// <summary>
+/// Проверяет ограничения модели хранения, целостность связей и конкурентную запись.
+/// </summary>
 public sealed class StorageModelTests
 {
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Maps_unique_keys_checks_and_same_object_current_version_foreign_key».
+    /// </summary>
     [Fact]
     public void Maps_unique_keys_checks_and_same_object_current_version_foreign_key()
     {
@@ -33,6 +39,10 @@ public sealed class StorageModelTests
         Assert.Equal(DeleteBehavior.Restrict, current.DeleteBehavior);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Sqlite_enforces_positive_quantity_and_same_object_current_version».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Sqlite_enforces_positive_quantity_and_same_object_current_version()
     {
@@ -57,6 +67,10 @@ public sealed class StorageModelTests
         await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Adding_a_link_bumps_parent_token_even_when_parent_was_not_loaded».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Adding_a_link_bumps_parent_token_even_when_parent_was_not_loaded()
     {
@@ -80,6 +94,10 @@ public sealed class StorageModelTests
         }
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Concurrent_writers_using_stale_object_token_cannot_both_save».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Concurrent_writers_using_stale_object_token_cannot_both_save()
     {
@@ -110,6 +128,10 @@ public sealed class StorageModelTests
         Assert.Equal("Первое изменение", await verification.Versions.Select(v => v.Name).SingleAsync());
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Rejects_mass_that_would_be_rounded_by_numeric_18_6».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Rejects_mass_that_would_be_rounded_by_numeric_18_6()
     {

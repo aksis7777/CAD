@@ -6,8 +6,13 @@ using MiniPdm.Storage.Entities;
 
 namespace MiniPdm.Modules.BackgroundTasks.Services.Database;
 
+/// <summary>
+/// Реализует хранение состояний фоновых задач через контекст базы данных.
+/// </summary>
+/// <param name="context">Контекст базы данных PDM.</param>
 public sealed class BackgroundTaskDatabaseService(PdmDbContext context) : IBackgroundTaskDatabaseService
 {
+    /// <inheritdoc />
     public async Task EnsureDefinitionsAsync(IReadOnlyCollection<BackgroundTaskDefinitionRecord> definitions, DateTimeOffset now, CancellationToken ct)
     {
         var existing = await context.BackgroundTasks.ToListAsync(ct);
@@ -38,23 +43,27 @@ public sealed class BackgroundTaskDatabaseService(PdmDbContext context) : IBackg
         await context.SaveChangesAsync(ct);
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyList<BackgroundTaskRow>> ListAsync(CancellationToken ct) =>
         await context.BackgroundTasks.AsNoTracking()
             .OrderBy(x => x.Id)
             .Select(ToRow())
             .ToListAsync(ct);
 
+    /// <inheritdoc />
     public async Task<BackgroundTaskRow?> GetAsync(string id, CancellationToken ct) =>
         await context.BackgroundTasks.AsNoTracking()
             .Where(x => x.Id == id)
             .Select(ToRow())
             .SingleOrDefaultAsync(ct);
 
+    /// <inheritdoc />
     public async Task<bool> UpdateScheduleAsync(string id, int intervalMinutes, DateTimeOffset now, CancellationToken ct)
     {
         ValidateInterval(intervalMinutes);
         var task = await context.BackgroundTasks.SingleOrDefaultAsync(x => x.Id == id, ct);
-        if (task is null) return false;
+        if (task is null)
+            return false;
         task.IntervalMinutes = intervalMinutes;
         if (task.State != "Running")
             task.NextRunAt = now.AddMinutes(intervalMinutes);
@@ -62,10 +71,12 @@ public sealed class BackgroundTaskDatabaseService(PdmDbContext context) : IBackg
         return true;
     }
 
+    /// <inheritdoc />
     public async Task<bool> TryStartAsync(string id, DateTimeOffset startedAt, CancellationToken ct)
     {
         var task = await context.BackgroundTasks.SingleOrDefaultAsync(x => x.Id == id, ct);
-        if (task is null || task.State == "Running") return false;
+        if (task is null || task.State == "Running")
+            return false;
         task.State = "Running";
         task.LastStartedAt = startedAt;
         task.LastError = null;
@@ -73,12 +84,14 @@ public sealed class BackgroundTaskDatabaseService(PdmDbContext context) : IBackg
         return true;
     }
 
+    /// <inheritdoc />
     public async Task<bool> CompleteAsync(string id, string state, DateTimeOffset completedAt, string? result, string? error, CancellationToken ct)
     {
         if (state is not ("Succeeded" or "PartiallySucceeded" or "Failed" or "Interrupted"))
             throw new ArgumentOutOfRangeException(nameof(state), "A completed background task must have a terminal state.");
         var task = await context.BackgroundTasks.SingleOrDefaultAsync(x => x.Id == id, ct);
-        if (task is null || task.State != "Running") return false;
+        if (task is null || task.State != "Running")
+            return false;
         task.State = state;
         task.LastCompletedAt = completedAt;
         task.LastResult = result;

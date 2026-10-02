@@ -13,10 +13,17 @@ using Xunit;
 
 namespace MiniPdm.Postgres.Tests;
 
+/// <summary>
+/// Проверяет чтение дерева состава и свойства SQL-запросов в PostgreSQL.
+/// </summary>
 public sealed class CompositionReadQueryPostgresTests
 {
     private const string ConnectionVariable = "PDM_TEST_POSTGRES_CONNECTION";
 
+    /// <summary>
+    /// Проверяет ожидаемое представление отсутствующего корня и пустого корня одним SQL-запросом.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [Fact]
     public async Task Missing_root_and_empty_root_have_expected_occurrences_in_one_statement()
     {
@@ -45,6 +52,10 @@ public sealed class CompositionReadQueryPostgresTests
         Assert.Equal(version.Id, occurrence.VersionId);
     }
 
+    /// <summary>
+    /// Проверяет, что проекция активного графа исключает аннулированные указатели и родителей, не являющихся сборками.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [Fact]
     public async Task Active_graph_projection_excludes_cancelled_pointers_and_nonassembly_parents()
     {
@@ -73,6 +84,10 @@ public sealed class CompositionReadQueryPostgresTests
             edges.Where(edge => fixtureParentIds.Contains(edge.ParentId)));
     }
 
+    /// <summary>
+    /// Проверяет выдачу каждого пути ромбовидной структуры с локальными количествами одним SQL-запросом.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [Fact]
     public async Task Diamond_returns_each_path_with_local_quantities_and_one_statement()
     {
@@ -129,6 +144,10 @@ public sealed class CompositionReadQueryPostgresTests
         Assert.Contains(sharedOccurrences, node => node.ObjectPath.SequenceEqual(new[] { root.Id, right.Id, leaf.Id }));
     }
 
+    /// <summary>
+    /// Проверяет чтение новой текущей версии дочернего объекта и её сокрытие после аннулирования.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [Fact]
     public async Task Query_reloads_new_child_current_version_and_hides_it_after_cancellation()
     {
@@ -185,6 +204,10 @@ public sealed class CompositionReadQueryPostgresTests
         Assert.Null(cancelledChild.UnitMassKg);
     }
 
+    /// <summary>
+    /// Проверяет сохранение корневого объекта без текущей версии в виде листа.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [Fact]
     public async Task Root_without_current_version_is_retained_as_leaf()
     {
@@ -203,6 +226,10 @@ public sealed class CompositionReadQueryPostgresTests
         Assert.Null(row.Name);
     }
 
+    /// <summary>
+    /// Проверяет однократное включение цикла как листа и завершение обхода одним SQL-запросом.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [Fact]
     public async Task Cycle_is_emitted_once_as_a_leaf_and_query_terminates_in_one_statement()
     {
@@ -227,6 +254,10 @@ public sealed class CompositionReadQueryPostgresTests
         Assert.All(rows.Where(x => !x.IsCycle), x => Assert.False(x.IsCycle));
     }
 
+    /// <summary>
+    /// Проверяет представление корневой детали одним листовым вхождением.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [Fact]
     public async Task Part_root_is_a_single_leaf_occurrence()
     {
@@ -249,6 +280,12 @@ public sealed class CompositionReadQueryPostgresTests
         Assert.Equal(0.75m, row.UnitMassKg);
     }
 
+    /// <summary>
+    /// Создаёт объект с указанным типом и обозначением.
+    /// </summary>
+    /// <param name="type">Тип создаваемого объекта.</param>
+    /// <param name="designation">Обозначение создаваемого объекта.</param>
+    /// <returns>Значение, сформированное для тестового сценария.</returns>
     private static PdmObject NewObject(PdmObjectType type, string designation) => new()
     {
         Type = type,
@@ -257,6 +294,16 @@ public sealed class CompositionReadQueryPostgresTests
         StandardName = null
     };
 
+    /// <summary>
+    /// Создаёт версию объекта с заданными атрибутами.
+    /// </summary>
+    /// <param name="owner">Окно-владелец диалога выбора.</param>
+    /// <param name="number">Номер создаваемой версии.</param>
+    /// <param name="state">Состояние создаваемой версии.</param>
+    /// <param name="name">Наименование создаваемой версии.</param>
+    /// <param name="material">Материал версии, если он задан.</param>
+    /// <param name="mass">Масса версии в килограммах, если она задана.</param>
+    /// <returns>Значение, сформированное для тестового сценария.</returns>
     private static ObjectVersion NewVersion(PdmObject owner, int number, VersionState state, string name, string? material = null, decimal? mass = null) => new()
     {
         ObjectId = owner.Id,
@@ -267,6 +314,13 @@ public sealed class CompositionReadQueryPostgresTests
         Mass = mass
     };
 
+    /// <summary>
+    /// Создаёт связь состава между родительской версией и дочерним объектом.
+    /// </summary>
+    /// <param name="parentVersionId">Идентификатор родительской версии состава.</param>
+    /// <param name="childObjectId">Идентификатор дочернего объекта.</param>
+    /// <param name="quantity">Количество дочернего объекта.</param>
+    /// <returns>Значение, сформированное для тестового сценария.</returns>
     private static BomLink Link(Guid parentVersionId, Guid childObjectId, int quantity) => new()
     {
         ParentVersionId = parentVersionId,
@@ -287,9 +341,25 @@ public sealed class CompositionReadQueryPostgresTests
             Commands = commands;
         }
 
-        public PdmDbContext Context { get; }
-        public CountingCommandInterceptor Commands { get; }
+        /// <summary>
+        /// Контекст базы данных, используемый тестовой фикстурой.
+        /// </summary>
+        public PdmDbContext Context
+        {
+            get;
+        }
+        /// <summary>
+        /// Перехватчик, учитывающий выполненные SQL-команды.
+        /// </summary>
+        public CountingCommandInterceptor Commands
+        {
+            get;
+        }
 
+        /// <summary>
+        /// Открывает транзакционную фикстуру для изолированной проверки PostgreSQL.
+        /// </summary>
+        /// <returns>Асинхронный результат операции и данные, полученные в результате её выполнения.</returns>
         public static async Task<Fixture> OpenAsync()
         {
             var connectionString = Environment.GetEnvironmentVariable(ConnectionVariable);
@@ -317,30 +387,55 @@ public sealed class CompositionReadQueryPostgresTests
             }
         }
 
+        /// <summary>
+        /// Добавляет объекты в контекст фикстуры и сохраняет изменения.
+        /// </summary>
+        /// <param name="objects">Объекты для добавления в контекст фикстуры.</param>
+        /// <returns>Завершение асинхронной операции.</returns>
         public async Task SaveObjectsAsync(params PdmObject[] objects)
         {
             Context.Objects.AddRange(objects);
             await Context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Добавляет версии в контекст фикстуры и сохраняет изменения.
+        /// </summary>
+        /// <param name="versions">Версии для добавления в контекст фикстуры.</param>
+        /// <returns>Завершение асинхронной операции.</returns>
         public async Task SaveVersionsAsync(params ObjectVersion[] versions)
         {
             Context.Versions.AddRange(versions);
             await Context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Устанавливает текущие версии указанных объектов и сохраняет изменения.
+        /// </summary>
+        /// <param name="pointers">Пары объекта и версии, которые нужно назначить текущими.</param>
+        /// <returns>Завершение асинхронной операции.</returns>
         public async Task SetCurrentVersionsAsync(params (PdmObject Object, ObjectVersion Version)[] pointers)
         {
-            foreach (var (obj, version) in pointers) obj.CurrentVersionId = version.Id;
+            foreach (var (obj, version) in pointers)
+                obj.CurrentVersionId = version.Id;
             await Context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Добавляет связи состава в контекст фикстуры и сохраняет изменения.
+        /// </summary>
+        /// <param name="links">Связи состава для сохранения.</param>
+        /// <returns>Завершение асинхронной операции.</returns>
         public async Task SaveLinksAsync(params BomLink[] links)
         {
             Context.BomLinks.AddRange(links);
             await Context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Освобождает контекст и соединение после отката тестовой транзакции.
+        /// </summary>
+        /// <returns>Завершение асинхронной операции.</returns>
         public async ValueTask DisposeAsync()
         {
             await Context.DisposeAsync();
@@ -354,14 +449,19 @@ public sealed class CompositionReadQueryPostgresTests
     {
         private int _count;
         public int Count => Volatile.Read(ref _count);
+        /// <summary>
+        /// Реализует операцию тестового помощника.
+        /// </summary>
         public void Reset() => Interlocked.Exchange(ref _count, 0);
 
+        /// <inheritdoc/>
         public override InterceptionResult<DbDataReader> ReaderExecuting(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result)
         {
             Interlocked.Increment(ref _count);
             return result;
         }
 
+        /// <inheritdoc/>
         public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
         {
             Interlocked.Increment(ref _count);

@@ -9,8 +9,15 @@ using Xunit;
 
 namespace MiniPdm.Modules.Tests;
 
+/// <summary>
+/// Проверяет чтение карточек и поиск объектов с текущей версией и историей.
+/// </summary>
 public sealed class ObjectReadServiceTests
 {
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «GetObject_maps_standard_name_current_version_and_history_from_database».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task GetObject_maps_standard_name_current_version_and_history_from_database()
     {
@@ -33,6 +40,10 @@ public sealed class ObjectReadServiceTests
         Assert.Empty(fixture.Context.ChangeTracker.Entries());
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «GetObject_keeps_object_without_current_version_and_returns_null_for_missing_object_or_version».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task GetObject_keeps_object_without_current_version_and_returns_null_for_missing_object_or_version()
     {
@@ -49,6 +60,10 @@ public sealed class ObjectReadServiceTests
         Assert.Null(await service.GetObjectAsync(item.Id, 7, CancellationToken.None));
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Search_returns_public_dtos_with_stable_paging_and_current_version_fields».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Search_returns_public_dtos_with_stable_paging_and_current_version_fields()
     {
@@ -82,7 +97,10 @@ public sealed class ObjectReadServiceTests
             Context = context;
         }
 
-        public PdmDbContext Context { get; }
+        public PdmDbContext Context
+        {
+            get;
+        }
 
         public static async Task<Fixture> OpenAsync()
         {
@@ -113,6 +131,15 @@ public sealed class ObjectReadServiceTests
             return await Context.Objects.AsNoTracking().SingleAsync(x => x.Id == item.Id);
         }
 
+        /// <summary>
+        /// Проверяет ожидаемое поведение сценария «AddVersionAsync».
+        /// </summary>
+        /// <param name="item">Значение, используемое в проверяемом сценарии.</param>
+        /// <param name="number">Значение, используемое в проверяемом сценарии.</param>
+        /// <param name="state">Значение, используемое в проверяемом сценарии.</param>
+        /// <param name="name">Значение, используемое в проверяемом сценарии.</param>
+        /// <param name="makeCurrent">Значение, используемое в проверяемом сценарии.</param>
+        /// <returns>Задача завершается после выполнения проверок теста.</returns>
         public async Task AddVersionAsync(PdmObject item, int number, VersionState state, string name, bool makeCurrent)
         {
             var version = new ObjectVersion { ObjectId = item.Id, Version = number, State = state, Name = name, Mass = 1m };

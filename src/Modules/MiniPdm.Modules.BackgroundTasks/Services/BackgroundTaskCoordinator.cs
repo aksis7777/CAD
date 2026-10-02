@@ -9,7 +9,9 @@ using MiniPdm.Modules.BackgroundTasks.Abstractions;
 
 namespace MiniPdm.Modules.BackgroundTasks.Services;
 
-/// <summary>Coordinates the registered jobs and owns their lifetime independently of HTTP requests.</summary>
+/// <summary>
+/// Координирует зарегистрированные задачи, расписание и их выполнение независимо от HTTP-запросов.
+/// </summary>
 public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskCoordinator
 {
     private static readonly TimeSpan InitializationRetryDelay = TimeSpan.FromSeconds(30);
@@ -30,6 +32,14 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
     private Task? _runner;
     private volatile bool _initialized;
 
+    /// <summary>
+    /// Создаёт координатор с набором зарегистрированных задач и зависимостями для их выполнения.
+    /// </summary>
+    /// <param name="definitions">Определения задач, доступных координатору.</param>
+    /// <param name="scopeFactory">Фабрика областей зависимостей для выполнения и доступа к данным.</param>
+    /// <param name="logger">Журнал для ошибок запуска и сохранения состояния.</param>
+    /// <param name="clock">Поставщик текущего времени.</param>
+    /// <param name="options">Параметры повторной записи результата.</param>
     public BackgroundTaskCoordinator(
         IEnumerable<BackgroundTaskDefinition> definitions,
         IServiceScopeFactory scopeFactory,
@@ -53,31 +63,49 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
         }
     }
 
+    /// <summary>
+    /// Запускает фоновый цикл планировщика.
+    /// </summary>
+    /// <param name="cancellationToken">Токен отмены запуска службы.</param>
+    /// <returns>Завершённая задача после старта цикла планировщика.</returns>
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _runner = Task.Run(() => RunSchedulerAsync(_stopping.Token), CancellationToken.None);
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Останавливает планировщик и ожидает завершения принадлежащих координатору запусков.
+    /// </summary>
+    /// <param name="cancellationToken">Токен, ограничивающий ожидание остановки.</param>
+    /// <returns>Задача, завершающаяся после остановки или отмены ожидания.</returns>
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         _stopping.Cancel();
         Signal();
         if (_runner is not null)
         {
-            try { await _runner.WaitAsync(cancellationToken); }
+            try
+            {
+                await _runner.WaitAsync(cancellationToken);
+            }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
         }
 
         Task[] owned;
-        lock (_ownedTasksLock) owned = _ownedTasks.Values.ToArray();
+        lock (_ownedTasksLock)
+            owned = _ownedTasks.Values.ToArray();
         if (owned.Length > 0)
         {
-            try { await Task.WhenAll(owned).WaitAsync(cancellationToken); }
+            try
+            {
+                await Task.WhenAll(owned).WaitAsync(cancellationToken);
+            }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
         }
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyList<BackgroundTaskDto>> ListAsync(CancellationToken ct)
     {
         await EnsureReadyAsync(ct);
@@ -93,9 +121,11 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
         }
     }
 
+    /// <inheritdoc />
     public async Task<BackgroundTaskDto?> UpdateScheduleAsync(string taskId, int intervalMinutes, CancellationToken ct)
     {
-        if (!_definitions.ContainsKey(taskId)) return null;
+        if (!_definitions.ContainsKey(taskId))
+            return null;
         await EnsureReadyAsync(ct);
         try
         {
@@ -105,7 +135,8 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
             await persistenceLock.WaitAsync(ct);
             try
             {
-                if (!await persistence.UpdateScheduleAsync(taskId, intervalMinutes, _clock.GetUtcNow(), ct)) return null;
+                if (!await persistence.UpdateScheduleAsync(taskId, intervalMinutes, _clock.GetUtcNow(), ct))
+                    return null;
                 Signal();
                 var row = await persistence.GetAsync(taskId, ct);
                 return row is null ? null : ToDto(row);
@@ -118,6 +149,7 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
         }
     }
 
+    /// <inheritdoc />
     public async Task<BackgroundTaskRunRequestResult> RequestManualRunAsync(string taskId, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
@@ -154,7 +186,10 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unable to initialize background task persistence; retrying in {Delay}.", InitializationRetryDelay);
-                try { await Task.Delay(InitializationRetryDelay, stoppingToken); }
+                try
+                {
+                    await Task.Delay(InitializationRetryDelay, stoppingToken);
+                }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { return; }
             }
         }
@@ -175,7 +210,10 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unable to read background task schedules; retrying in {Delay}.", InitializationRetryDelay);
-                try { await Task.Delay(InitializationRetryDelay, stoppingToken); }
+                try
+                {
+                    await Task.Delay(InitializationRetryDelay, stoppingToken);
+                }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
                 continue;
             }
@@ -187,15 +225,22 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
 
             var next = rows.Where(x => x.State != "Running" && x.NextRunAt > now).MinBy(x => x.NextRunAt)?.NextRunAt;
             var delay = next is null ? MaximumPollDelay : next.Value - now;
-            if (delay <= TimeSpan.Zero || delay > MaximumPollDelay) delay = MaximumPollDelay;
-            try { await _wakeSignal.WaitAsync(delay, stoppingToken); }
+            if (delay <= TimeSpan.Zero || delay > MaximumPollDelay)
+                delay = MaximumPollDelay;
+            try
+            {
+                await _wakeSignal.WaitAsync(delay, stoppingToken);
+            }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
         }
     }
 
     private async Task TryLaunchScheduledAsync(BackgroundTaskDefinition definition, CancellationToken ct)
     {
-        try { await TryLaunchAsync(definition, ct); }
+        try
+        {
+            await TryLaunchAsync(definition, ct);
+        }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
         catch (Exception ex) { _logger.LogError(ex, "Could not start scheduled background task {TaskId}.", definition.Id); }
     }
@@ -203,7 +248,8 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
     private async Task<bool> TryLaunchAsync(BackgroundTaskDefinition definition, CancellationToken ct)
     {
         var taskLock = _taskLocks[definition.Id];
-        if (!await taskLock.WaitAsync(0, ct)) return false;
+        if (!await taskLock.WaitAsync(0, ct))
+            return false;
         var started = false;
         try
         {
@@ -212,13 +258,18 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
             var persistenceLock = _persistenceLocks[definition.Id];
             using var startTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             await persistenceLock.WaitAsync(startTimeout.Token);
-            try { started = await persistence.TryStartAsync(definition.Id, _clock.GetUtcNow(), startTimeout.Token); }
+            try
+            {
+                started = await persistence.TryStartAsync(definition.Id, _clock.GetUtcNow(), startTimeout.Token);
+            }
             finally { persistenceLock.Release(); }
-            if (!started) return false;
+            if (!started)
+                return false;
         }
         finally
         {
-            if (!started) taskLock.Release();
+            if (!started)
+                taskLock.Release();
         }
 
         var runId = Interlocked.Increment(ref _nextRunId);
@@ -278,7 +329,10 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Unable to persist completion for background task {TaskId}; retrying the status write without rerunning the task.", definition.Id);
-                    try { await Task.Delay(_options.CompletionWriteRetryDelay, ct); }
+                    try
+                    {
+                        await Task.Delay(_options.CompletionWriteRetryDelay, ct);
+                    }
                     catch (OperationCanceledException) when (ct.IsCancellationRequested) { break; }
                 }
             }
@@ -286,18 +340,21 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
         finally
         {
             taskLock.Release();
-            lock (_ownedTasksLock) _ownedTasks.Remove(runId);
+            lock (_ownedTasksLock)
+                _ownedTasks.Remove(runId);
             Signal();
         }
     }
 
     private async Task EnsureReadyAsync(CancellationToken ct)
     {
-        if (_initialized) return;
+        if (_initialized)
+            return;
         await _initializationLock.WaitAsync(ct);
         try
         {
-            if (_initialized) return;
+            if (_initialized)
+                return;
             using var scope = _scopeFactory.CreateScope();
             await scope.ServiceProvider.GetRequiredService<IBackgroundTaskDatabaseService>()
                 .EnsureDefinitionsAsync(_definitions.Values.Select(x => new BackgroundTaskDefinitionRecord(x.Id, x.Name, x.DefaultIntervalMinutes)).ToArray(), _clock.GetUtcNow(), ct);
@@ -321,7 +378,10 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
 
     private void Signal()
     {
-        try { _wakeSignal.Release(); }
+        try
+        {
+            _wakeSignal.Release();
+        }
         catch (SemaphoreFullException) { }
     }
 }

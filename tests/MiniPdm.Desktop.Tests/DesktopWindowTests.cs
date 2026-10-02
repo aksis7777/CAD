@@ -22,6 +22,9 @@ using Xunit;
 
 namespace MiniPdm.Desktop.Tests;
 
+/// <summary>
+/// Проверяет поведение главного окна, отображение данных и взаимодействие с выбором файлов.
+/// </summary>
 public sealed class DesktopWindowTests
 {
     private static readonly Guid AssemblyId = Guid.Parse("10000000-0000-0000-0000-000000000001");
@@ -31,6 +34,10 @@ public sealed class DesktopWindowTests
     private static readonly Guid HistoricalVersionId = Guid.Parse("50000000-0000-0000-0000-000000000005");
     private static readonly Guid ConcurrencyToken = Guid.Parse("60000000-0000-0000-0000-000000000006");
 
+    /// <summary>
+    /// Проверяет, что содержимое вкладки отчёта импорта использует соответствующую модель представления.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [AvaloniaFact]
     public async Task ImportReportContentUsesImportViewModelAsDataContext()
     {
@@ -58,6 +65,10 @@ public sealed class DesktopWindowTests
         }
     }
 
+    /// <summary>
+    /// Проверяет восстановление кнопки импорта и сброс состояния выбора после отмены диалога.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [AvaloniaFact]
     public async Task CancelingFolderPickerRestoresImportButtonAndClearsPickingState()
     {
@@ -93,6 +104,10 @@ public sealed class DesktopWindowTests
         }
     }
 
+    /// <summary>
+    /// Проверяет восстановление кнопки и отображение отчёта после каждого последовательного импорта.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [AvaloniaFact]
     public async Task SuccessfulRepeatedImportsRestoreButtonAndRenderEachReport()
     {
@@ -135,6 +150,10 @@ public sealed class DesktopWindowTests
         }
     }
 
+    /// <summary>
+    /// Проверяет доступность повтора при неопределённом результате и восстановление импорта с прежним идентификатором.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [AvaloniaFact]
     public async Task UncertainImportOutcomeKeepsRetryVisibleAndRecoversWithTheSameId()
     {
@@ -185,6 +204,10 @@ public sealed class DesktopWindowTests
         }
     }
 
+    /// <summary>
+    /// Проверяет отображение редактируемого исторического состава рядом с текущим деревом и расчётом.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [AvaloniaFact]
     public async Task WindowLoadsHistoricalEditableBomBesideCurrentTreeAndCalculation()
     {
@@ -271,6 +294,10 @@ public sealed class DesktopWindowTests
         }
     }
 
+    /// <summary>
+    /// Проверяет, что утверждение версии сохраняет выбранным тот же объект в списке.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [AvaloniaFact]
     public async Task ApprovingVersionKeepsTheSameObjectSelected()
     {
@@ -306,6 +333,12 @@ public sealed class DesktopWindowTests
         }
     }
 
+    /// <summary>
+    /// Ожидает выполнения условия и сообщает об ошибке, если срок ожидания истёк.
+    /// </summary>
+    /// <param name="condition">Условие, выполнение которого завершает ожидание.</param>
+    /// <param name="failureMessage">Сообщение, выводимое при истечении срока ожидания.</param>
+    /// <returns>Завершение асинхронного ожидания после выполнения условия.</returns>
     private static async Task WaitUntilAsync(Func<bool> condition, string failureMessage)
     {
         var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
@@ -314,10 +347,20 @@ public sealed class DesktopWindowTests
         Assert.True(condition(), failureMessage);
     }
 
+    /// <summary>
+    /// Возвращает текущее состояние выбора папки в главном окне.
+    /// </summary>
+    /// <param name="window">Окно, состояние которого проверяется.</param>
+    /// <returns>Значение, показывающее, выполняется ли сейчас выбор папки.</returns>
     private static bool GetIsPicking(MainWindow window) => (bool)typeof(MainWindow)
         .GetField("_isPicking", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
         .GetValue(window)!;
 
+    /// <summary>
+    /// Находит контейнер редактора состава в визуальном дереве окна.
+    /// </summary>
+    /// <param name="window">Окно, в котором ищется редактор состава.</param>
+    /// <returns>Контейнер редактора состава главного окна.</returns>
     private static Border FindCompositionEditor(MainWindow window) =>
         Assert.IsType<Border>(window.FindControl<Border>("CompositionEditor"));
 
@@ -326,21 +369,46 @@ public sealed class DesktopWindowTests
         private readonly TaskCompletionSource<SelectedImportPackage?> _result =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        /// <summary>
+        /// Сигнализирует, что тестовый выбор файлов начался.
+        /// </summary>
         public TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        /// <summary>
+        /// Регистрирует начало выбора файлов и возвращает задачу с выбранным пакетом.
+        /// </summary>
+        /// <param name="owner">Окно-владелец диалога выбора.</param>
+        /// <param name="cancellationToken">Токен отмены операции выбора.</param>
+        /// <returns>Задача с выбранным пакетом файлов либо null при отмене.</returns>
         public Task<SelectedImportPackage?> PickAsync(Window owner, CancellationToken cancellationToken = default)
         {
             Entered.TrySetResult();
             return _result.Task;
         }
 
+        /// <summary>
+        /// Завершает ожидающую операцию выбора заданным пакетом.
+        /// </summary>
+        /// <param name="package">Выбранный пакет файлов либо null при отмене.</param>
         public void Complete(SelectedImportPackage? package) => _result.TrySetResult(package);
     }
 
     private sealed class RepeatingFolderPicker(string path) : IImportFolderPicker
     {
-        public int CallCount { get; private set; }
+        /// <summary>
+        /// Число вызовов тестового средства выбора файлов.
+        /// </summary>
+        public int CallCount
+        {
+            get; private set;
+        }
 
+        /// <summary>
+        /// Регистрирует начало выбора файлов и возвращает задачу с выбранным пакетом.
+        /// </summary>
+        /// <param name="owner">Окно-владелец диалога выбора.</param>
+        /// <param name="cancellationToken">Токен отмены операции выбора.</param>
+        /// <returns>Задача с выбранным пакетом файлов либо null при отмене.</returns>
         public Task<SelectedImportPackage?> PickAsync(Window owner, CancellationToken cancellationToken = default)
         {
             CallCount++;
@@ -351,10 +419,23 @@ public sealed class DesktopWindowTests
     private sealed class DesktopApiHandler : HttpMessageHandler
     {
         private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+        /// <summary>
+        /// Идентификаторы запросов импорта, полученных обработчиком.
+        /// </summary>
         public List<Guid> ImportIds { get; } = [];
-        public int ImportFailuresRemaining { get; set; }
+        /// <summary>
+        /// Число оставшихся искусственных ошибок импорта.
+        /// </summary>
+        public int ImportFailuresRemaining
+        {
+            get; set;
+        }
+        /// <summary>
+        /// Состояние текущей версии тестовой сборки.
+        /// </summary>
         public string CurrentAssemblyState { get; set; } = "Approved";
 
+        /// <inheritdoc/>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var path = request.RequestUri!.AbsolutePath;
@@ -433,6 +514,11 @@ public sealed class DesktopWindowTests
             });
         }
 
+        /// <summary>
+        /// Создаёт карточку объекта для ответа тестового API.
+        /// </summary>
+        /// <param name="historical">Указывает, следует ли вернуть историческую версию.</param>
+        /// <returns>Карточка тестового объекта с текущей или исторической версией.</returns>
         private ObjectCardDto CreateCard(bool historical)
         {
             var selectedId = historical ? HistoricalVersionId : CurrentVersionId;
@@ -448,6 +534,11 @@ public sealed class DesktopWindowTests
                 ], null, null);
         }
 
+        /// <summary>
+        /// Создаёт успешный HTTP-ответ с сериализованным JSON-телом.
+        /// </summary>
+        /// <param name="response">Объект, который сериализуется в тело ответа.</param>
+        /// <returns>HTTP-ответ со статусом 200 и JSON-содержимым.</returns>
         private static Task<HttpResponseMessage> Ok<T>(T response) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(JsonSerializer.Serialize(response, JsonOptions), Encoding.UTF8, "application/json")
@@ -456,15 +547,22 @@ public sealed class DesktopWindowTests
 
     private sealed class BindingErrorCollector : ILogSink
     {
+        /// <summary>
+        /// Сообщения об ошибках привязки, полученные во время проверки.
+        /// </summary>
         public List<string> Messages { get; } = [];
+
+        /// <inheritdoc/>
         public bool IsEnabled(LogEventLevel level, string area) => true;
 
+        /// <inheritdoc/>
         public void Log(LogEventLevel level, string area, object? source, string messageTemplate)
         {
             if (level >= LogEventLevel.Warning && area == LogArea.Binding)
                 Messages.Add(messageTemplate);
         }
 
+        /// <inheritdoc/>
         public void Log(LogEventLevel level, string area, object? source, string messageTemplate,
             params object?[] propertyValues)
         {

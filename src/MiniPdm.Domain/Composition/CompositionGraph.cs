@@ -1,9 +1,30 @@
 namespace MiniPdm.Domain.Composition;
 
+/// <summary>
+///     Ориентированная связь от родительского объекта к дочернему в графе состава.
+/// </summary>
+/// <param name="ParentId">
+///     Идентификатор сборки, содержащей компонент.
+/// </param>
+/// <param name="ChildId">
+///     Идентификатор объекта-компонента.
+/// </param>
 public sealed record CompositionGraphEdge(Guid ParentId, Guid ChildId);
 
+/// <summary>
+/// Проверяет ориентированный граф состава и определяет узлы, участвующие в циклах.
+/// </summary>
 public static class CompositionGraph
 {
+    /// <summary>
+    ///     Находит один цикл в заданном ориентированном графе.
+    /// </summary>
+    /// <param name="edges">
+    ///     Связи от родительских объектов к дочерним для проверки.
+    /// </param>
+    /// <returns>
+    ///     Замкнутый путь с совпадающими первым и последним идентификаторами либо null, если циклов нет.
+    /// </returns>
     public static Guid[]? FindCyclePath(IEnumerable<CompositionGraphEdge> edges)
     {
         var adjacency = edges.GroupBy(x => x.ParentId)
@@ -14,27 +35,30 @@ public static class CompositionGraph
         foreach (var node in adjacency.Keys.Concat(adjacency.Values.SelectMany(x => x)).Distinct())
         {
             var path = Visit(node);
-            if (path is not null) return path;
+            if (path is not null)
+                return path;
         }
         return null;
 
         Guid[]? Visit(Guid node)
         {
-            if (state.TryGetValue(node, out var currentState)) return null;
+            if (state.TryGetValue(node, out var currentState))
+                return null;
             state[node] = 1;
             positions[node] = stack.Count;
             stack.Add(node);
             if (adjacency.TryGetValue(node, out var children))
-            foreach (var child in children)
-            {
-                if (state.TryGetValue(child, out var childState) && childState == 1)
-                    return stack.Skip(positions[child]).Append(child).ToArray();
-                if (childState == 0)
+                foreach (var child in children)
                 {
-                    var path = Visit(child);
-                    if (path is not null) return path;
+                    if (state.TryGetValue(child, out var childState) && childState == 1)
+                        return stack.Skip(positions[child]).Append(child).ToArray();
+                    if (childState == 0)
+                    {
+                        var path = Visit(child);
+                        if (path is not null)
+                            return path;
+                    }
                 }
-            }
             stack.RemoveAt(stack.Count - 1);
             positions.Remove(node);
             state[node] = 2;
@@ -42,6 +66,15 @@ public static class CompositionGraph
         }
     }
 
+    /// <summary>
+    ///     Находит узлы, из которых можно вернуться к ним же, пройдя по одной или нескольким заданным связям.
+    /// </summary>
+    /// <param name="edges">
+    ///     Связи от родительских объектов к дочерним для проверки.
+    /// </param>
+    /// <returns>
+    ///     Идентификаторы узлов, входящих хотя бы в один ориентированный цикл.
+    /// </returns>
     public static IReadOnlySet<Guid> FindCycleNodes(IEnumerable<CompositionGraphEdge> edges)
     {
         var edgeArray = edges.ToArray();
@@ -53,12 +86,21 @@ public static class CompositionGraph
         {
             var seen = new HashSet<Guid>();
             var pending = new Stack<Guid>();
-            if (adjacency.TryGetValue(start, out var children)) foreach (var child in children) pending.Push(child);
+            if (adjacency.TryGetValue(start, out var children))
+                foreach (var child in children)
+                    pending.Push(child);
             while (pending.TryPop(out var current))
             {
-                if (current == start) { cyclic.Add(start); break; }
-                if (!seen.Add(current)) continue;
-                if (adjacency.TryGetValue(current, out var next)) foreach (var child in next) pending.Push(child);
+                if (current == start)
+                {
+                    cyclic.Add(start);
+                    break;
+                }
+                if (!seen.Add(current))
+                    continue;
+                if (adjacency.TryGetValue(current, out var next))
+                    foreach (var child in next)
+                        pending.Push(child);
             }
         }
         return cyclic;

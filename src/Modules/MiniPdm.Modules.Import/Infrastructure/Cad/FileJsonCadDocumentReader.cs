@@ -5,10 +5,15 @@ using MiniPdm.Modules.Import.DtoModels.Cad;
 
 namespace MiniPdm.Modules.Import.Infrastructure.Cad;
 
+/// <summary>
+/// Читает JSON-описания CAD-документов из файлового каталога.
+/// </summary>
+/// <param name="directory">Каталог, содержащий файлы пакета.</param>
 public sealed class FileJsonCadDocumentReader(string directory) : ICadDocumentReader
 {
     private static readonly JsonDocumentOptions JsonOptions = new() { CommentHandling = JsonCommentHandling.Disallow };
 
+    /// <inheritdoc />
     public async Task<CadReadResult> ReadAsync(CadDocumentRef document, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(document);

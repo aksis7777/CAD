@@ -33,4 +33,9 @@ var app = builder.Build();
 app.MapControllers();
 app.Run();
 
-public partial class Program { }
+/// <summary>
+/// Предоставляет точку входа веб-приложения.
+/// </summary>
+public partial class Program
+{
+}

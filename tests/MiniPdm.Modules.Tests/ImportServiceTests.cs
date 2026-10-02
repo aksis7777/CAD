@@ -12,8 +12,15 @@ using Xunit;
 
 namespace MiniPdm.Modules.Tests;
 
+/// <summary>
+/// Проверяет бизнес-правила импорта документов, версий, состава и отката файловых изменений.
+/// </summary>
 public sealed class ImportServiceTests
 {
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Duplicate_identities_are_all_rejected_and_parents_are_cascaded».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Duplicate_identities_are_all_rejected_and_parents_are_cascaded()
     {
@@ -31,6 +38,10 @@ public sealed class ImportServiceTests
         Assert.Contains("rejected", report.Files.Single(x => x.FileName == "top.a3d").Reason!, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Missing_part_mass_is_accepted_with_warning».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Missing_part_mass_is_accepted_with_warning()
     {
@@ -44,6 +55,10 @@ public sealed class ImportServiceTests
         Assert.Equal(1, report.WarningCount);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Normalized_standard_name_duplicates_are_rejected_even_when_masses_differ».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Normalized_standard_name_duplicates_are_rejected_even_when_masses_differ()
     {
@@ -57,6 +72,10 @@ public sealed class ImportServiceTests
         Assert.All(report.Files, file => Assert.Equal(ImportFileStatus.Rejected, file.Status));
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Invalid_quantity_document_still_rejects_valid_duplicate_identity».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Invalid_quantity_document_still_rejects_valid_duplicate_identity()
     {
@@ -72,6 +91,10 @@ public sealed class ImportServiceTests
         Assert.Contains("identity", report.Files.Single(x => x.FileName == "valid.m3d").Reason!, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Partial_document_with_reader_error_still_rejects_valid_duplicate_identity».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Partial_document_with_reader_error_still_rejects_valid_duplicate_identity()
     {
@@ -90,6 +113,10 @@ public sealed class ImportServiceTests
         Assert.Contains("identity", report.Files.Single(x => x.FileName == "valid.m3d").Reason!, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Repeated_positive_component_rows_are_combined_and_reported».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Repeated_positive_component_rows_are_combined_and_reported()
     {
@@ -108,6 +135,10 @@ public sealed class ImportServiceTests
         Assert.Equal(5, Assert.Single(version.Components).Quantity);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Single_invalid_quantity_does_not_claim_duplicate_rows_were_combined».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Single_invalid_quantity_does_not_claim_duplicate_rows_were_combined()
     {
@@ -122,6 +153,10 @@ public sealed class ImportServiceTests
         Assert.DoesNotContain(result.Warnings, x => x.Contains("Repeated component rows"));
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Changed_version_gets_source_reference_for_its_package_file».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Changed_version_gets_source_reference_for_its_package_file()
     {
@@ -137,6 +172,10 @@ public sealed class ImportServiceTests
         Assert.Equal($"{importId}/new.m3d", existing.CurrentVersion!.SourceReference);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Reordered_components_do_not_create_a_version».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Reordered_components_do_not_create_a_version()
     {
@@ -157,6 +196,10 @@ public sealed class ImportServiceTests
         Assert.Empty(persistence.LastPlan!.NewVersions);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Changed_approved_object_gets_next_version_and_updated_inwork_object_is_reused».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Changed_approved_object_gets_next_version_and_updated_inwork_object_is_reused()
     {
@@ -176,6 +219,10 @@ public sealed class ImportServiceTests
         Assert.Equal("B2", inwork.CurrentVersion!.Name);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «All_cancelled_object_uses_maximum_historical_version_plus_one».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task All_cancelled_object_uses_maximum_historical_version_plus_one()
     {
@@ -190,6 +237,10 @@ public sealed class ImportServiceTests
         Assert.Equal(8, Assert.Single(persistence.LastPlan!.NewVersions).Version);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Changed_designation_creates_a_new_object».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Changed_designation_creates_a_new_object()
     {
@@ -203,6 +254,10 @@ public sealed class ImportServiceTests
         Assert.Equal("АБВГ.301245.099", persistence.LastPlan.NewObjects[0].Designation);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Repeated_branch_is_valid_but_package_cycle_is_rejected_with_ancestors».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Repeated_branch_is_valid_but_package_cycle_is_rejected_with_ancestors()
     {
@@ -232,6 +287,10 @@ public sealed class ImportServiceTests
         Assert.Equal(5, cycleReport.RejectedCount);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Database_only_cycle_blocks_import_before_file_promotion».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Database_only_cycle_blocks_import_before_file_promotion()
     {
@@ -246,6 +305,10 @@ public sealed class ImportServiceTests
         Assert.Equal(0, files.PromoteCount);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Confirmed_rollback_compensates_promoted_files».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Confirmed_rollback_compensates_promoted_files()
     {
@@ -259,6 +322,10 @@ public sealed class ImportServiceTests
         Assert.Equal(1, files.CompensateCount);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Completed_import_id_replays_report_without_reading_source_again».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Completed_import_id_replays_report_without_reading_source_again()
     {
@@ -294,8 +361,15 @@ public sealed class ImportServiceTests
         VersionState state = VersionState.InWork, params (PdmObject Child, int Count)[] components)
     {
         var item = new PdmObject { Type = type, Designation = designation };
-        var version = new ObjectVersion { ObjectId = item.Id, Version = 1, State = state, Name = name,
-            Material = type == PdmObjectType.Part ? "Steel" : null, Mass = mass };
+        var version = new ObjectVersion
+        {
+            ObjectId = item.Id,
+            Version = 1,
+            State = state,
+            Name = name,
+            Material = type == PdmObjectType.Part ? "Steel" : null,
+            Mass = mass
+        };
         foreach (var (child, count) in components)
             version.Components.Add(new BomLink { ParentVersionId = version.Id, ChildObjectId = child.Id, Quantity = count });
         item.Versions.Add(version);
@@ -306,7 +380,10 @@ public sealed class ImportServiceTests
 
     private sealed class FakeCadFactory(IReadOnlyList<CadDocument> docs, IReadOnlyDictionary<string, string?>? errors = null) : ICadSourceFactory
     {
-        public int OpenCount { get; set; }
+        public int OpenCount
+        {
+            get; set;
+        }
         public Task<ICadSession> OpenAsync(CadSourceDescriptor descriptor, CancellationToken cancellationToken)
         {
             OpenCount++;
@@ -343,25 +420,61 @@ public sealed class ImportServiceTests
 
     private sealed class FakeSourceStorage : IImportSourceStorage
     {
-        public int PromoteCount { get; private set; }
-        public int CompensateCount { get; private set; }
+        public int PromoteCount
+        {
+            get; private set;
+        }
+        public int CompensateCount
+        {
+            get; private set;
+        }
+
+        /// <summary>
+        /// Проверяет ожидаемое поведение сценария «PromoteAsync».
+        /// </summary>
+        /// <param name="importId">Значение, используемое в проверяемом сценарии.</param>
+        /// <param name="source">Значение, используемое в проверяемом сценарии.</param>
+        /// <param name="acceptedFiles">Значение, используемое в проверяемом сценарии.</param>
+        /// <param name="ct">Значение, используемое в проверяемом сценарии.</param>
+        /// <returns>Задача завершается после выполнения проверок теста.</returns>
         public Task PromoteAsync(Guid importId, CadSourceDescriptor source, IReadOnlyCollection<string> acceptedFiles, CancellationToken ct)
-        { PromoteCount++; return Task.CompletedTask; }
+        {
+            PromoteCount++;
+            return Task.CompletedTask;
+        }
         public string GetSourceReference(Guid importId, string fileName) => $"{importId}/{fileName}";
+
+        /// <summary>
+        /// Проверяет ожидаемое поведение сценария «CompensateAsync».
+        /// </summary>
+        /// <param name="importId">Значение, используемое в проверяемом сценарии.</param>
+        /// <param name="ct">Значение, используемое в проверяемом сценарии.</param>
+        /// <returns>Задача завершается после выполнения проверок теста.</returns>
         public Task CompensateAsync(Guid importId, CancellationToken ct)
-        { CompensateCount++; return Task.CompletedTask; }
+        {
+            CompensateCount++;
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakePersistence(IReadOnlyList<PdmObject> existing, IReadOnlyList<ActiveGraphEdge>? graph = null, bool rollback = false) : IImportDatabaseService
     {
         private readonly Dictionary<Guid, ImportPersistenceResult> _completed = [];
-        public ImportWritePlan? LastPlan { get; private set; }
+        public ImportWritePlan? LastPlan
+        {
+            get; private set;
+        }
         public async Task<ImportPersistenceResult> ExecuteAsync(Guid importId, ImportLookup lookup,
             Func<ImportSnapshot, CancellationToken, Task<ImportWritePlan>> prepare, CancellationToken ct)
         {
-            if (_completed.TryGetValue(importId, out var replay)) return replay with { Replayed = true };
+            if (_completed.TryGetValue(importId, out var replay))
+                return replay with
+                {
+                    Replayed = true
+                };
             LastPlan = await prepare(new ImportSnapshot(existing, graph ?? []), ct);
-            if (rollback) return new ImportPersistenceResult(ImportCommitState.ConfirmedRollback, false, null, "test rollback");
+            if (rollback)
+                return new ImportPersistenceResult(ImportCommitState.ConfirmedRollback, false, null, "test rollback");
             var result = new ImportPersistenceResult(ImportCommitState.Completed, false, LastPlan.ReportJson);
             _completed[importId] = result;
             return result;
@@ -370,6 +483,11 @@ public sealed class ImportServiceTests
         public Task<ImportPersistenceResult> ResolveAsync(Guid id, CancellationToken ct) =>
             Task.FromResult(_completed.GetValueOrDefault(id) ?? new ImportPersistenceResult(ImportCommitState.ConfirmedRollback, false, null));
         public async Task<bool> CompensateIfRolledBackAsync(Guid id, Func<CancellationToken, Task> compensate, CancellationToken ct)
-        { if (!rollback) return false; await compensate(ct); return true; }
+        {
+            if (!rollback)
+                return false;
+            await compensate(ct);
+            return true;
+        }
     }
 }

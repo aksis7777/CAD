@@ -10,10 +10,17 @@ using Xunit;
 
 namespace MiniPdm.Postgres.Tests;
 
+/// <summary>
+/// Проверяет поиск объектов и чтение карточек в PostgreSQL.
+/// </summary>
 public sealed class ObjectReadQueryPostgresTests
 {
     private const string ConnectionVariable = "PDM_TEST_POSTGRES_CONNECTION";
 
+    /// <summary>
+    /// Проверяет регистронезависимый поиск кириллицы, буквальное трактование подстановочных символов и получение карточки одним запросом.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [Fact]
     public async Task ILike_is_case_insensitive_for_cyrillic_and_treats_wildcards_as_literals_and_card_is_one_query()
     {
@@ -109,9 +116,25 @@ public sealed class ObjectReadQueryPostgresTests
             Commands = commands;
         }
 
-        public PdmDbContext Context { get; }
-        public CommandCounter Commands { get; }
+        /// <summary>
+        /// Контекст базы данных, используемый тестовой фикстурой.
+        /// </summary>
+        public PdmDbContext Context
+        {
+            get;
+        }
+        /// <summary>
+        /// Перехватчик, учитывающий выполненные SQL-команды.
+        /// </summary>
+        public CommandCounter Commands
+        {
+            get;
+        }
 
+        /// <summary>
+        /// Открывает транзакционную фикстуру для изолированной проверки PostgreSQL.
+        /// </summary>
+        /// <returns>Асинхронный результат операции и данные, полученные в результате её выполнения.</returns>
         public static async Task<Fixture> OpenAsync()
         {
             var connectionString = Environment.GetEnvironmentVariable(ConnectionVariable);
@@ -136,18 +159,34 @@ public sealed class ObjectReadQueryPostgresTests
             }
         }
 
+        /// <summary>
+        /// Добавляет объекты в контекст фикстуры и сохраняет изменения.
+        /// </summary>
+        /// <param name="objects">Объекты для добавления в контекст фикстуры.</param>
+        /// <returns>Завершение асинхронной операции.</returns>
         public async Task SaveObjectsAsync(params PdmObject[] objects)
         {
             Context.Objects.AddRange(objects);
             await Context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Добавляет версии в контекст фикстуры и сохраняет изменения.
+        /// </summary>
+        /// <param name="versions">Версии для добавления в контекст фикстуры.</param>
+        /// <returns>Завершение асинхронной операции.</returns>
         public async Task SaveVersionsAsync(params ObjectVersion[] versions)
         {
             Context.Versions.AddRange(versions);
             await Context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Устанавливает текущую версию объекта и сохраняет изменения.
+        /// </summary>
+        /// <param name="item">Объект, которому назначается текущая версия.</param>
+        /// <param name="version">Версия, назначаемая текущей для объекта.</param>
+        /// <returns>Завершение асинхронной операции.</returns>
         public async Task SetCurrentAsync(PdmObject item, ObjectVersion version)
         {
             item.CurrentVersionId = version.Id;
@@ -155,6 +194,10 @@ public sealed class ObjectReadQueryPostgresTests
             Context.ChangeTracker.Clear();
         }
 
+        /// <summary>
+        /// Освобождает контекст и соединение после отката тестовой транзакции.
+        /// </summary>
+        /// <returns>Завершение асинхронной операции.</returns>
         public async ValueTask DisposeAsync()
         {
             await Context.DisposeAsync();
@@ -168,14 +211,19 @@ public sealed class ObjectReadQueryPostgresTests
     {
         private int _count;
         public int Count => Volatile.Read(ref _count);
+        /// <summary>
+        /// Реализует операцию тестового помощника.
+        /// </summary>
         public void Reset() => Interlocked.Exchange(ref _count, 0);
 
+        /// <inheritdoc/>
         public override InterceptionResult<DbDataReader> ReaderExecuting(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result)
         {
             Interlocked.Increment(ref _count);
             return result;
         }
 
+        /// <inheritdoc/>
         public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData,
             InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
         {

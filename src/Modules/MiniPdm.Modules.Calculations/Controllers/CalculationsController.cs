@@ -6,17 +6,29 @@ using MiniPdm.Modules.Calculations.Features.Queries.GetCompositionCalculation;
 
 namespace MiniPdm.Modules.Calculations.Controllers;
 
+/// <summary>
+/// Предоставляет HTTP-операцию расчёта массы и спецификации объекта.
+/// Расчёт выполняется обработчиком запроса модуля вычислений.
+/// </summary>
+/// <param name="sender">Посредник для отправки запроса расчёта.</param>
 [ApiController]
 [Route("api/objects/{objectId:guid}/calculations")]
 public sealed class CalculationsController(ISender sender) : ControllerBase
 {
+    /// <summary>
+    /// Рассчитывает состав и массу указанного объекта.
+    /// </summary>
+    /// <param name="objectId">Идентификатор корневого объекта.</param>
+    /// <param name="cancellationToken">Токен отмены HTTP-запроса.</param>
+    /// <returns>Расчёт объекта, ошибка запроса или статус отсутствующего объекта.</returns>
     [HttpGet]
     [ProducesResponseType<CompositionCalculationDto>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CompositionCalculationDto>> Get(Guid objectId, CancellationToken cancellationToken)
     {
-        if (objectId == Guid.Empty) return BadRequest();
+        if (objectId == Guid.Empty)
+            return BadRequest();
 
         var result = await sender.Send(new GetCompositionCalculationQuery(objectId), cancellationToken);
         return result is null ? NotFound() : Ok(result);

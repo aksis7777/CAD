@@ -12,8 +12,15 @@ using Xunit;
 
 namespace MiniPdm.Storage.Tests;
 
+/// <summary>
+/// Проверяет атомарную запись импорта, журналирование, откат и согласование текущих версий.
+/// </summary>
 public sealed class ImportPersistenceTests
 {
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Writes_new_objects_versions_current_pointer_and_journal_atomically».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Writes_new_objects_versions_current_pointer_and_journal_atomically()
     {
@@ -36,6 +43,10 @@ public sealed class ImportPersistenceTests
         Assert.Equal("{\"ok\":true}", (await verify.ImportJournals.SingleAsync(x => x.ImportId == importId)).ReportJson);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Replays_journal_without_invoking_prepare_again».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Replays_journal_without_invoking_prepare_again()
     {
@@ -56,6 +67,10 @@ public sealed class ImportPersistenceTests
         Assert.Equal("{}", result.ReportJson);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Failed_prepare_rolls_back_without_rows_or_journal».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Failed_prepare_rolls_back_without_rows_or_journal()
     {
@@ -70,6 +85,10 @@ public sealed class ImportPersistenceTests
         Assert.Empty(await verify.ImportJournals.ToListAsync());
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Completed_import_is_never_compensated».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Completed_import_is_never_compensated()
     {
@@ -88,6 +107,10 @@ public sealed class ImportPersistenceTests
         Assert.False(called);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Failed_save_rolls_back_callback_mutations_to_existing_current_version».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Failed_save_rolls_back_callback_mutations_to_existing_current_version()
     {
@@ -124,6 +147,10 @@ public sealed class ImportPersistenceTests
         Assert.Empty(await verify.ImportJournals.ToListAsync());
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Removes_old_bom_links_before_advancing_current_version».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Removes_old_bom_links_before_advancing_current_version()
     {
@@ -176,9 +203,18 @@ public sealed class ImportPersistenceTests
     private sealed class Fixture : IAsyncDisposable
     {
         private readonly SqliteConnection _connection;
-        public DbContextOptions<PdmDbContext> Options { get; }
-        private PdmDbContext Context { get; }
-        public ImportDatabaseService Persistence { get; }
+        public DbContextOptions<PdmDbContext> Options
+        {
+            get;
+        }
+        private PdmDbContext Context
+        {
+            get;
+        }
+        public ImportDatabaseService Persistence
+        {
+            get;
+        }
 
         private Fixture(SqliteConnection connection, DbContextOptions<PdmDbContext> options)
         {

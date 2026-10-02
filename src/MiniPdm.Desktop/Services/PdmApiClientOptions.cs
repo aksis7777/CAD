@@ -1,7 +1,15 @@
 namespace MiniPdm.Desktop.Services;
 
+/// <summary>
+/// Содержит параметры подключения настольного клиента к API PDM.
+/// </summary>
+/// <param name="BaseAddress">Абсолютный базовый HTTP- или HTTPS-адрес API с завершающим слешем.</param>
 public sealed record PdmApiClientOptions(Uri BaseAddress)
 {
+    /// <summary>
+    /// Создаёт настройки из переменной окружения <c>PDM_API_BASE_URL</c>.
+    /// </summary>
+    /// <returns>Настройки с проверенным базовым адресом; при отсутствии переменной используется <c>http://localhost:5000/</c>.</returns>
     public static PdmApiClientOptions FromEnvironment()
     {
         var configured = Environment.GetEnvironmentVariable("PDM_API_BASE_URL");

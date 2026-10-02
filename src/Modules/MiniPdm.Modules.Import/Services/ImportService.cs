@@ -10,8 +10,19 @@ using MiniPdm.Modules.Import.DtoModels.Database;
 
 namespace MiniPdm.Modules.Import.Services;
 
+/// <summary>
+/// Сообщает, что импорт не удалось завершить или достоверно определить исход сохранения.
+/// </summary>
+/// <param name="message">Описание ошибки импорта.</param>
+/// <param name="inner">Исходное исключение, если оно было причиной ошибки.</param>
 public sealed class ImportSaveException(string message, Exception? inner = null) : Exception(message, inner);
 
+/// <summary>
+/// Координирует чтение CAD-пакета, проверку данных и транзакционное сохранение импорта.
+/// </summary>
+/// <param name="cadSourceFactory">Фабрика сессий чтения CAD-источников.</param>
+/// <param name="persistence">Сервис транзакционной записи и журнала импорта.</param>
+/// <param name="sourceStorage">Хранилище файлов и операция их компенсации.</param>
 public sealed class ImportService(
     ICadSourceFactory cadSourceFactory,
     IImportDatabaseService persistence,
@@ -19,6 +30,13 @@ public sealed class ImportService(
 {
     private static readonly JsonSerializerOptions ReportJsonOptions = new(JsonSerializerDefaults.Web);
 
+    /// <summary>
+    /// Обрабатывает пакет и возвращает сохранённый либо заново сформированный отчёт.
+    /// </summary>
+    /// <param name="importId">Идентификатор операции для идемпотентного повтора.</param>
+    /// <param name="source">Описатель CAD-источника.</param>
+    /// <param name="cancellationToken">Токен отмены до начала внешних побочных эффектов.</param>
+    /// <returns>Задача с отчётом по принятым и отклонённым файлам.</returns>
     public async Task<ImportReportDto> ExecuteAsync(Guid importId, CadSourceDescriptor source, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -64,7 +82,8 @@ public sealed class ImportService(
             if (resolved?.State == ImportCommitState.ConfirmedRollback)
             {
                 var recovery = await CompensateOrReplayAsync(importId);
-                if (recovery.Report is not null) return recovery.Report;
+                if (recovery.Report is not null)
+                    return recovery.Report;
                 if (recovery.Compensated)
                     throw new ImportSaveException("Import persistence failed and the database confirmed rollback; promoted files were compensated.", ex);
                 throw new ImportSaveException("Import outcome could not be resolved; promoted files were retained for recovery.", ex);
@@ -77,7 +96,8 @@ public sealed class ImportService(
         if (result.State == ImportCommitState.ConfirmedRollback)
         {
             var recovery = await CompensateOrReplayAsync(importId);
-            if (recovery.Report is not null) return recovery.Report;
+            if (recovery.Report is not null)
+                return recovery.Report;
             if (recovery.Compensated)
                 throw new ImportSaveException(result.Error ?? "Import persistence failed and the database rolled back; promoted files were compensated.");
             throw new ImportSaveException("Import outcome could not be resolved; promoted files were retained for recovery.",
@@ -90,7 +110,8 @@ public sealed class ImportService(
         if (resolution?.State == ImportCommitState.ConfirmedRollback)
         {
             var recovery = await CompensateOrReplayAsync(importId);
-            if (recovery.Report is not null) return recovery.Report;
+            if (recovery.Report is not null)
+                return recovery.Report;
             if (recovery.Compensated)
                 throw new ImportSaveException("Import persistence failed and the database confirmed rollback; promoted files were compensated.");
             throw new ImportSaveException("Import outcome could not be resolved; promoted files were retained for recovery.");
@@ -100,7 +121,10 @@ public sealed class ImportService(
 
     private async Task<ImportPersistenceResult?> ResolveAfterFailureAsync(Guid id)
     {
-        try { return await persistence.ResolveAsync(id, CancellationToken.None); }
+        try
+        {
+            return await persistence.ResolveAsync(id, CancellationToken.None);
+        }
         catch { return null; }
     }
 
@@ -113,7 +137,8 @@ public sealed class ImportService(
                 ct => sourceStorage.CompensateAsync(id, ct), CancellationToken.None);
         }
         catch { return (null, false); }
-        if (compensated) return (null, true);
+        if (compensated)
+            return (null, true);
         var resolution = await ResolveAfterFailureAsync(id);
         return (resolution is { State: ImportCommitState.Completed, ReportJson: not null }
             ? DeserializeReport(resolution.ReportJson)

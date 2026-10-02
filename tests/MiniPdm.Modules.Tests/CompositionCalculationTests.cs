@@ -5,8 +5,14 @@ using Xunit;
 
 namespace MiniPdm.Modules.Tests;
 
+/// <summary>
+/// Проверяет расчёт количеств, масс и спецификации для состава изделия, включая неполные и циклические графы.
+/// </summary>
 public sealed class CompositionCalculationTests
 {
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «CalculatesDiamondQuantitiesAcrossPathsAndGroupsByObject».
+    /// </summary>
     [Fact]
     public void CalculatesDiamondQuantitiesAcrossPathsAndGroupsByObject()
     {
@@ -33,6 +39,9 @@ public sealed class CompositionCalculationTests
         Assert.Equal(62m, item.TotalMassKg);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «MissingMassKeepsKnownQuantityAndBlocksAssemblyMass».
+    /// </summary>
     [Fact]
     public void MissingMassKeepsKnownQuantityAndBlocksAssemblyMass()
     {
@@ -51,6 +60,9 @@ public sealed class CompositionCalculationTests
         Assert.Null(Assert.Single(result.Items).TotalMassKg);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «MissingCurrentVersionBlocksAssemblyAndPreservesKnownLeafQuantity».
+    /// </summary>
     [Fact]
     public void MissingCurrentVersionBlocksAssemblyAndPreservesKnownLeafQuantity()
     {
@@ -78,6 +90,9 @@ public sealed class CompositionCalculationTests
         Assert.Null(leaf.TotalMassKg);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «CycleIsReportedAndCyclicOccurrenceIsExcludedFromSpecification».
+    /// </summary>
     [Fact]
     public void CycleIsReportedAndCyclicOccurrenceIsExcludedFromSpecification()
     {
@@ -97,6 +112,9 @@ public sealed class CompositionCalculationTests
         Assert.Equal(6m, Assert.Single(result.Items).TotalMassKg);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «EmptyAssemblyHasZeroMassAndEmptySpecification».
+    /// </summary>
     [Fact]
     public void EmptyAssemblyHasZeroMassAndEmptySpecification()
     {
@@ -109,6 +127,9 @@ public sealed class CompositionCalculationTests
         Assert.Empty(result.Diagnostics);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «RootPartAppearsWithQuantityOne».
+    /// </summary>
     [Fact]
     public void RootPartAppearsWithQuantityOne()
     {
@@ -122,6 +143,9 @@ public sealed class CompositionCalculationTests
         Assert.Equal(5m, item.TotalMassKg);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «StandardPartOccurrencesAreGroupedByObjectId».
+    /// </summary>
     [Fact]
     public void StandardPartOccurrencesAreGroupedByObjectId()
     {
@@ -145,6 +169,9 @@ public sealed class CompositionCalculationTests
         Assert.Equal(5m, item.Quantity);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «QuantityOverflowOnPathPropagatesWithoutRedundantDiagnostics».
+    /// </summary>
     [Fact]
     public void QuantityOverflowOnPathPropagatesWithoutRedundantDiagnostics()
     {
@@ -168,6 +195,9 @@ public sealed class CompositionCalculationTests
         Assert.Null(result.TotalMassKg);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «GroupQuantityAdditionOverflowMakesGroupedQuantityUnknown».
+    /// </summary>
     [Fact]
     public void GroupQuantityAdditionOverflowMakesGroupedQuantityUnknown()
     {
@@ -196,6 +226,9 @@ public sealed class CompositionCalculationTests
         Assert.Null(Assert.Single(result.Items).Quantity);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «LineMassOverflowLeavesMassUnknown».
+    /// </summary>
     [Fact]
     public void LineMassOverflowLeavesMassUnknown()
     {
@@ -219,6 +252,9 @@ public sealed class CompositionCalculationTests
         Assert.Null(result.TotalMassKg);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «TotalMassAdditionOverflowBlocksTheReportedTotal».
+    /// </summary>
     [Fact]
     public void TotalMassAdditionOverflowBlocksTheReportedTotal()
     {
@@ -238,6 +274,9 @@ public sealed class CompositionCalculationTests
         Assert.All(result.Items, item => Assert.NotNull(item.TotalMassKg));
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «NonRootOccurrenceWithoutParentPathIsRejected».
+    /// </summary>
     [Fact]
     public void NonRootOccurrenceWithoutParentPathIsRejected()
     {

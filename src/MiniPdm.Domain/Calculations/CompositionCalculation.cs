@@ -3,8 +3,48 @@ using MiniPdm.Domain.Versions;
 
 namespace MiniPdm.Domain.Calculations;
 
-/// <summary>One storage-independent occurrence needed to calculate an object's composition.</summary>
-/// <param name="LocalQuantity">Positive whole-piece count on the edge from the parent occurrence.</param>
+/// <summary>
+///     Вхождение объекта в развёрнутом дереве с данными для расчёта массы и спецификации.
+/// </summary>
+/// <param name="ObjectId">
+///     Идентификатор объекта в этом вхождении.
+/// </param>
+/// <param name="ObjectPath">
+///     Идентификаторы объектов от корня до этого вхождения.
+/// </param>
+/// <param name="ParentPath">
+///     Путь родительского вхождения; для корня равен null.
+/// </param>
+/// <param name="LocalQuantity">
+///     Положительное целое количество экземпляров на связи с родительским вхождением.
+/// </param>
+/// <param name="Type">
+///     Тип объекта PDM.
+/// </param>
+/// <param name="Designation">
+///     Обозначение детали или сборки, если оно применимо.
+/// </param>
+/// <param name="Name">
+///     Отображаемое наименование объекта, если оно задано.
+/// </param>
+/// <param name="Material">
+///     Материал текущей версии, если он применим.
+/// </param>
+/// <param name="VersionId">
+///     Идентификатор текущей версии; null, если действующей версии нет.
+/// </param>
+/// <param name="VersionNumber">
+///     Номер текущей версии, если он задан.
+/// </param>
+/// <param name="State">
+///     Состояние текущей версии, если она задана.
+/// </param>
+/// <param name="UnitMassKg">
+///     Масса одного изделия в килограммах, если она известна.
+/// </param>
+/// <param name="IsCycle">
+///     Замыкает ли это вхождение цикл состава.
+/// </param>
 public sealed record CompositionCalculationInput(
     Guid ObjectId,
     IReadOnlyList<Guid> ObjectPath,
@@ -20,8 +60,39 @@ public sealed record CompositionCalculationInput(
     decimal? UnitMassKg,
     bool IsCycle);
 
-/// <summary>A calculated specification row, with quantity expressed in pieces and mass in kilograms.</summary>
-/// <param name="Quantity">Whole-piece count summed across all paths; null means at least one contributing count is unknown.</param>
+/// <summary>
+///     Рассчитанная строка спецификации: количество указано в штуках, масса — в килограммах.
+/// </summary>
+/// <param name="ObjectId">
+///     Идентификатор объекта спецификации.
+/// </param>
+/// <param name="Type">
+///     Тип объекта PDM.
+/// </param>
+/// <param name="Designation">
+///     Обозначение детали или сборки, если оно применимо.
+/// </param>
+/// <param name="Name">
+///     Отображаемое наименование объекта, если оно задано.
+/// </param>
+/// <param name="Material">
+///     Материал текущей версии, если он применим.
+/// </param>
+/// <param name="VersionId">
+///     Идентификатор текущей версии; null, если действующей версии нет.
+/// </param>
+/// <param name="VersionNumber">
+///     Номер текущей версии, если он задан.
+/// </param>
+/// <param name="Quantity">
+///     Количество целых изделий, суммированное по всем путям; null означает, что хотя бы одно слагаемое неизвестно.
+/// </param>
+/// <param name="UnitMassKg">
+///     Масса одного изделия в килограммах, если она известна.
+/// </param>
+/// <param name="TotalMassKg">
+///     Количество, умноженное на массу одного изделия; null, если одно из значений неизвестно.
+/// </param>
 public sealed record CalculatedSpecificationItem(
     Guid ObjectId,
     PdmObjectType Type,
@@ -34,10 +105,41 @@ public sealed record CalculatedSpecificationItem(
     decimal? UnitMassKg,
     decimal? TotalMassKg);
 
+/// <summary>
+///     Описывает отсутствующее или неверное значение, из-за которого расчёт состава неполон.
+/// </summary>
+/// <param name="Code">
+///     Стабильный код диагностики, например <c>MissingMass</c> или <c>Cycle</c>.
+/// </param>
+/// <param name="ObjectId">
+///     Идентификатор объекта, связанного с проблемой.
+/// </param>
+/// <param name="ObjectPath">
+///     Путь от корневого объекта до проблемного вхождения.
+/// </param>
+/// <param name="Message">
+///     Понятное пользователю описание проблемы.
+/// </param>
 public sealed record CalculationDiagnostic(string Code, Guid ObjectId, IReadOnlyList<Guid> ObjectPath, string Message);
 
-/// <summary>The calculated specification and mass status. Any diagnostic makes the total mass unknown.</summary>
-/// <param name="IsComplete">True only when no calculation diagnostic was produced.</param>
+/// <summary>
+///     Результат расчёта спецификации и массы. При наличии диагностики общая масса считается неизвестной.
+/// </summary>
+/// <param name="RootObjectId">
+///     Идентификатор корневого объекта расчёта.
+/// </param>
+/// <param name="TotalMassKg">
+///     Рассчитанная общая масса; null, если возникла хотя бы одна диагностика.
+/// </param>
+/// <param name="IsComplete">
+///     Равно true только при отсутствии диагностик расчёта.
+/// </param>
+/// <param name="Items">
+///     Плоские строки спецификации, сгруппированные по объекту.
+/// </param>
+/// <param name="Diagnostics">
+///     Проблемы, обнаруженные при расчёте дерева объектов.
+/// </param>
 public sealed record CompositionCalculationResult(
     Guid RootObjectId,
     decimal? TotalMassKg,
@@ -45,9 +147,23 @@ public sealed record CompositionCalculationResult(
     IReadOnlyList<CalculatedSpecificationItem> Items,
     IReadOnlyList<CalculationDiagnostic> Diagnostics);
 
-/// <summary>Calculates composition quantities, part masses, and the flat specification without storage access.</summary>
+/// <summary>
+///     Рассчитывает количества в составе, массы деталей и плоскую спецификацию без обращения к хранилищу.
+/// </summary>
 public static class CompositionCalculator
 {
+    /// <summary>
+    ///     Рассчитывает массу корневого объекта и плоскую спецификацию по развёрнутым вхождениям дерева.
+    /// </summary>
+    /// <param name="rootObjectId">
+    ///     Идентификатор объекта, состав которого рассчитывается.
+    /// </param>
+    /// <param name="occurrences">
+    ///     Вхождения из развёрнутого дерева состава.
+    /// </param>
+    /// <returns>
+    ///     Рассчитанная спецификация, общая масса и найденные диагностики.
+    /// </returns>
     public static CompositionCalculationResult Calculate(Guid rootObjectId, IEnumerable<CompositionCalculationInput> occurrences)
     {
         ArgumentNullException.ThrowIfNull(occurrences);

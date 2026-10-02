@@ -1,6 +1,12 @@
 namespace MiniPdm.Modules.Versions.DtoModels;
 
-/// <summary>Concurrency precondition and inputs required to prepare one version mutation.</summary>
+/// <summary>
+/// Предусловие конкурентного доступа и данные для подготовки одной мутации версии.
+/// </summary>
+/// <param name="ObjectId">Идентификатор изменяемого объекта.</param>
+/// <param name="VersionNumber">Номер версии, к которой относится мутация.</param>
+/// <param name="ExpectedConcurrencyToken">Токен конкурентности, ожидаемый от клиента.</param>
+/// <param name="ReferencedChildIds">Идентификаторы дочерних объектов для предварительной проверки.</param>
 public sealed record VersionWriteRequest(
     Guid ObjectId,
     int VersionNumber,

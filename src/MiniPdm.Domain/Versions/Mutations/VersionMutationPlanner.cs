@@ -4,29 +4,63 @@ using MiniPdm.Domain.Versions;
 
 namespace MiniPdm.Domain.Versions.Mutations;
 
+/// <summary>
+/// Проверяет бизнес-условия изменения версии и строит план изменений без доступа к хранилищу.
+/// </summary>
 public static class VersionMutationPlanner
 {
+    /// <summary>
+    ///     Планирует создание следующей версии «В работе» копированием выбранной версии.
+    /// </summary>
+    /// <param name="snapshot">
+    ///     Текущее состояние объекта, выбранной версии и графа состава.
+    /// </param>
+    /// <returns>
+    ///     План с новой версией либо причиной отказа.
+    /// </returns>
     public static VersionMutationPlan Clone(VersionMutationSnapshot snapshot)
     {
-        if (!IsConsistent(snapshot)) return NotFound("VersionNotFound", "The selected version was not found for this object.");
+        if (!IsConsistent(snapshot))
+            return NotFound("VersionNotFound", "The selected version was not found for this object.");
         var source = snapshot.SelectedVersion;
         var max = snapshot.Object.Versions.Append(snapshot.Object.CurrentVersion).Where(x => x is not null)
             .Select(x => x!.Version).Append(source.Version).DefaultIfEmpty(0).Max();
-        if (max == int.MaxValue) return Invalid("VersionNumberOverflow", "The next version number exceeds Int32.");
+        if (max == int.MaxValue)
+            return Invalid("VersionNumberOverflow", "The next version number exceeds Int32.");
 
         var clone = CopyVersion(snapshot.Object, source, max + 1, VersionState.InWork);
         var currentId = clone.Id;
 
         var graphError = ValidateFutureGraph(snapshot, currentId, clone);
-        if (graphError is not null) return graphError;
+        if (graphError is not null)
+            return graphError;
         return Success(clone, currentId, clone, [], []);
     }
 
+    /// <summary>
+    ///     Планирует изменение атрибутов редактируемой версии без изменения идентичности объекта.
+    /// </summary>
+    /// <param name="snapshot">
+    ///     Текущее состояние объекта и выбранной версии.
+    /// </param>
+    /// <param name="name">
+    ///     Новое наименование версии либо null, если оно не задано.
+    /// </param>
+    /// <param name="material">
+    ///     Новый материал детали либо null, если он не задан.
+    /// </param>
+    /// <param name="mass">
+    ///     Новая масса одного изделия в килограммах либо null, если она не задана.
+    /// </param>
+    /// <returns>
+    ///     План с изменённой версией либо причиной отказа.
+    /// </returns>
     public static VersionMutationPlan UpdateAttributes(VersionMutationSnapshot snapshot, string? name,
         string? material, decimal? mass)
     {
         var precondition = Editable(snapshot);
-        if (precondition is not null) return precondition;
+        if (precondition is not null)
+            return precondition;
         var obj = snapshot.Object;
         if (obj.Type == PdmObjectType.StandardPart)
         {
@@ -36,30 +70,46 @@ public static class VersionMutationPlanner
 
         var validation = VersionAttributeRules.Validate(obj.Type,
             obj.Type == PdmObjectType.StandardPart ? obj.StandardName : name, material, mass);
-        if (!validation.IsValid) return Invalid("InvalidAttributes", validation.Errors[0]);
+        if (!validation.IsValid)
+            return Invalid("InvalidAttributes", validation.Errors[0]);
         var changed = CopyVersion(obj, snapshot.SelectedVersion, snapshot.SelectedVersion.Version, snapshot.SelectedVersion.State, preserveId: true);
         changed.Name = obj.Type == PdmObjectType.StandardPart ? snapshot.SelectedVersion.Name : name;
         changed.Material = material;
         changed.Mass = mass;
         var currentId = obj.CurrentVersionId;
         var graphError = ValidateFutureGraph(snapshot, currentId, changed);
-        if (graphError is not null) return graphError;
+        if (graphError is not null)
+            return graphError;
         snapshot.SelectedVersion.Name = changed.Name;
         snapshot.SelectedVersion.Material = changed.Material;
         snapshot.SelectedVersion.Mass = changed.Mass;
         return Success(snapshot.SelectedVersion, currentId, null, [], validation.Warnings);
     }
 
+    /// <summary>
+    ///     Планирует полную замену строк состава редактируемой версии сборки.
+    /// </summary>
+    /// <param name="snapshot">
+    ///     Текущее состояние объекта, выбранной версии и графа состава.
+    /// </param>
+    /// <param name="composition">
+    ///     Запрошенные дочерние объекты и их количества.
+    /// </param>
+    /// <returns>
+    ///     План с изменениями, предупреждениями либо причиной отказа.
+    /// </returns>
     public static VersionMutationPlan ReplaceComposition(VersionMutationSnapshot snapshot,
         IReadOnlyList<CompositionItem> composition)
     {
         var precondition = Editable(snapshot);
-        if (precondition is not null) return precondition;
+        if (precondition is not null)
+            return precondition;
         if (snapshot.Object.Type != PdmObjectType.Assembly)
             return Invalid("CompositionRequiresAssembly", "Only assemblies may contain components.");
 
         var normalized = CompositionRules.Normalize(composition.Select(x => (x.ChildObjectId, x.Quantity)));
-        if (normalized.Errors.Count != 0) return Invalid("InvalidComposition", normalized.Errors[0]);
+        if (normalized.Errors.Count != 0)
+            return Invalid("InvalidComposition", normalized.Errors[0]);
         foreach (var childId in normalized.Items.Keys)
             if (!snapshot.ExistingChildIds.Contains(childId))
                 return Invalid("UnknownChild", $"Component object '{childId}' does not exist.");
@@ -72,25 +122,42 @@ public static class VersionMutationPlanner
 
         var currentId = snapshot.Object.CurrentVersionId;
         var graphError = ValidateFutureGraph(snapshot, currentId, changed);
-        if (graphError is not null) return graphError;
+        if (graphError is not null)
+            return graphError;
         var selected = snapshot.SelectedVersion;
         var removed = selected.Components.Where(x => !normalized.Items.ContainsKey(x.ChildObjectId)).ToArray();
-        foreach (var link in removed) selected.Components.Remove(link);
+        foreach (var link in removed)
+            selected.Components.Remove(link);
         foreach (var (childId, quantity) in normalized.Items)
         {
             var existing = selected.Components.SingleOrDefault(x => x.ChildObjectId == childId);
             if (existing is null)
                 selected.Components.Add(new BomLink { ParentVersionId = selected.Id, ChildObjectId = childId, Quantity = quantity });
-            else existing.Quantity = quantity;
+            else
+                existing.Quantity = quantity;
         }
         return Success(selected, currentId, null, removed, normalized.Warnings);
     }
 
+    /// <summary>
+    ///     Проверяет и планирует перевод версии в новое состояние с учётом текущего указателя и графа состава.
+    /// </summary>
+    /// <param name="snapshot">
+    ///     Текущее состояние объекта, выбранной версии и графа состава.
+    /// </param>
+    /// <param name="newState">
+    ///     Запрошенное новое состояние версии.
+    /// </param>
+    /// <returns>
+    ///     План изменения состояния либо причину отказа.
+    /// </returns>
     public static VersionMutationPlan ChangeState(VersionMutationSnapshot snapshot, VersionState newState)
     {
-        if (!IsConsistent(snapshot)) return NotFound("VersionNotFound", "The selected version was not found for this object.");
+        if (!IsConsistent(snapshot))
+            return NotFound("VersionNotFound", "The selected version was not found for this object.");
         var version = snapshot.SelectedVersion;
-        if (version.State == newState) return Conflict("StateUnchanged", "The version is already in the requested state.");
+        if (version.State == newState)
+            return Conflict("StateUnchanged", "The version is already in the requested state.");
         if (!Enum.IsDefined(newState) || !ObjectVersion.CanTransition(version.State, newState))
             return Conflict("InvalidStateTransition", "The requested version state transition is not allowed.");
 
@@ -102,14 +169,16 @@ public static class VersionMutationPlanner
                 .OrderByDescending(x => x.Version).Select(x => (Guid?)x.Id).FirstOrDefault();
 
         var graphError = ValidateFutureGraph(snapshot, currentId, changed);
-        if (graphError is not null) return graphError;
+        if (graphError is not null)
+            return graphError;
         version.State = newState;
         return Success(version, currentId, null, [], []);
     }
 
     private static VersionMutationPlan? Editable(VersionMutationSnapshot snapshot)
     {
-        if (!IsConsistent(snapshot)) return NotFound("VersionNotFound", "The selected version was not found for this object.");
+        if (!IsConsistent(snapshot))
+            return NotFound("VersionNotFound", "The selected version was not found for this object.");
         if (snapshot.SelectedVersion.State != VersionState.InWork)
             return Conflict("VersionImmutable", "Approved and cancelled versions cannot be edited.");
         return null;
@@ -141,8 +210,15 @@ public static class VersionMutationPlanner
     {
         var copy = new ObjectVersion
         {
-            Id = preserveId ? source.Id : Guid.NewGuid(), ObjectId = obj.Id, Object = obj, Version = number, State = state,
-            Name = source.Name, Material = source.Material, Mass = source.Mass, SourceReference = source.SourceReference
+            Id = preserveId ? source.Id : Guid.NewGuid(),
+            ObjectId = obj.Id,
+            Object = obj,
+            Version = number,
+            State = state,
+            Name = source.Name,
+            Material = source.Material,
+            Mass = source.Mass,
+            SourceReference = source.SourceReference
         };
         foreach (var link in source.Components)
             copy.Components.Add(new BomLink { ParentVersionId = copy.Id, ChildObjectId = link.ChildObjectId, Quantity = link.Quantity });

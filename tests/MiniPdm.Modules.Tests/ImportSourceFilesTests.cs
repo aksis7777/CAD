@@ -7,8 +7,15 @@ using Xunit;
 
 namespace MiniPdm.Modules.Tests;
 
+/// <summary>
+/// Проверяет загрузку, продвижение, восстановление и очистку файловых источников импорта.
+/// </summary>
 public sealed class ImportSourceFilesTests
 {
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «UploadAttemptsAreIsolatedAndDisposedIndependently».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task UploadAttemptsAreIsolatedAndDisposedIndependently()
     {
@@ -24,6 +31,11 @@ public sealed class ImportSourceFilesTests
         Assert.Equal("two", await File.ReadAllTextAsync(Path.Combine(second.SourceDescriptor.Location, "part.m3d")));
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «UploadRejectsUnsafeNames».
+    /// </summary>
+    /// <param name="fileName">Значение, используемое в проверяемом сценарии.</param>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Theory]
     [InlineData("../escape.m3d")]
     [InlineData("folder/part.m3d")]
@@ -36,6 +48,10 @@ public sealed class ImportSourceFilesTests
             Guid.NewGuid(), [Upload(fileName, "x")], CancellationToken.None));
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «UploadEnforcesStreamingSizeLimitAndCleansPartialAttempt».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task UploadEnforcesStreamingSizeLimitAndCleansPartialAttempt()
     {
@@ -49,6 +65,10 @@ public sealed class ImportSourceFilesTests
             : Enumerable.Empty<string>());
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «CancelledUploadCleansItsAttemptDirectory».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task CancelledUploadCleansItsAttemptDirectory()
     {
@@ -60,6 +80,10 @@ public sealed class ImportSourceFilesTests
         Assert.False(Directory.Exists(Path.Combine(fixture.Root, "uploads")));
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «PromotionCopiesOnlyAcceptedFilesAndCompensationIsImportScoped».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task PromotionCopiesOnlyAcceptedFilesAndCompensationIsImportScoped()
     {
@@ -79,6 +103,10 @@ public sealed class ImportSourceFilesTests
         Assert.True(File.Exists(storage.GetSourceReference(secondId, "accepted.m3d")));
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «PromotionNeverOverwritesExistingImportFolder».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task PromotionNeverOverwritesExistingImportFolder()
     {
@@ -91,6 +119,10 @@ public sealed class ImportSourceFilesTests
         Assert.Equal("source", await File.ReadAllTextAsync(storage.GetSourceReference(id, "part.m3d")));
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «RecoveryDeletesOrphanPromotionsAndConfirmedRollbackFoldersOnly».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task RecoveryDeletesOrphanPromotionsAndConfirmedRollbackFoldersOnly()
     {
@@ -119,6 +151,10 @@ public sealed class ImportSourceFilesTests
         Assert.True(Directory.Exists(completed));
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «DetailedRecoveryReportsDatabaseFailureAndRetainsFolders».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task DetailedRecoveryReportsDatabaseFailureAndRetainsFolders()
     {
@@ -138,6 +174,10 @@ public sealed class ImportSourceFilesTests
         Assert.True(Directory.Exists(orphan));
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «PromotionFolderWithUnknownDatabaseOutcomeIsRetained».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task PromotionFolderWithUnknownDatabaseOutcomeIsRetained()
     {
@@ -156,6 +196,10 @@ public sealed class ImportSourceFilesTests
         Assert.True(Directory.Exists(folder));
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «RecoverySkipsActiveUploadLeaseAndDeletesAbandonedAttempt».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task RecoverySkipsActiveUploadLeaseAndDeletesAbandonedAttempt()
     {
@@ -179,7 +223,15 @@ public sealed class ImportSourceFilesTests
     {
         public string Root { get; } = Path.Combine(Path.GetTempPath(), $"import-storage-{Guid.NewGuid():N}");
         public FileImportStorage CreateStorage(ImportStorageOptions? options = null) => new(Options.Create(options ?? new ImportStorageOptions { DataRoot = Root }));
-        public void Dispose() { if (Directory.Exists(Root)) Directory.Delete(Root, recursive: true); }
+
+        /// <summary>
+        /// Проверяет ожидаемое поведение сценария «Dispose».
+        /// </summary>
+        public void Dispose()
+        {
+            if (Directory.Exists(Root))
+                Directory.Delete(Root, recursive: true);
+        }
     }
 
     private static ImportSourceRecovery CreateRecovery(Fixture fixture, FileImportStorage storage, IImportDatabaseService persistence) =>
@@ -193,7 +245,8 @@ public sealed class ImportSourceFilesTests
         public async Task<bool> CompensateIfRolledBackAsync(Guid id, Func<CancellationToken, Task> compensate, CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();
-            if (resolve(id).State == ImportCommitState.Completed) return false;
+            if (resolve(id).State == ImportCommitState.Completed)
+                return false;
             await compensate(ct);
             return true;
         }

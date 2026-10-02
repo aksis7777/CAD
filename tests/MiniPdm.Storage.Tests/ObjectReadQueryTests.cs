@@ -8,8 +8,15 @@ using Xunit;
 
 namespace MiniPdm.Storage.Tests;
 
+/// <summary>
+/// Проверяет запросы поиска и карточки объекта, включая историю версий.
+/// </summary>
 public sealed class ObjectReadQueryTests
 {
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Search_uses_literal_ascii_substrings_current_versions_and_stable_paging_without_tracking».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Search_uses_literal_ascii_substrings_current_versions_and_stable_paging_without_tracking()
     {
@@ -32,6 +39,10 @@ public sealed class ObjectReadQueryTests
         Assert.Empty(fixture.Context.ChangeTracker.Entries());
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Search_finds_designation_and_standard_name_and_ignores_cancelled_current_version».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Search_finds_designation_and_standard_name_and_ignores_cancelled_current_version()
     {
@@ -52,6 +63,10 @@ public sealed class ObjectReadQueryTests
         Assert.Empty(fixture.Context.ChangeTracker.Entries());
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Card_returns_current_only_when_valid_and_keeps_cancelled_versions_in_history».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Card_returns_current_only_when_valid_and_keeps_cancelled_versions_in_history()
     {
@@ -79,8 +94,15 @@ public sealed class ObjectReadQueryTests
     private sealed class Fixture : IAsyncDisposable
     {
         private readonly SqliteConnection _connection;
-        private Fixture(SqliteConnection connection, PdmDbContext context) { _connection = connection; Context = context; }
-        public PdmDbContext Context { get; }
+        private Fixture(SqliteConnection connection, PdmDbContext context)
+        {
+            _connection = connection;
+            Context = context;
+        }
+        public PdmDbContext Context
+        {
+            get;
+        }
 
         public static async Task<Fixture> OpenAsync()
         {
@@ -119,6 +141,10 @@ public sealed class ObjectReadQueryTests
             return item;
         }
 
-        public async ValueTask DisposeAsync() { await Context.DisposeAsync(); await _connection.DisposeAsync(); }
+        public async ValueTask DisposeAsync()
+        {
+            await Context.DisposeAsync();
+            await _connection.DisposeAsync();
+        }
     }
 }

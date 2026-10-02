@@ -12,8 +12,15 @@ using Xunit;
 
 namespace MiniPdm.Storage.Tests;
 
+/// <summary>
+/// Проверяет сохранение изменений состава через сервис управления версиями.
+/// </summary>
 public sealed class VersionMutationServiceTests
 {
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Clone_persists_next_version_and_moves_current_pointer_atomically».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Clone_persists_next_version_and_moves_current_pointer_atomically()
     {
@@ -32,6 +39,10 @@ public sealed class VersionMutationServiceTests
         Assert.Equal(result.VersionId, await verify.Objects.Where(x => x.Id == item.Id).Select(x => x.CurrentVersionId).SingleAsync());
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Stale_token_returns_conflict_without_invoking_domain_callback».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Stale_token_returns_conflict_without_invoking_domain_callback()
     {
@@ -53,6 +64,10 @@ public sealed class VersionMutationServiceTests
         Assert.Single(await verify.Versions.ToListAsync());
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Rejected_plan_discards_callback_mutations_and_clears_tracker».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Rejected_plan_discards_callback_mutations_and_clears_tracker()
     {
@@ -73,6 +88,10 @@ public sealed class VersionMutationServiceTests
         Assert.Equal(item.ConcurrencyToken, await verify.Objects.Where(x => x.Id == item.Id).Select(x => x.ConcurrencyToken).SingleAsync());
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Composition_update_removes_old_links_before_saving_new_pointer_and_bulk_loads_children».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Composition_update_removes_old_links_before_saving_new_pointer_and_bulk_loads_children()
     {
@@ -112,6 +131,10 @@ public sealed class VersionMutationServiceTests
         Assert.Equal(3, await verify.BomLinks.Where(x => x.ParentVersionId == oldParentVersion.Id && x.ChildObjectId == newChild.Id).Select(x => x.Quantity).SingleAsync());
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Clone_works_when_object_has_versions_but_no_current_pointer».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Clone_works_when_object_has_versions_but_no_current_pointer()
     {
@@ -132,9 +155,18 @@ public sealed class VersionMutationServiceTests
     private sealed class Fixture : IAsyncDisposable
     {
         private readonly SqliteConnection _connection;
-        public DbContextOptions<PdmDbContext> Options { get; }
-        public PdmDbContext Context { get; }
-        public VersionMutationService Persistence { get; }
+        public DbContextOptions<PdmDbContext> Options
+        {
+            get;
+        }
+        public PdmDbContext Context
+        {
+            get;
+        }
+        public VersionMutationService Persistence
+        {
+            get;
+        }
 
         private Fixture(SqliteConnection connection, DbContextOptions<PdmDbContext> options)
         {
@@ -149,7 +181,8 @@ public sealed class VersionMutationServiceTests
             var connection = new SqliteConnection("Data Source=:memory:");
             await connection.OpenAsync();
             var options = new DbContextOptionsBuilder<PdmDbContext>().UseSqlite(connection).Options;
-            await using (var db = new PdmDbContext(options)) await db.Database.EnsureCreatedAsync();
+            await using (var db = new PdmDbContext(options))
+                await db.Database.EnsureCreatedAsync();
             return new Fixture(connection, options);
         }
 

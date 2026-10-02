@@ -10,18 +10,33 @@ using MiniPdm.Modules.Versions.Services;
 
 namespace MiniPdm.Modules.Versions.Controllers;
 
+/// <summary>
+/// Предоставляет HTTP-операции создания версий и изменения их состояния.
+/// </summary>
+/// <param name="sender">Посредник команд приложения.</param>
 [ApiController]
 [Route("api/objects")]
 public sealed class VersionsController(ISender sender) : ControllerBase
 {
+    /// <summary>
+    /// Создаёт версию, клонируя указанную исходную версию объекта.
+    /// </summary>
+    /// <param name="objectId">Идентификатор объекта в маршруте.</param>
+    /// <param name="request">Исходная версия и ожидаемый токен объекта.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    /// <returns>HTTP-ответ с созданной версией либо описанием ошибки проверки или конфликта.</returns>
     [HttpPost("{objectId:guid}/versions")]
     public async Task<IActionResult> Clone(Guid objectId, [FromBody] CloneVersionRequestDto? request,
         CancellationToken cancellationToken = default)
     {
-        if (objectId == Guid.Empty) return BadRequest("Object ID must not be empty.");
-        if (request is null) return BadRequest("A request body is required.");
-        if (request.SourceVersion <= 0) return BadRequest("Source version must be positive.");
-        if (request.ExpectedConcurrencyToken == Guid.Empty) return BadRequest("Expected concurrency token must not be empty.");
+        if (objectId == Guid.Empty)
+            return BadRequest("Object ID must not be empty.");
+        if (request is null)
+            return BadRequest("A request body is required.");
+        if (request.SourceVersion <= 0)
+            return BadRequest("Source version must be positive.");
+        if (request.ExpectedConcurrencyToken == Guid.Empty)
+            return BadRequest("Expected concurrency token must not be empty.");
 
         VersionMutationResult result;
         try
@@ -35,20 +50,34 @@ public sealed class VersionsController(ISender sender) : ControllerBase
         }
 
         var response = Map(result);
-        if (response is not null) return response;
+        if (response is not null)
+            return response;
         var dto = ToDto(result);
         return Created($"/api/objects/{result.ObjectId}?version={result.VersionNumber}", dto);
     }
 
+    /// <summary>
+    /// Меняет состояние заданной версии объекта.
+    /// </summary>
+    /// <param name="objectId">Идентификатор объекта в маршруте.</param>
+    /// <param name="version">Номер версии в маршруте.</param>
+    /// <param name="request">Новое состояние и ожидаемый токен объекта.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    /// <returns>HTTP-ответ с результатом операции или описанием ошибки.</returns>
     [HttpPut("{objectId:guid}/versions/{version:int}/state")]
     public async Task<IActionResult> ChangeState(Guid objectId, int version,
         [FromBody] ChangeVersionStateRequestDto? request, CancellationToken cancellationToken = default)
     {
-        if (objectId == Guid.Empty) return BadRequest("Object ID must not be empty.");
-        if (version <= 0) return BadRequest("Version must be positive.");
-        if (request is null) return BadRequest("A request body is required.");
-        if (request.ExpectedConcurrencyToken == Guid.Empty) return BadRequest("Expected concurrency token must not be empty.");
-        if (!TryParseState(request.State, out var state)) return BadRequest("State must be InWork, Approved, or Cancelled.");
+        if (objectId == Guid.Empty)
+            return BadRequest("Object ID must not be empty.");
+        if (version <= 0)
+            return BadRequest("Version must be positive.");
+        if (request is null)
+            return BadRequest("A request body is required.");
+        if (request.ExpectedConcurrencyToken == Guid.Empty)
+            return BadRequest("Expected concurrency token must not be empty.");
+        if (!TryParseState(request.State, out var state))
+            return BadRequest("State must be InWork, Approved, or Cancelled.");
 
         VersionMutationResult result;
         try

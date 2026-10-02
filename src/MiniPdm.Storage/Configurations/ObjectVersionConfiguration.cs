@@ -9,7 +9,8 @@ internal sealed class ObjectVersionConfiguration : IEntityTypeConfiguration<Obje
 {
     public void Configure(EntityTypeBuilder<ObjectVersion> b)
     {
-        b.ToTable("object_versions", t => {
+        b.ToTable("object_versions", t =>
+        {
             t.HasCheckConstraint("ck_object_versions_version_positive", "\"Version\" > 0");
             t.HasCheckConstraint("ck_object_versions_mass_nonnegative", "\"Mass\" IS NULL OR \"Mass\" >= 0");
             t.HasCheckConstraint("ck_object_versions_state", "\"State\" IN (1, 2, 3)");

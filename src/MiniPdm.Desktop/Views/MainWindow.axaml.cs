@@ -6,14 +6,23 @@ using MiniPdm.Desktop.ViewModels;
 
 namespace MiniPdm.Desktop;
 
+/// <summary>
+/// Главное окно приложения для просмотра объектов и запуска рабочих операций.
+/// </summary>
 public partial class MainWindow : Window
 {
     private CancellationTokenSource? _pickerCancellation;
     private bool _isPicking;
     private bool _windowClosed;
 
+    /// <summary>
+    /// Получает или задаёт средство выбора папки для импорта файлов.
+    /// </summary>
     public IImportFolderPicker FolderPicker { get; set; } = new ImportFolderPicker();
 
+    /// <summary>
+    /// Создаёт окно и связывает закрытие окна с отменой текущего выбора папки.
+    /// </summary>
     public MainWindow()
     {
         InitializeComponent();
@@ -26,7 +35,8 @@ public partial class MainWindow : Window
 
     private async void PickImportFolder(object? sender, RoutedEventArgs e)
     {
-        if (_isPicking || DataContext is not MainWindowViewModel viewModel) return;
+        if (_isPicking || DataContext is not MainWindowViewModel viewModel)
+            return;
         _isPicking = true;
         var cancellation = new CancellationTokenSource();
         _pickerCancellation = cancellation;
@@ -34,7 +44,8 @@ public partial class MainWindow : Window
         try
         {
             var package = await FolderPicker.PickAsync(this, cancellation.Token);
-            if (package is null) return;
+            if (package is null)
+                return;
             MainTabs.SelectedItem = ImportReportTab;
             await viewModel.Import.ImportPackageAsync(package);
         }

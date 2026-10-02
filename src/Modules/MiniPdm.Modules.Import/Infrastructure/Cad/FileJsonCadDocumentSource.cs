@@ -3,10 +3,15 @@ using MiniPdm.Modules.Import.DtoModels.Cad;
 
 namespace MiniPdm.Modules.Import.Infrastructure.Cad;
 
+/// <summary>
+/// Перечисляет поддерживаемые CAD-файлы в файловом каталоге.
+/// </summary>
+/// <param name="directory">Каталог с документами.</param>
 public sealed class FileJsonCadDocumentSource(string directory) : ICadDocumentSource
 {
     private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase) { ".a3d", ".m3d" };
 
+    /// <inheritdoc />
     public async IAsyncEnumerable<CadDocumentRef> GetDocumentsAsync(
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {

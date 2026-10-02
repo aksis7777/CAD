@@ -34,6 +34,8 @@ docker compose up -d --build --no-deps desktop
 
 В каждом backend-модуле HTTP endpoints собраны в `Controllers`, а CQRS сообщения и их handlers разнесены по `Features/Commands` и `Features/Queries`. Контроллер отправляет сообщение через MediatR, handler вызывает service своего модуля, service работает со scoped `PdmDbContext` через EF Core. Например, поиск объектов находится в `Modules/MiniPdm.Modules.Objects/Services/ObjectReadService.cs`, а редактирование версий — в `Modules/MiniPdm.Modules.Versions/Services/VersionMutationService.cs`. Компоненты saga импорта и singleton фонового координатора используют отдельные scoped database services, чтобы сохранять свежие границы DbContext.
 
+Это обзор основных частей и связей проекта, а не утверждение, что в README задокументирован каждый файл или класс. XML-документация публичных типов и членов и правила форматирования C# описаны в `PDM_RULES.md`.
+
 ## Сборка и тесты
 
 Требуется .NET SDK 10.0.100 или новее в feature band 10. `global.json` разрешает SDK 10.0.401 и последующие feature band версии .NET 10.
@@ -42,6 +44,22 @@ docker compose up -d --build --no-deps desktop
 dotnet restore MiniPdm.sln
 dotnet build MiniPdm.sln
 dotnet test MiniPdm.sln
+```
+
+Обычная сборка генерирует XML-файлы документации для проектов C# и проверяет комментарии публичного API компилятором.
+
+Форматирование C# по корневому `.editorconfig` поддерживается `dotnet format`:
+
+```sh
+dotnet format whitespace MiniPdm.sln --no-restore
+dotnet format whitespace MiniPdm.sln --no-restore --verify-no-changes
+```
+
+Первая команда применяет форматирование, вторая проверяет его без изменений.
+Отдельный PostgreSQL-интеграционный проект не включён в solution; проверяйте его отдельно:
+
+```sh
+dotnet format whitespace tests/MiniPdm.Postgres.Tests --no-restore --verify-no-changes
 ```
 
 Storage-тесты используют SQLite в памяти и не требуют установленного PostgreSQL. API при запуске и миграционные команды требуют PostgreSQL connection string.

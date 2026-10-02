@@ -8,10 +8,15 @@ using MiniPdm.Desktop.Services.ImportFolderPickers;
 
 namespace MiniPdm.Desktop;
 
+/// <summary>
+/// Настраивает приложение и создаёт главное окно с необходимыми сервисами.
+/// </summary>
 public partial class App : Application
 {
+    /// <inheritdoc />
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
+    /// <inheritdoc />
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)

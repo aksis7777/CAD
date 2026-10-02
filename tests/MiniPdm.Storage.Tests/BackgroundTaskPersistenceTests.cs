@@ -8,8 +8,15 @@ using Xunit;
 
 namespace MiniPdm.Storage.Tests;
 
+/// <summary>
+/// Проверяет сохранение расписания, запусков и восстановления прерванных фоновых задач.
+/// </summary>
 public sealed class BackgroundTaskPersistenceTests
 {
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Schedule_and_run_status_persist_and_scheduled_time_uses_updated_interval».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Schedule_and_run_status_persist_and_scheduled_time_uses_updated_interval()
     {
@@ -53,6 +60,10 @@ public sealed class BackgroundTaskPersistenceTests
         Assert.Equal(completedAt.AddMinutes(30), persisted.NextRunAt);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Existing_running_job_is_marked_interrupted_when_definitions_are_ensured_after_restart».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Existing_running_job_is_marked_interrupted_when_definitions_are_ensured_after_restart()
     {
@@ -74,8 +85,14 @@ public sealed class BackgroundTaskPersistenceTests
     private sealed class Fixture : IAsyncDisposable
     {
         private readonly SqliteConnection _connection;
-        public DbContextOptions<PdmDbContext> Options { get; }
-        public PdmDbContext Context { get; }
+        public DbContextOptions<PdmDbContext> Options
+        {
+            get;
+        }
+        public PdmDbContext Context
+        {
+            get;
+        }
 
         private Fixture(SqliteConnection connection, DbContextOptions<PdmDbContext> options)
         {
@@ -89,7 +106,8 @@ public sealed class BackgroundTaskPersistenceTests
             var connection = new SqliteConnection("Data Source=:memory:");
             await connection.OpenAsync();
             var options = new DbContextOptionsBuilder<PdmDbContext>().UseSqlite(connection).Options;
-            await using (var db = new PdmDbContext(options)) await db.Database.EnsureCreatedAsync();
+            await using (var db = new PdmDbContext(options))
+                await db.Database.EnsureCreatedAsync();
             return new Fixture(connection, options);
         }
 

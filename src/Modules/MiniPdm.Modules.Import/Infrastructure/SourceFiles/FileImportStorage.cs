@@ -5,11 +5,16 @@ using MiniPdm.Modules.Import.DtoModels.Cad;
 
 namespace MiniPdm.Modules.Import.Infrastructure.SourceFiles;
 
+/// <summary>
+/// Сохраняет загружаемые файлы во временных и долговременных каталогах на диске.
+/// </summary>
+/// <param name="options">Настройки корневого каталога и лимитов загрузки.</param>
 public sealed class FileImportStorage(IOptions<ImportStorageOptions> options) : IImportSourceStorage, IImportUploadStorage
 {
     private readonly string _root = Path.GetFullPath(string.IsNullOrWhiteSpace(options.Value.DataRoot)
         ? Path.Combine(AppContext.BaseDirectory, "data") : options.Value.DataRoot);
 
+    /// <inheritdoc />
     public async Task<IImportUploadAttempt> StageAsync(Guid importId, IReadOnlyList<ImportUploadFile> files, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
@@ -44,7 +49,8 @@ public sealed class FileImportStorage(IOptions<ImportStorageOptions> options) : 
                 while (true)
                 {
                     var read = await file.Content.ReadAsync(buffer, ct);
-                    if (read == 0) break;
+                    if (read == 0)
+                        break;
                     fileBytes += read;
                     total += read;
                     if (fileBytes > limits.MaxFileBytes || total > limits.MaxTotalBytes)
@@ -62,6 +68,7 @@ public sealed class FileImportStorage(IOptions<ImportStorageOptions> options) : 
         }
     }
 
+    /// <inheritdoc />
     public async Task PromoteAsync(Guid importId, CadSourceDescriptor source, IReadOnlyCollection<string> acceptedFiles, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(source);
@@ -74,17 +81,21 @@ public sealed class FileImportStorage(IOptions<ImportStorageOptions> options) : 
         var importsRoot = Path.GetDirectoryName(destination)!;
         Directory.CreateDirectory(importsRoot);
         var staging = Path.Combine(importsRoot, $".{importId:D}.{Guid.NewGuid():N}.promoting");
-        if (Directory.Exists(destination)) throw new IOException("Import source files have already been promoted.");
+        if (Directory.Exists(destination))
+            throw new IOException("Import source files have already been promoted.");
         Directory.CreateDirectory(staging);
         try
         {
             foreach (var fileName in acceptedFiles.Distinct(StringComparer.Ordinal))
             {
                 ct.ThrowIfCancellationRequested();
-                if (!IsSafeCadName(fileName)) throw new InvalidDataException("Accepted CAD file name is invalid.");
+                if (!IsSafeCadName(fileName))
+                    throw new InvalidDataException("Accepted CAD file name is invalid.");
                 var sourceFile = Path.GetFullPath(Path.Combine(sourceRoot, fileName));
-                if (!IsWithin(sourceRoot, sourceFile) || !File.Exists(sourceFile)) throw new FileNotFoundException("Accepted CAD file was not found in its source folder.");
-                if ((File.GetAttributes(sourceFile) & FileAttributes.ReparsePoint) != 0) throw new InvalidDataException("Symbolic links are not accepted as CAD files.");
+                if (!IsWithin(sourceRoot, sourceFile) || !File.Exists(sourceFile))
+                    throw new FileNotFoundException("Accepted CAD file was not found in its source folder.");
+                if ((File.GetAttributes(sourceFile) & FileAttributes.ReparsePoint) != 0)
+                    throw new InvalidDataException("Symbolic links are not accepted as CAD files.");
                 var targetFile = Path.Combine(staging, fileName);
                 await using var input = new FileStream(sourceFile, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, FileOptions.Asynchronous | FileOptions.SequentialScan);
                 await using var output = new FileStream(targetFile, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, FileOptions.Asynchronous | FileOptions.SequentialScan);
@@ -100,17 +111,21 @@ public sealed class FileImportStorage(IOptions<ImportStorageOptions> options) : 
         }
     }
 
+    /// <inheritdoc />
     public string GetSourceReference(Guid importId, string fileName)
     {
-        if (!IsSafeCadName(fileName)) throw new ArgumentException("A safe CAD file name is required.", nameof(fileName));
+        if (!IsSafeCadName(fileName))
+            throw new ArgumentException("A safe CAD file name is required.", nameof(fileName));
         return Path.Combine(_root, "imports", importId.ToString("D"), fileName);
     }
 
+    /// <inheritdoc />
     public Task CompensateAsync(Guid importId, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         var path = Path.Combine(_root, "imports", importId.ToString("D"));
-        if (Directory.Exists(path)) Directory.Delete(path, recursive: true);
+        if (Directory.Exists(path))
+            Directory.Delete(path, recursive: true);
         return Task.CompletedTask;
     }
 
@@ -120,20 +135,28 @@ public sealed class FileImportStorage(IOptions<ImportStorageOptions> options) : 
     internal AbandonedUploadRecoveryStatus RecoverAbandonedUploadAttemptDetailed(string path)
     {
         FileAttributes attemptAttributes;
-        try { attemptAttributes = File.GetAttributes(path); }
+        try
+        {
+            attemptAttributes = File.GetAttributes(path);
+        }
         catch (FileNotFoundException) { return AbandonedUploadRecoveryStatus.Skipped; }
         catch (DirectoryNotFoundException) { return AbandonedUploadRecoveryStatus.Skipped; }
         catch (IOException) { return AbandonedUploadRecoveryStatus.Failed; }
         catch (UnauthorizedAccessException) { return AbandonedUploadRecoveryStatus.Failed; }
         catch (System.Security.SecurityException) { return AbandonedUploadRecoveryStatus.Failed; }
-        if ((attemptAttributes & FileAttributes.Directory) == 0) return AbandonedUploadRecoveryStatus.Skipped;
+        if ((attemptAttributes & FileAttributes.Directory) == 0)
+            return AbandonedUploadRecoveryStatus.Skipped;
         var uploadsRoot = Path.Combine(_root, "uploads");
         var importFolder = Path.GetDirectoryName(Path.GetFullPath(path));
         if (importFolder is null || !IsDirectChild(uploadsRoot, importFolder) ||
             !Guid.TryParseExact(Path.GetFileName(importFolder), "D", out _) ||
-            !Guid.TryParseExact(Path.GetFileName(path), "N", out _)) return AbandonedUploadRecoveryStatus.Skipped;
+            !Guid.TryParseExact(Path.GetFileName(path), "N", out _))
+            return AbandonedUploadRecoveryStatus.Skipped;
         var marker = Path.Combine(path, ".active");
-        try { _ = File.GetAttributes(marker); }
+        try
+        {
+            _ = File.GetAttributes(marker);
+        }
         catch (FileNotFoundException) { return AbandonedUploadRecoveryStatus.Skipped; }
         catch (DirectoryNotFoundException) { return AbandonedUploadRecoveryStatus.Skipped; }
         catch (IOException) { return AbandonedUploadRecoveryStatus.Failed; }
@@ -169,7 +192,10 @@ public sealed class FileImportStorage(IOptions<ImportStorageOptions> options) : 
         var expectedPrefix = $".{importId:D}.";
         if (!IsDirectChild(importsRoot, path) || !Path.GetFileName(path).StartsWith(expectedPrefix, StringComparison.Ordinal) || !Path.GetFileName(path).EndsWith(".promoting", StringComparison.Ordinal))
             throw new InvalidOperationException("Recovery path is outside the import root.");
-        try { _ = File.GetAttributes(path); }
+        try
+        {
+            _ = File.GetAttributes(path);
+        }
         catch (FileNotFoundException) { return Task.FromResult(false); }
         catch (DirectoryNotFoundException) { return Task.FromResult(false); }
         Directory.Delete(path, recursive: true);
@@ -207,18 +233,37 @@ public sealed class FileImportStorage(IOptions<ImportStorageOptions> options) : 
 
     private static void TryDeleteDirectory(string path)
     {
-        try { if (Directory.Exists(path)) Directory.Delete(path, recursive: true); }
+        try
+        {
+            if (Directory.Exists(path))
+                Directory.Delete(path, recursive: true);
+        }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
     }
 
+    /// <summary>
+    /// Представляет временные файлы одной попытки загрузки и удаляет их при освобождении.
+    /// </summary>
+    /// <param name="path">Каталог временной попытки.</param>
+    /// <param name="lease">Блокировка, удерживающая каталог от восстановления до конца обработки.</param>
     private sealed class UploadAttempt(string path, FileStream lease) : IImportUploadAttempt
     {
         private bool _disposed;
+        /// <inheritdoc />
         public CadSourceDescriptor SourceDescriptor { get; } = new("file-json", path);
+        /// <summary>
+        /// Освобождает блокировку и удаляет временный каталог попытки.
+        /// </summary>
+        /// <returns>Завершённая задача освобождения.</returns>
         public ValueTask DisposeAsync()
         {
-            if (!_disposed) { lease.Dispose(); TryDeleteDirectory(path); _disposed = true; }
+            if (!_disposed)
+            {
+                lease.Dispose();
+                TryDeleteDirectory(path);
+                _disposed = true;
+            }
             return ValueTask.CompletedTask;
         }
     }
@@ -226,10 +271,26 @@ public sealed class FileImportStorage(IOptions<ImportStorageOptions> options) : 
 
 internal enum AbandonedUploadRecoveryStatus
 {
+    /// <summary>
+    /// Каталог отсутствует или не соответствует критериям восстановления.
+    /// </summary>
     Skipped,
+    /// <summary>
+    /// Каталог используется активной попыткой загрузки.
+    /// </summary>
     ActiveLease,
+    /// <summary>
+    /// Заброшенный каталог удалён.
+    /// </summary>
     Removed,
+    /// <summary>
+    /// Каталог не удалось проверить или удалить.
+    /// </summary>
     Failed
 }
 
+/// <summary>
+/// Загрузка отклонена из-за недопустимого имени, количества или размера файлов.
+/// </summary>
+/// <param name="message">Причина отклонения загрузки.</param>
 public sealed class ImportUploadValidationException(string message) : Exception(message);

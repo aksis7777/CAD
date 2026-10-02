@@ -9,8 +9,16 @@ using MiniPdm.Modules.Import.Services.Database;
 
 namespace MiniPdm.Modules.Import.Extensions;
 
+/// <summary>
+/// Методы регистрации зависимостей модуля импорта.
+/// </summary>
 public static class ModuleRegistration
 {
+    /// <summary>
+    /// Добавляет хранилища, адаптеры CAD-источников и сервисы импорта.
+    /// </summary>
+    /// <param name="services">Коллекция регистраций зависимостей приложения.</param>
+    /// <returns>Та же коллекция для последовательной регистрации модулей.</returns>
     public static IServiceCollection AddImportModule(this IServiceCollection services)
     {
         services.AddOptions<ImportStorageOptions>().BindConfiguration("ImportStorage")

@@ -9,8 +9,15 @@ using Xunit;
 
 namespace MiniPdm.Modules.Tests;
 
+/// <summary>
+/// Проверяет последовательность ручных и плановых запусков, обработку ошибок хранилища и остановку координатора.
+/// </summary>
 public sealed class BackgroundTaskCoordinatorTests
 {
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Manual_run_is_persisted_before_acceptance_and_cannot_overlap_schedule_updates».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Manual_run_is_persisted_before_acceptance_and_cannot_overlap_schedule_updates()
     {
@@ -50,6 +57,10 @@ public sealed class BackgroundTaskCoordinatorTests
         await coordinator.StopAsync(CancellationToken.None);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Failed_start_persistence_does_not_run_the_job_or_return_accepted».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Failed_start_persistence_does_not_run_the_job_or_return_accepted()
     {
@@ -70,6 +81,10 @@ public sealed class BackgroundTaskCoordinatorTests
         await coordinator.StopAsync(CancellationToken.None);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Completion_status_write_retries_without_rerunning_job_and_shutdown_marks_cancellation_interrupted».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Completion_status_write_retries_without_rerunning_job_and_shutdown_marks_cancellation_interrupted()
     {
@@ -111,6 +126,10 @@ public sealed class BackgroundTaskCoordinatorTests
         Assert.Equal("Interrupted", (await cancelPersistence.GetAsync(blocking.Id, CancellationToken.None))!.State);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «Completion_storage_failure_keeps_status_running_until_recovery_or_restart».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task Completion_storage_failure_keeps_status_running_until_recovery_or_restart()
     {
@@ -159,7 +178,8 @@ public sealed class BackgroundTaskCoordinatorTests
         while (DateTime.UtcNow < deadline)
         {
             var row = await persistence.GetAsync("test-job", CancellationToken.None);
-            if (row?.State == state) return row;
+            if (row?.State == state)
+                return row;
             await Task.Delay(10);
         }
         throw new TimeoutException($"Task did not reach {state}.");
@@ -170,7 +190,8 @@ public sealed class BackgroundTaskCoordinatorTests
         var deadline = DateTime.UtcNow.AddSeconds(3);
         while (DateTime.UtcNow < deadline)
         {
-            if (persistence.CompletionAttempts > 0) return;
+            if (persistence.CompletionAttempts > 0)
+                return;
             await Task.Delay(10);
         }
         throw new TimeoutException("The coordinator did not attempt to persist completion.");
@@ -180,52 +201,89 @@ public sealed class BackgroundTaskCoordinatorTests
     {
         private readonly object _sync = new();
         private readonly Dictionary<string, BackgroundTaskRow> _rows = new(StringComparer.Ordinal);
-        public bool FailStart { get; init; }
-        public bool FailEveryCompletion { get; init; }
-        public int FailCompletions { get; set; }
-        public int CompletionAttempts { get; private set; }
+        public bool FailStart
+        {
+            get; init;
+        }
+        public bool FailEveryCompletion
+        {
+            get; init;
+        }
+        public int FailCompletions
+        {
+            get; set;
+        }
+        public int CompletionAttempts
+        {
+            get; private set;
+        }
 
+        /// <summary>
+        /// Проверяет ожидаемое поведение сценария «EnsureDefinitionsAsync».
+        /// </summary>
+        /// <param name="definitions">Значение, используемое в проверяемом сценарии.</param>
+        /// <param name="now">Значение, используемое в проверяемом сценарии.</param>
+        /// <param name="ct">Значение, используемое в проверяемом сценарии.</param>
+        /// <returns>Задача завершается после выполнения проверок теста.</returns>
         public Task EnsureDefinitionsAsync(IReadOnlyCollection<BackgroundTaskDefinitionRecord> definitions, DateTimeOffset now, CancellationToken ct)
         {
             lock (_sync)
-            foreach (var definition in definitions)
-            {
-                if (!_rows.TryGetValue(definition.Id, out var row))
-                    _rows.Add(definition.Id, new(definition.Id, definition.Name, definition.DefaultIntervalMinutes, "Idle", now, null, null, null, null));
-                else if (row.State == "Running")
-                    _rows[definition.Id] = row with { State = "Interrupted", LastError = "The previous process stopped while this task was running." };
-            }
+                foreach (var definition in definitions)
+                {
+                    if (!_rows.TryGetValue(definition.Id, out var row))
+                        _rows.Add(definition.Id, new(definition.Id, definition.Name, definition.DefaultIntervalMinutes, "Idle", now, null, null, null, null));
+                    else if (row.State == "Running")
+                        _rows[definition.Id] = row with
+                        {
+                            State = "Interrupted",
+                            LastError = "The previous process stopped while this task was running."
+                        };
+                }
             return Task.CompletedTask;
         }
 
         public Task<IReadOnlyList<BackgroundTaskRow>> ListAsync(CancellationToken ct)
         {
-            lock (_sync) return Task.FromResult<IReadOnlyList<BackgroundTaskRow>>(_rows.Values.ToArray());
+            lock (_sync)
+                return Task.FromResult<IReadOnlyList<BackgroundTaskRow>>(_rows.Values.ToArray());
         }
 
         public Task<BackgroundTaskRow?> GetAsync(string id, CancellationToken ct)
         {
-            lock (_sync) return Task.FromResult(_rows.GetValueOrDefault(id));
+            lock (_sync)
+                return Task.FromResult(_rows.GetValueOrDefault(id));
         }
 
         public Task<bool> UpdateScheduleAsync(string id, int intervalMinutes, DateTimeOffset now, CancellationToken ct)
         {
             lock (_sync)
             {
-                if (!_rows.TryGetValue(id, out var row)) return Task.FromResult(false);
+                if (!_rows.TryGetValue(id, out var row))
+                    return Task.FromResult(false);
                 var next = row.State == "Running" ? row.NextRunAt : now.AddMinutes(intervalMinutes);
-                _rows[id] = row with { IntervalMinutes = intervalMinutes, NextRunAt = next };
+                _rows[id] = row with
+                {
+                    IntervalMinutes = intervalMinutes,
+                    NextRunAt = next
+                };
                 return Task.FromResult(true);
             }
         }
 
         public Task<bool> TryStartAsync(string id, DateTimeOffset startedAt, CancellationToken ct)
         {
-            if (FailStart) throw new InvalidOperationException("storage unavailable");
+            if (FailStart)
+                throw new InvalidOperationException("storage unavailable");
             lock (_sync)
             {
-                if (!_rows.TryGetValue(id, out var row) || row.State == "Running") return Task.FromResult(false);
-                _rows[id] = row with { State = "Running", LastStartedAt = startedAt, LastError = null };
+                if (!_rows.TryGetValue(id, out var row) || row.State == "Running")
+                    return Task.FromResult(false);
+                _rows[id] = row with
+                {
+                    State = "Running",
+                    LastStartedAt = startedAt,
+                    LastError = null
+                };
                 return Task.FromResult(true);
             }
         }
@@ -237,10 +295,12 @@ public sealed class BackgroundTaskCoordinatorTests
                 CompletionAttempts++;
                 if (FailEveryCompletion || FailCompletions > 0)
                 {
-                    if (FailCompletions > 0) FailCompletions--;
+                    if (FailCompletions > 0)
+                        FailCompletions--;
                     throw new InvalidOperationException("temporary storage failure");
                 }
-                if (!_rows.TryGetValue(id, out var row) || row.State != "Running") return Task.FromResult(false);
+                if (!_rows.TryGetValue(id, out var row) || row.State != "Running")
+                    return Task.FromResult(false);
                 _rows[id] = row with
                 {
                     State = state,

@@ -10,8 +10,15 @@ using Xunit;
 
 namespace MiniPdm.Modules.Tests;
 
+/// <summary>
+/// Проверяет сохранение изменений состава через сервис управления версиями.
+/// </summary>
 public sealed class VersionMutationServiceTests
 {
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «ReplaceComposition_merges_duplicate_children_and_persists_through_module_service».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task ReplaceComposition_merges_duplicate_children_and_persists_through_module_service()
     {
@@ -51,15 +58,22 @@ public sealed class VersionMutationServiceTests
             Context = new PdmDbContext(options);
         }
 
-        public DbContextOptions<PdmDbContext> Options { get; }
-        public PdmDbContext Context { get; }
+        public DbContextOptions<PdmDbContext> Options
+        {
+            get;
+        }
+        public PdmDbContext Context
+        {
+            get;
+        }
 
         public static async Task<Fixture> OpenAsync()
         {
             var connection = new SqliteConnection("Data Source=:memory:");
             await connection.OpenAsync();
             var options = new DbContextOptionsBuilder<PdmDbContext>().UseSqlite(connection).Options;
-            await using (var context = new PdmDbContext(options)) await context.Database.EnsureCreatedAsync();
+            await using (var context = new PdmDbContext(options))
+                await context.Database.EnsureCreatedAsync();
             return new Fixture(connection, options);
         }
 

@@ -7,8 +7,21 @@ using MiniPdm.Storage;
 
 namespace MiniPdm.Modules.Objects.Services;
 
+/// <summary>
+/// Читает страницы поиска и карточки объектов через проекции хранилища.
+/// Сервис преобразует внутренние строки данных в публичные контракты API.
+/// </summary>
+/// <param name="context">Контекст базы данных объектов и версий.</param>
 public sealed class ObjectReadService(PdmDbContext context)
 {
+    /// <summary>
+    /// Выполняет поиск объектов и формирует страницу публичного ответа.
+    /// </summary>
+    /// <param name="search">Подстрока для поиска по обозначению и имени.</param>
+    /// <param name="offset">Число строк, пропускаемых перед страницей.</param>
+    /// <param name="limit">Максимальное число объектов в странице.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    /// <returns>Страница результатов поиска с метаданными постраничной выдачи.</returns>
     public async Task<ObjectSearchPageDto> SearchObjectsAsync(string search, int offset, int limit, CancellationToken cancellationToken)
     {
         var page = await SearchAsync(search, offset, limit, cancellationToken);
@@ -18,10 +31,18 @@ public sealed class ObjectReadService(PdmDbContext context)
             page.Offset, page.Limit, page.HasMore);
     }
 
+    /// <summary>
+    /// Получает публичную карточку объекта и выбранной версии.
+    /// </summary>
+    /// <param name="objectId">Идентификатор объекта.</param>
+    /// <param name="versionNumber">Номер версии для просмотра или <see langword="null"/> для текущей версии.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    /// <returns>Карточка объекта либо <see langword="null"/>, если объект или выбранная версия не найдены.</returns>
     public async Task<ObjectCardDto?> GetObjectAsync(Guid objectId, int? versionNumber, CancellationToken cancellationToken)
     {
         var row = await GetAsync(objectId, versionNumber, cancellationToken);
-        if (row is null || (versionNumber.HasValue && row.SelectedVersion is null)) return null;
+        if (row is null || (versionNumber.HasValue && row.SelectedVersion is null))
+            return null;
         var selected = row.SelectedVersion;
         var name = row.Type == PdmObjectType.StandardPart ? row.StandardName : selected?.Name;
         var current = row.CurrentVersionId;
@@ -38,6 +59,15 @@ public sealed class ObjectReadService(PdmDbContext context)
             noCurrent && versionNumber is null ? "The object has no current non-cancelled version." : null);
     }
 
+    /// <summary>
+    /// Ищет объекты и возвращает внутреннюю страницу проекций.
+    /// Запрос выбирает не более <paramref name="limit"/> строк и определяет наличие следующей страницы.
+    /// </summary>
+    /// <param name="search">Подстрока для поиска по обозначению и имени.</param>
+    /// <param name="offset">Число строк, пропускаемых перед страницей.</param>
+    /// <param name="limit">Максимальное число строк страницы.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    /// <returns>Внутренняя страница строк объектов.</returns>
     public async Task<ObjectSearchPage> SearchAsync(string search, int offset, int limit, CancellationToken cancellationToken)
     {
         var query = context.Objects.AsNoTracking();
@@ -94,6 +124,13 @@ public sealed class ObjectReadService(PdmDbContext context)
         return new ObjectSearchPage(items, offset, limit, hasMore);
     }
 
+    /// <summary>
+    /// Читает внутреннюю проекцию карточки объекта и его версий.
+    /// </summary>
+    /// <param name="objectId">Идентификатор объекта.</param>
+    /// <param name="versionNumber">Номер версии для чтения или <see langword="null"/> для текущей версии.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    /// <returns>Проекция карточки либо <see langword="null"/>, если объект не найден.</returns>
     public async Task<ObjectCardReadRow?> GetAsync(Guid objectId, int? versionNumber, CancellationToken cancellationToken)
     {
         var row = await context.Objects

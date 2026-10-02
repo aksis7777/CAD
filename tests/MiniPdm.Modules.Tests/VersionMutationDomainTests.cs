@@ -6,8 +6,14 @@ using Xunit;
 
 namespace MiniPdm.Modules.Tests;
 
+/// <summary>
+/// Проверяет доменные правила клонирования, состояний, атрибутов и изменения состава версий.
+/// </summary>
 public sealed class VersionMutationDomainTests
 {
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «CloneCopiesDataAndUsesMaximumHistoricalNumberPlusOne».
+    /// </summary>
     [Fact]
     public void CloneCopiesDataAndUsesMaximumHistoricalNumberPlusOne()
     {
@@ -27,6 +33,10 @@ public sealed class VersionMutationDomainTests
         Assert.Equal(plan.NewVersion.Id, plan.DesiredCurrentVersionId);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «ImmutableVersionsCannotBeEdited».
+    /// </summary>
+    /// <param name="state">Значение, используемое в проверяемом сценарии.</param>
     [Theory]
     [InlineData(VersionState.Approved)]
     [InlineData(VersionState.Cancelled)]
@@ -38,6 +48,9 @@ public sealed class VersionMutationDomainTests
         Assert.Equal("VersionImmutable", plan.Error!.Code);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «CancellingCurrentVersionFallsBackToHighestActiveHistoricalVersion».
+    /// </summary>
     [Fact]
     public void CancellingCurrentVersionFallsBackToHighestActiveHistoricalVersion()
     {
@@ -52,6 +65,9 @@ public sealed class VersionMutationDomainTests
         Assert.Equal(VersionState.Cancelled, plan.Version!.State);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «StateChangeThatMakesFallbackGraphCyclicConflictsWithClosedPath».
+    /// </summary>
     [Fact]
     public void StateChangeThatMakesFallbackGraphCyclicConflictsWithClosedPath()
     {
@@ -62,7 +78,10 @@ public sealed class VersionMutationDomainTests
         fixture.Object.CurrentVersion = fixture.Selected;
         fixture.Object.CurrentVersionId = fixture.Selected.Id;
         var graph = new[] { new CompositionGraphEdge(fixture.ChildId, fixture.Object.Id) };
-        var snapshot = fixture.Snapshot with { CurrentGraph = graph };
+        var snapshot = fixture.Snapshot with
+        {
+            CurrentGraph = graph
+        };
 
         var plan = VersionMutationPlanner.ChangeState(snapshot, VersionState.Cancelled);
 
@@ -74,6 +93,9 @@ public sealed class VersionMutationDomainTests
             plan.Error.CyclePath[..^1].OrderBy(x => x));
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «HistoricalInWorkCompositionEditDoesNotChangeCurrentPointer».
+    /// </summary>
     [Fact]
     public void HistoricalInWorkCompositionEditDoesNotChangeCurrentPointer()
     {
@@ -89,6 +111,9 @@ public sealed class VersionMutationDomainTests
         Assert.Equal(3, plan.Version.Components.Single().Quantity);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «ExistingChildWithoutCurrentVersionCanBeAddedAndRetainedLinksUpdateInPlace».
+    /// </summary>
     [Fact]
     public void ExistingChildWithoutCurrentVersionCanBeAddedAndRetainedLinksUpdateInPlace()
     {
@@ -107,6 +132,9 @@ public sealed class VersionMutationDomainTests
         Assert.Empty(plan.RemovedLinks);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «CompositionCycleFailsWithoutChangingSelectedVersion».
+    /// </summary>
     [Fact]
     public void CompositionCycleFailsWithoutChangingSelectedVersion()
     {
@@ -123,6 +151,9 @@ public sealed class VersionMutationDomainTests
         Assert.Empty(fixture.Selected.Components);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «CompositionNormalizesValidDuplicatesAndRejectsInvalidRowsAndUnknownChildren».
+    /// </summary>
     [Fact]
     public void CompositionNormalizesValidDuplicatesAndRejectsInvalidRowsAndUnknownChildren()
     {
@@ -141,6 +172,9 @@ public sealed class VersionMutationDomainTests
         Assert.Equal("UnknownChild", unknown.Error!.Code);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «CloneOverflowAndAttributeTypeRulesAreInvalid».
+    /// </summary>
     [Fact]
     public void CloneOverflowAndAttributeTypeRulesAreInvalid()
     {
@@ -161,6 +195,9 @@ public sealed class VersionMutationDomainTests
             VersionMutationPlanner.UpdateAttributes(assembly.Snapshot, "New name", null, null).Status);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «TypeSpecificInvalidAttributesFailWithoutChangingSelectedVersion».
+    /// </summary>
     [Fact]
     public void TypeSpecificInvalidAttributesFailWithoutChangingSelectedVersion()
     {
@@ -187,9 +224,16 @@ public sealed class VersionMutationDomainTests
     private static Fixture Create(PdmObjectType type, VersionState state = VersionState.InWork)
     {
         var obj = new PdmObject { Type = type, StandardName = type == PdmObjectType.StandardPart ? "Bolt" : null };
-        var version = new ObjectVersion { ObjectId = obj.Id, Object = obj, Version = 1, State = state,
-            Name = type == PdmObjectType.StandardPart ? null : "Name", Material = type == PdmObjectType.Part ? "Steel" : null,
-            Mass = type == PdmObjectType.Assembly ? null : 1m };
+        var version = new ObjectVersion
+        {
+            ObjectId = obj.Id,
+            Object = obj,
+            Version = 1,
+            State = state,
+            Name = type == PdmObjectType.StandardPart ? null : "Name",
+            Material = type == PdmObjectType.Part ? "Steel" : null,
+            Mass = type == PdmObjectType.Assembly ? null : 1m
+        };
         obj.Versions.Add(version);
         obj.CurrentVersion = version;
         obj.CurrentVersionId = version.Id;
@@ -199,7 +243,14 @@ public sealed class VersionMutationDomainTests
     }
 
     private static ObjectVersion Version(PdmObject obj, int number, VersionState state) =>
-        new() { ObjectId = obj.Id, Object = obj, Version = number, State = state, Name = "Old" };
+        new()
+        {
+            ObjectId = obj.Id,
+            Object = obj,
+            Version = number,
+            State = state,
+            Name = "Old"
+        };
 
     private sealed record Fixture(PdmObject Object, ObjectVersion Selected, Guid ChildId, VersionMutationSnapshot Snapshot);
 }

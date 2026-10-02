@@ -12,8 +12,14 @@ using System.Data;
 
 namespace MiniPdm.Modules.Import.Services.Database;
 
+/// <summary>
+/// Сохраняет пакет и журнал идемпотентности в общей транзакции базы данных.
+/// </summary>
+/// <param name="context">Контекст для транзакционной записи импорта.</param>
+/// <param name="contextFactory">Фабрика независимых контекстов для чтения результата и восстановления.</param>
 public sealed class ImportDatabaseService(PdmDbContext context, IDbContextFactory<PdmDbContext> contextFactory) : IImportDatabaseService
 {
+    /// <inheritdoc />
     public async Task<ImportPersistenceResult> ExecuteAsync(Guid importId, ImportLookup lookup, Func<ImportSnapshot, CancellationToken, Task<ImportWritePlan>> prepare, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
@@ -71,21 +77,34 @@ public sealed class ImportDatabaseService(PdmDbContext context, IDbContextFactor
             var rollbackSucceeded = false;
             if (!committed)
             {
-                try { await transaction.RollbackAsync(CancellationToken.None); rollbackSucceeded = true; }
+                try
+                {
+                    await transaction.RollbackAsync(CancellationToken.None);
+                    rollbackSucceeded = true;
+                }
                 catch { }
             }
             context.ChangeTracker.Clear();
             if (commitAttempted)
             {
-                try { await transaction.DisposeAsync(); } catch { }
+                try
+                {
+                    await transaction.DisposeAsync();
+                }
+                catch { }
                 var resolution = await ResolveAsync(importId, CancellationToken.None);
-                return resolution with { Error = resolution.Error is null ? ex.Message : $"{ex.Message}; resolution failed: {resolution.Error}" };
+                return resolution with
+                {
+                    Error = resolution.Error is null ? ex.Message : $"{ex.Message}; resolution failed: {resolution.Error}"
+                };
             }
-            if (rollbackSucceeded) return new(ImportCommitState.ConfirmedRollback, false, null, ex.Message);
+            if (rollbackSucceeded)
+                return new(ImportCommitState.ConfirmedRollback, false, null, ex.Message);
             return new(ImportCommitState.Unknown, false, null, ex.Message);
         }
     }
 
+    /// <inheritdoc />
     public async Task<ImportPersistenceResult?> FindAsync(Guid id, CancellationToken ct)
     {
         await using var fresh = await contextFactory.CreateDbContextAsync(ct);
@@ -93,6 +112,7 @@ public sealed class ImportDatabaseService(PdmDbContext context, IDbContextFactor
         return row is null ? null : new(ImportCommitState.Completed, true, row.ReportJson);
     }
 
+    /// <inheritdoc />
     public async Task<ImportPersistenceResult> ResolveAsync(Guid id, CancellationToken ct)
     {
         try
@@ -112,6 +132,7 @@ public sealed class ImportDatabaseService(PdmDbContext context, IDbContextFactor
         }
     }
 
+    /// <inheritdoc />
     public async Task<bool> CompensateIfRolledBackAsync(Guid id, Func<CancellationToken, Task> compensate, CancellationToken ct)
     {
         await using var fresh = await contextFactory.CreateDbContextAsync(ct);
@@ -131,7 +152,11 @@ public sealed class ImportDatabaseService(PdmDbContext context, IDbContextFactor
         }
         catch
         {
-            try { await transaction.RollbackAsync(CancellationToken.None); } catch { }
+            try
+            {
+                await transaction.RollbackAsync(CancellationToken.None);
+            }
+            catch { }
             throw;
         }
     }
@@ -148,6 +173,10 @@ public sealed class ImportDatabaseService(PdmDbContext context, IDbContextFactor
 
     private static async Task RollbackAsync(IDbContextTransaction transaction)
     {
-        try { await transaction.RollbackAsync(CancellationToken.None); } catch { }
+        try
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+        }
+        catch { }
     }
 }

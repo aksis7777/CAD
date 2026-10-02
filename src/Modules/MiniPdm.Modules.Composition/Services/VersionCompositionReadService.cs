@@ -7,8 +7,20 @@ using MiniPdm.Storage;
 
 namespace MiniPdm.Modules.Composition.Services;
 
+/// <summary>
+/// Читает состав и токен конкурентности выбранной версии объекта.
+/// Элементы состава описывают дочерние объекты с их текущими версиями.
+/// </summary>
+/// <param name="context">Контекст базы данных для проекции состава.</param>
 public sealed class VersionCompositionReadService(PdmDbContext context)
 {
+    /// <summary>
+    /// Получает публичный DTO состава указанной версии.
+    /// </summary>
+    /// <param name="objectId">Идентификатор объекта.</param>
+    /// <param name="version">Номер версии.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    /// <returns>DTO состава версии либо <see langword="null"/>, если версия не найдена.</returns>
     public async Task<VersionCompositionDto?> GetVersionCompositionAsync(Guid objectId, int version,
         CancellationToken cancellationToken)
     {
@@ -18,6 +30,13 @@ public sealed class VersionCompositionReadService(PdmDbContext context)
                 TypeName(item.Type), item.Designation, item.Name, item.NoCurrentVersion)).ToArray());
     }
 
+    /// <summary>
+    /// Читает внутреннюю проекцию состава версии без создания API DTO.
+    /// </summary>
+    /// <param name="objectId">Идентификатор объекта.</param>
+    /// <param name="version">Номер версии.</param>
+    /// <param name="cancellationToken">Токен отмены запроса.</param>
+    /// <returns>Строка состава версии либо <see langword="null"/>, если версия не найдена.</returns>
     public async Task<VersionCompositionReadRow?> ReadAsync(Guid objectId, int version,
         CancellationToken cancellationToken)
     {

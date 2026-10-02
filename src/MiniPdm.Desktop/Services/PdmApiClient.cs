@@ -11,6 +11,10 @@ using MiniPdm.Desktop.Services.Abstractions;
 
 namespace MiniPdm.Desktop.Services;
 
+/// <summary>
+/// Реализация клиента HTTP для API системы PDM.
+/// </summary>
+/// <param name="httpClient">HTTP-клиент с настроенным базовым адресом сервера.</param>
 public sealed class PdmApiClient(HttpClient httpClient) : IPdmApiClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
@@ -18,6 +22,7 @@ public sealed class PdmApiClient(HttpClient httpClient) : IPdmApiClient
         PropertyNameCaseInsensitive = true
     };
 
+    /// <inheritdoc />
     public Task<ObjectSearchPageDto> SearchObjectsAsync(string? search = null, int offset = 0, int limit = 50,
         CancellationToken cancellationToken = default)
     {
@@ -25,24 +30,30 @@ public sealed class PdmApiClient(HttpClient httpClient) : IPdmApiClient
         return GetAsync<ObjectSearchPageDto>($"api/objects{query}", cancellationToken);
     }
 
+    /// <inheritdoc />
     public Task<ObjectCardDto> GetObjectAsync(Guid objectId, int? version = null,
         CancellationToken cancellationToken = default)
     {
         var path = $"api/objects/{objectId:D}";
-        if (version is not null) path += $"?version={version.Value}";
+        if (version is not null)
+            path += $"?version={version.Value}";
         return GetAsync<ObjectCardDto>(path, cancellationToken);
     }
 
+    /// <inheritdoc />
     public Task<CompositionTreeDto> GetCompositionAsync(Guid objectId, CancellationToken cancellationToken = default) =>
         GetAsync<CompositionTreeDto>($"api/objects/{objectId:D}/composition", cancellationToken);
 
+    /// <inheritdoc />
     public Task<VersionCompositionDto> GetVersionCompositionAsync(Guid objectId, int version,
         CancellationToken cancellationToken = default) =>
         GetAsync<VersionCompositionDto>($"api/objects/{objectId:D}/versions/{version}/composition", cancellationToken);
 
+    /// <inheritdoc />
     public Task<CompositionCalculationDto> GetCalculationAsync(Guid objectId, CancellationToken cancellationToken = default) =>
         GetAsync<CompositionCalculationDto>($"api/objects/{objectId:D}/calculations", cancellationToken);
 
+    /// <inheritdoc />
     public async Task<ImportReportDto> ImportFilesAsync(Guid importId, IReadOnlyList<string> filePaths,
         CancellationToken cancellationToken = default)
     {
@@ -50,7 +61,8 @@ public sealed class PdmApiClient(HttpClient httpClient) : IPdmApiClient
         using var form = new MultipartFormDataContent();
         foreach (var filePath in filePaths)
         {
-            if (string.IsNullOrWhiteSpace(filePath)) throw new ArgumentException("A file path cannot be empty.", nameof(filePaths));
+            if (string.IsNullOrWhiteSpace(filePath))
+                throw new ArgumentException("A file path cannot be empty.", nameof(filePaths));
             var fileContent = new StreamContent(File.OpenRead(filePath));
             fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
             form.Add(fileContent, "files", Path.GetFileName(filePath));
@@ -60,36 +72,44 @@ public sealed class PdmApiClient(HttpClient httpClient) : IPdmApiClient
         return await ReadResponseAsync<ImportReportDto>(response, cancellationToken);
     }
 
+    /// <inheritdoc />
     public Task<ImportReportDto> GetImportReportAsync(Guid importId, CancellationToken cancellationToken = default) =>
         GetAsync<ImportReportDto>($"api/imports/{importId:D}", cancellationToken);
 
+    /// <inheritdoc />
     public Task<VersionMutationDto> CloneVersionAsync(Guid objectId, CloneVersionRequestDto request,
         CancellationToken cancellationToken = default) =>
         PostJsonAsync<CloneVersionRequestDto, VersionMutationDto>($"api/objects/{objectId:D}/versions", request, cancellationToken);
 
+    /// <inheritdoc />
     public Task<VersionMutationDto> ChangeVersionStateAsync(Guid objectId, int version,
         ChangeVersionStateRequestDto request, CancellationToken cancellationToken = default) =>
         PutJsonAsync<ChangeVersionStateRequestDto, VersionMutationDto>(
             $"api/objects/{objectId:D}/versions/{version}/state", request, cancellationToken);
 
+    /// <inheritdoc />
     public Task<VersionMutationDto> UpdateVersionAttributesAsync(Guid objectId, int version,
         UpdateVersionAttributesRequestDto request, CancellationToken cancellationToken = default) =>
         PutJsonAsync<UpdateVersionAttributesRequestDto, VersionMutationDto>(
             $"api/objects/{objectId:D}/versions/{version}/attributes", request, cancellationToken);
 
+    /// <inheritdoc />
     public Task<VersionMutationDto> ReplaceCompositionAsync(Guid objectId, int version,
         ReplaceCompositionRequestDto request, CancellationToken cancellationToken = default) =>
         PutJsonAsync<ReplaceCompositionRequestDto, VersionMutationDto>(
             $"api/objects/{objectId:D}/versions/{version}/composition", request, cancellationToken);
 
+    /// <inheritdoc />
     public Task<IReadOnlyList<BackgroundTaskDto>> GetBackgroundTasksAsync(CancellationToken cancellationToken = default) =>
         GetAsync<IReadOnlyList<BackgroundTaskDto>>("api/background-tasks", cancellationToken);
 
+    /// <inheritdoc />
     public Task<BackgroundTaskDto> UpdateBackgroundTaskScheduleAsync(string taskId,
         UpdateBackgroundTaskScheduleRequestDto request, CancellationToken cancellationToken = default) =>
         PutJsonAsync<UpdateBackgroundTaskScheduleRequestDto, BackgroundTaskDto>(
             $"api/background-tasks/{Uri.EscapeDataString(taskId)}/schedule", request, cancellationToken);
 
+    /// <inheritdoc />
     public async Task<BackgroundTaskRunAcceptedDto> RunBackgroundTaskAsync(string taskId,
         CancellationToken cancellationToken = default)
     {

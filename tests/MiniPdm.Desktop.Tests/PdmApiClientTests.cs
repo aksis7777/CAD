@@ -6,8 +6,15 @@ using Xunit;
 
 namespace MiniPdm.Desktop.Tests;
 
+/// <summary>
+/// Проверяет формирование HTTP-запросов и обработку ответов клиентом API Mini-PDM.
+/// </summary>
 public sealed class PdmApiClientTests
 {
+    /// <summary>
+    /// Проверяет отправку файлов с Unicode-именами и числовыми значениями перечислений, а также повторное получение отчёта по тому же идентификатору.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [Fact]
     public async Task ImportUsesMultipartUnicodeFileNamesAndNumericEnumsAndCanReplayReportBySameId()
     {
@@ -57,6 +64,10 @@ public sealed class PdmApiClientTests
         }
     }
 
+    /// <summary>
+    /// Проверяет сохранение сведений о конфликте и цикле, а также распознавание неопределённого результата ответа 503.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [Fact]
     public async Task ApiExceptionPreservesConflictCycleAndMarksUnknown503Outcome()
     {
@@ -79,6 +90,10 @@ public sealed class PdmApiClientTests
         Assert.True(uncertain.IsOutcomeUnknown);
     }
 
+    /// <summary>
+    /// Проверяет проверку HTTP-схемы базового адреса и сохранение заданного пути.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [Fact]
     public async Task BaseAddressValidatesHttpSchemeAndRetainsConfiguredPath()
     {
@@ -107,6 +122,12 @@ public sealed class PdmApiClientTests
         }
     }
 
+    /// <summary>
+    /// Создаёт HTTP-ответ с JSON-содержимым и указанным статусом.
+    /// </summary>
+    /// <param name="status">Код состояния HTTP-ответа.</param>
+    /// <param name="content">Текст содержимого HTTP-ответа.</param>
+    /// <returns>Значение, сформированное для тестового сценария.</returns>
     private static HttpResponseMessage Json(HttpStatusCode status, string content) => new(status)
     {
         Content = new StringContent(content, Encoding.UTF8, "application/json")
@@ -114,8 +135,12 @@ public sealed class PdmApiClientTests
 
     private sealed class RecordingHandler(Func<HttpRequestMessage, Task<HttpResponseMessage>> responder) : HttpMessageHandler
     {
+        /// <summary>
+        /// HTTP-запросы, полученные тестовым обработчиком.
+        /// </summary>
         public List<HttpRequestMessage> Requests { get; } = [];
 
+        /// <inheritdoc/>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Requests.Add(request);

@@ -6,19 +6,46 @@ using MiniPdm.Domain.Versions;
 
 namespace MiniPdm.Storage;
 
-/// <summary>Scoped unit of work. Callers changing data must load affected objects first so their original concurrency token is the one checked by EF.</summary>
+/// <summary>
+///     Контекст единицы работы с ограниченным временем жизни. Перед изменением данных необходимо загрузить затронутые объекты, чтобы EF проверял их исходный токен конкурентного доступа.
+/// </summary>
+/// <param name="options">
+///     Параметры EF Core для настройки контекста и провайдера.
+/// </param>
 public sealed class PdmDbContext(DbContextOptions<PdmDbContext> options) : DbContext(options)
 {
+    /// <summary>
+    ///     Возвращает объекты PDM, отслеживаемые этим контекстом.
+    /// </summary>
     public DbSet<PdmObject> Objects => Set<PdmObject>();
+
+    /// <summary>
+    ///     Возвращает версии объектов, отслеживаемые этим контекстом.
+    /// </summary>
     public DbSet<ObjectVersion> Versions => Set<ObjectVersion>();
+
+    /// <summary>
+    ///     Возвращает строки состава, отслеживаемые этим контекстом.
+    /// </summary>
     public DbSet<BomLink> BomLinks => Set<BomLink>();
+
+    /// <summary>
+    ///     Возвращает завершённые записи идемпотентности импорта, отслеживаемые этим контекстом.
+    /// </summary>
     public DbSet<Entities.ImportJournal> ImportJournals => Set<Entities.ImportJournal>();
+
+    /// <summary>
+    ///     Возвращает сохранённые расписания и результаты фоновых задач, отслеживаемые этим контекстом.
+    /// </summary>
     public DbSet<Entities.BackgroundTask> BackgroundTasks => Set<Entities.BackgroundTask>();
 
+    /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder) =>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(PdmDbContext).Assembly);
 
+    /// <inheritdoc />
     public override int SaveChanges() => SaveChanges(true);
+    /// <inheritdoc />
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
         PrepareForSave();
@@ -26,7 +53,9 @@ public sealed class PdmDbContext(DbContextOptions<PdmDbContext> options) : DbCon
         return base.SaveChanges(acceptAllChangesOnSuccess);
     }
 
+    /// <inheritdoc />
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => SaveChangesAsync(true, cancellationToken);
+    /// <inheritdoc />
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
         PrepareForSave();
@@ -58,7 +87,8 @@ public sealed class PdmDbContext(DbContextOptions<PdmDbContext> options) : DbCon
         foreach (var id in objectIds)
         {
             var parent = Objects.Local.FirstOrDefault(x => x.Id == id) ?? Objects.Find(id);
-            if (parent is not null) parent.ConcurrencyToken = Guid.NewGuid();
+            if (parent is not null)
+                parent.ConcurrencyToken = Guid.NewGuid();
         }
     }
 
@@ -101,7 +131,8 @@ public sealed class PdmDbContext(DbContextOptions<PdmDbContext> options) : DbCon
         foreach (var id in objectIds)
         {
             var parent = Objects.Local.FirstOrDefault(x => x.Id == id) ?? await Objects.FindAsync([id], ct);
-            if (parent is not null) parent.ConcurrencyToken = Guid.NewGuid();
+            if (parent is not null)
+                parent.ConcurrencyToken = Guid.NewGuid();
         }
     }
 

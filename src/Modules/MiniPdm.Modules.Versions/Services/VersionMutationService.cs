@@ -13,29 +13,44 @@ using Npgsql;
 
 namespace MiniPdm.Modules.Versions.Services;
 
+/// <summary>
+/// Сохраняет мутации версий под блокировкой графа и проверкой токена конкурентности.
+/// </summary>
+/// <param name="context">Контекст базы данных, используемый для транзакционного чтения и записи.</param>
 public sealed class VersionMutationService(PdmDbContext context) : IVersionMutationService
 {
+    /// <inheritdoc />
     public Task<VersionMutationResult> CloneAsync(Guid objectId, int sourceVersion,
         Guid expectedConcurrencyToken, CancellationToken ct) =>
         ExecuteAsync(new VersionWriteRequest(objectId, sourceVersion, expectedConcurrencyToken, []),
             VersionMutationPlanner.Clone, ct);
 
+    /// <inheritdoc />
     public Task<VersionMutationResult> ChangeStateAsync(Guid objectId, int version, VersionState state,
         Guid expectedConcurrencyToken, CancellationToken ct) =>
         ExecuteAsync(new VersionWriteRequest(objectId, version, expectedConcurrencyToken, []),
             snapshot => VersionMutationPlanner.ChangeState(snapshot, state), ct);
 
+    /// <inheritdoc />
     public Task<VersionMutationResult> UpdateAttributesAsync(Guid objectId, int version, string? name,
         string? material, decimal? mass, Guid expectedConcurrencyToken, CancellationToken ct) =>
         ExecuteAsync(new VersionWriteRequest(objectId, version, expectedConcurrencyToken, []),
             snapshot => VersionMutationPlanner.UpdateAttributes(snapshot, name, material, mass), ct);
 
+    /// <inheritdoc />
     public Task<VersionMutationResult> ReplaceCompositionAsync(Guid objectId, int version,
         IReadOnlyList<CompositionItem> components, Guid expectedConcurrencyToken, CancellationToken ct) =>
         ExecuteAsync(new VersionWriteRequest(objectId, version, expectedConcurrencyToken,
                 components.Select(x => x.ChildObjectId).Distinct().ToArray()),
             snapshot => VersionMutationPlanner.ReplaceComposition(snapshot, components), ct);
 
+    /// <summary>
+    /// Подготавливает и атомарно применяет план мутации внутри транзакции.
+    /// </summary>
+    /// <param name="request">Идентификатор объекта, версии и предусловия записи.</param>
+    /// <param name="prepare">Функция построения плана по загруженному снимку.</param>
+    /// <param name="ct">Токен отмены до начала записи.</param>
+    /// <returns>Результат мутации либо статус отказа в проверке предусловий.</returns>
     public async Task<VersionMutationResult> ExecuteAsync(
         VersionWriteRequest request,
         Func<VersionMutationSnapshot, VersionMutationPlan> prepare,
@@ -159,7 +174,8 @@ public sealed class VersionMutationService(PdmDbContext context) : IVersionMutat
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (commitAttempted) throw;
+            if (commitAttempted)
+                throw;
             await RollbackAsync(transaction);
             context.ChangeTracker.Clear();
             return Failure(VersionMutationStatus.Conflict, request.ObjectId, "ConcurrencyConflict", "The object changed while the version mutation was being saved.");
@@ -200,7 +216,11 @@ public sealed class VersionMutationService(PdmDbContext context) : IVersionMutat
 
     private static async Task RollbackAsync(IDbContextTransaction transaction)
     {
-        try { await transaction.RollbackAsync(CancellationToken.None); } catch { }
+        try
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+        }
+        catch { }
     }
 
     private static bool IsExpectedConstraintConflict(DbUpdateException exception)

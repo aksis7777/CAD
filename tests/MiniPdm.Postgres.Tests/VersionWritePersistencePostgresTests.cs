@@ -15,10 +15,17 @@ using Xunit;
 
 namespace MiniPdm.Postgres.Tests;
 
+/// <summary>
+/// Проверяет сохранение версий и сериализацию связанных изменений в PostgreSQL.
+/// </summary>
 public sealed class VersionMutationServicePostgresTests
 {
     private const string ConnectionVariable = "PDM_TEST_POSTGRES_CONNECTION";
 
+    /// <summary>
+    /// Проверяет, что параллельные запросы клонирования с одним токеном создают ровно одну новую версию.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [Fact]
     public async Task Concurrent_clones_with_same_token_create_exactly_one_version()
     {
@@ -52,6 +59,10 @@ public sealed class VersionMutationServicePostgresTests
         }
     }
 
+    /// <summary>
+    /// Проверяет сериализацию параллельных изменений состава разных объектов при проверке циклов.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [Fact]
     public async Task Concurrent_cross_object_composition_writes_serialize_cycle_validation()
     {
@@ -91,6 +102,10 @@ public sealed class VersionMutationServicePostgresTests
         }
     }
 
+    /// <summary>
+    /// Проверяет, что импорт и изменение версии ожидают одну блокировку графа и продолжаются после её освобождения.
+    /// </summary>
+    /// <returns>Завершение проверки подтверждает ожидаемое поведение; нарушение ожиданий приводит к ошибке утверждения.</returns>
     [Fact]
     public async Task Import_and_version_writes_wait_on_the_same_graph_lock()
     {
@@ -158,10 +173,18 @@ public sealed class VersionMutationServicePostgresTests
         }
         finally
         {
-            try { await lockTransaction.RollbackAsync(); } catch { }
+            try
+            {
+                await lockTransaction.RollbackAsync();
+            }
+            catch { }
             if (importTask is not null && versionTask is not null)
             {
-                try { await Task.WhenAll(importTask, versionTask); } catch { }
+                try
+                {
+                    await Task.WhenAll(importTask, versionTask);
+                }
+                catch { }
             }
             await CleanupAsync(options, [item.Id]);
             await using var cleanup = new PdmDbContext(options);
@@ -174,6 +197,10 @@ public sealed class VersionMutationServicePostgresTests
         }
     }
 
+    /// <summary>
+    /// Создаёт параметры подключения контекста к выделенной тестовой базе данных.
+    /// </summary>
+    /// <returns>Значение, сформированное для тестового сценария.</returns>
     private static DbContextOptions<PdmDbContext> Options()
     {
         var connectionString = Environment.GetEnvironmentVariable(ConnectionVariable);
@@ -182,6 +209,12 @@ public sealed class VersionMutationServicePostgresTests
         return new DbContextOptionsBuilder<PdmDbContext>().UseNpgsql(connectionString).Options;
     }
 
+    /// <summary>
+    /// Сохраняет тестовые объекты и версии в базе данных.
+    /// </summary>
+    /// <param name="options">Параметры подключения к тестовой базе данных.</param>
+    /// <param name="entities">Сущности, которые нужно сохранить для теста.</param>
+    /// <returns>Завершение асинхронной операции.</returns>
     private static async Task SeedAsync(DbContextOptions<PdmDbContext> options, params object[] entities)
     {
         await using var context = new PdmDbContext(options);
@@ -196,12 +229,25 @@ public sealed class VersionMutationServicePostgresTests
         await context.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Читает токен конкурентного доступа объекта.
+    /// </summary>
+    /// <param name="options">Параметры подключения к тестовой базе данных.</param>
+    /// <param name="id">Идентификатор объекта для чтения.</param>
+    /// <returns>Асинхронный результат операции и данные, полученные в результате её выполнения.</returns>
     private static async Task<Guid> ReadTokenAsync(DbContextOptions<PdmDbContext> options, Guid id)
     {
         await using var context = new PdmDbContext(options);
         return await context.Objects.Where(x => x.Id == id).Select(x => x.ConcurrencyToken).SingleAsync();
     }
 
+    /// <summary>
+    /// Ожидает появления заданных процессов среди ожидающих общую блокировку графа.
+    /// </summary>
+    /// <param name="options">Параметры подключения к тестовой базе данных.</param>
+    /// <param name="firstPid">Идентификатор первого процесса, ожидающего блокировку.</param>
+    /// <param name="secondPid">Идентификатор второго процесса, ожидающего блокировку.</param>
+    /// <returns>Завершение асинхронной операции.</returns>
     private static async Task WaitForLockWaitersAsync(DbContextOptions<PdmDbContext> options, int firstPid, int secondPid)
     {
         var key = unchecked((ulong)GraphWriteLock.AdvisoryLockKey);
@@ -222,17 +268,25 @@ public sealed class VersionMutationServicePostgresTests
                   AND pid IN ({firstPid}, {secondPid})
                   AND granted = false
                 """).SingleAsync();
-            if (waiting == 2) return;
+            if (waiting == 2)
+                return;
             await Task.Delay(TimeSpan.FromMilliseconds(50));
         }
         throw new TimeoutException("Import and version writes did not both wait on the shared PostgreSQL graph lock.");
     }
 
+    /// <summary>
+    /// Удаляет созданные тестом объекты и связанные записи.
+    /// </summary>
+    /// <param name="options">Параметры подключения к тестовой базе данных.</param>
+    /// <param name="objectIds">Идентификаторы объектов, созданных тестом.</param>
+    /// <returns>Завершение асинхронной операции.</returns>
     private static async Task CleanupAsync(DbContextOptions<PdmDbContext> options, Guid[] objectIds)
     {
         await using var context = new PdmDbContext(options);
         var items = await context.Objects.Where(x => objectIds.Contains(x.Id)).ToListAsync();
-        foreach (var item in items) item.CurrentVersionId = null;
+        foreach (var item in items)
+            item.CurrentVersionId = null;
         await context.SaveChangesAsync();
         var versions = await context.Versions.Where(x => objectIds.Contains(x.ObjectId)).ToListAsync();
         var versionIds = versions.Select(x => x.Id).ToArray();
@@ -244,11 +298,24 @@ public sealed class VersionMutationServicePostgresTests
         await context.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Создаёт уникальное обозначение для тестовых данных.
+    /// </summary>
+    /// <returns>Значение, сформированное для тестового сценария.</returns>
     private static string Designation() => $"АБВГ.30{Random.Shared.Next(1000, 9999):0000}.{Random.Shared.Next(0, 999):000}";
 
     private sealed class TestContextFactory(DbContextOptions<PdmDbContext> options) : IDbContextFactory<PdmDbContext>
     {
+        /// <summary>
+        /// Реализует операцию тестового помощника.
+        /// </summary>
+        /// <returns>Значение, сформированное для тестового сценария.</returns>
         public PdmDbContext CreateDbContext() => new(options);
+        /// <summary>
+        /// Реализует операцию тестового помощника.
+        /// </summary>
+        /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
+        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
         public Task<PdmDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) => Task.FromResult(CreateDbContext());
     }
 }

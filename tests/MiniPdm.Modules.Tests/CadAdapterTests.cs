@@ -5,8 +5,15 @@ using Xunit;
 
 namespace MiniPdm.Modules.Tests;
 
+/// <summary>
+/// Проверяет чтение CAD-файлов, фильтрацию поддерживаемых форматов и диагностику некорректных документов.
+/// </summary>
 public sealed class CadAdapterTests
 {
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «SourceListsOnlySupportedCadFilesByDiskFileName».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task SourceListsOnlySupportedCadFilesByDiskFileName()
     {
@@ -23,6 +30,10 @@ public sealed class CadAdapterTests
         Assert.Equal(new[] { "part.M3D", "unit.a3d" }, names);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «ReaderUsesDiskFileNameAndPreservesOptionalNullValues».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task ReaderUsesDiskFileNameAndPreservesOptionalNullValues()
     {
@@ -42,6 +53,12 @@ public sealed class CadAdapterTests
         Assert.Empty(result.Document.Components);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «ReaderReturnsDiagnosticsForInvalidDocuments».
+    /// </summary>
+    /// <param name="contents">Значение, используемое в проверяемом сценарии.</param>
+    /// <param name="expectedError">Значение, используемое в проверяемом сценарии.</param>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Theory]
     [InlineData("{", "invalid JSON")]
     [InlineData("{\"formatVersion\":2,\"type\":\"Part\",\"name\":\"x\",\"components\":[]}", "formatVersion")]
@@ -58,6 +75,10 @@ public sealed class CadAdapterTests
         Assert.Contains(expectedError, result.Error, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «ReaderRejectsExtensionTypeMismatchAndMissingFile».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task ReaderRejectsExtensionTypeMismatchAndMissingFile()
     {
@@ -74,6 +95,10 @@ public sealed class CadAdapterTests
         Assert.Contains("not found", missing.Error);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «ReaderRejectsPathTraversalReference».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task ReaderRejectsPathTraversalReference()
     {
@@ -85,6 +110,10 @@ public sealed class CadAdapterTests
         Assert.Contains("file name only", result.Error);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «ReaderPreservesBusinessInvalidNameAndCountForCoreValidation».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task ReaderPreservesBusinessInvalidNameAndCountForCoreValidation()
     {
@@ -102,6 +131,10 @@ public sealed class CadAdapterTests
         Assert.Equal(-3, result.Document.Components.Single().Count);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «ReaderPreservesIdentityOnInvalidComponentSchema».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task ReaderPreservesIdentityOnInvalidComponentSchema()
     {
@@ -120,6 +153,10 @@ public sealed class CadAdapterTests
         Assert.Empty(result.Document.Components);
     }
 
+    /// <summary>
+    /// Проверяет ожидаемое поведение сценария «ReaderAcceptsUtf8ByteOrderMark».
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
     public async Task ReaderAcceptsUtf8ByteOrderMark()
     {
@@ -145,8 +182,20 @@ public sealed class CadAdapterTests
             return new Fixture(directory);
         }
 
+        /// <summary>
+        /// Проверяет ожидаемое поведение сценария «WriteAsync».
+        /// </summary>
+        /// <param name="fileName">Имя файла тестового источника.</param>
+        /// <param name="contents">Текст, записываемый в файл тестового источника.</param>
+        /// <returns>Задача завершается после выполнения проверок теста.</returns>
         public Task WriteAsync(string fileName, string contents) => File.WriteAllTextAsync(Path.Combine(directory, fileName), contents);
 
+        /// <summary>
+        /// Проверяет ожидаемое поведение сценария «WriteUtf8BomAsync».
+        /// </summary>
+        /// <param name="fileName">Значение, используемое в проверяемом сценарии.</param>
+        /// <param name="contents">Значение, используемое в проверяемом сценарии.</param>
+        /// <returns>Задача завершается после выполнения проверок теста.</returns>
         public Task WriteUtf8BomAsync(string fileName, string contents)
         {
             var encoding = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: true);

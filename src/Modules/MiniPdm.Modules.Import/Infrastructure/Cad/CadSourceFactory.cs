@@ -3,11 +3,16 @@ using MiniPdm.Modules.Import.DtoModels.Cad;
 
 namespace MiniPdm.Modules.Import.Infrastructure.Cad;
 
+/// <summary>
+/// Выбирает зарегистрированный адаптер по виду CAD-источника.
+/// </summary>
+/// <param name="adapters">Адаптеры, поддерживаемые приложением.</param>
 public sealed class CadSourceFactory(IEnumerable<ICadSourceAdapter> adapters) : ICadSourceFactory
 {
     private readonly IReadOnlyDictionary<string, ICadSourceAdapter> _adapters = adapters
         .ToDictionary(adapter => adapter.Kind, StringComparer.OrdinalIgnoreCase);
 
+    /// <inheritdoc />
     public Task<ICadSession> OpenAsync(CadSourceDescriptor descriptor, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(descriptor);

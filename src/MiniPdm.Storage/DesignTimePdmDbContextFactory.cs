@@ -3,8 +3,20 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace MiniPdm.Storage;
 
+/// <summary>
+/// Создаёт контекст базы данных для команд EF Core во время разработки.
+/// </summary>
 public sealed class DesignTimePdmDbContextFactory : IDesignTimeDbContextFactory<PdmDbContext>
 {
+    /// <summary>
+    ///     Создаёт контекст базы данных для команд EF Core во время разработки.
+    /// </summary>
+    /// <param name="args">
+    ///     Аргументы инструмента разработки EF Core.
+    /// </param>
+    /// <returns>
+    ///     Контекст, настроенный через <c>PDM_CONNECTION_STRING</c>.
+    /// </returns>
     public PdmDbContext CreateDbContext(string[] args)
     {
         var connectionString = Environment.GetEnvironmentVariable("PDM_CONNECTION_STRING");
