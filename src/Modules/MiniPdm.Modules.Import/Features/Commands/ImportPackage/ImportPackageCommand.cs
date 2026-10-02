@@ -9,9 +9,18 @@ namespace MiniPdm.Modules.Import.Features.Commands.ImportPackage;
 /// <summary>
 /// Запрашивает чтение, проверку и сохранение пакета CAD-документов.
 /// </summary>
-/// <param name="ImportId">Идентификатор импорта для идемпотентной обработки.</param>
-/// <param name="Source">Описатель источника пакета.</param>
-public sealed record ImportPackageCommand(Guid ImportId, CadSourceDescriptor Source) : IRequest<ImportReportDto>;
+public sealed record ImportPackageCommand(Guid ImportId, CadSourceDescriptor Source) : IRequest<ImportReportDto>
+{
+    /// <summary>
+    /// Идентификатор импорта для идемпотентной обработки.
+    /// </summary>
+    public Guid ImportId { get; init; } = ImportId;
+
+    /// <summary>
+    /// Описатель CAD-источника пакета.
+    /// </summary>
+    public CadSourceDescriptor Source { get; init; } = Source;
+}
 
 /// <summary>
 /// Передаёт команду импорта прикладному сервису.

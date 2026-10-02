@@ -250,7 +250,9 @@ public sealed class FileImportStorage(IOptions<ImportStorageOptions> options) : 
     private sealed class UploadAttempt(string path, FileStream lease) : IImportUploadAttempt
     {
         private bool _disposed;
-        /// <inheritdoc />
+        /// <summary>
+        /// Описатель временного источника с загруженными файлами.
+        /// </summary>
         public CadSourceDescriptor SourceDescriptor { get; } = new("file-json", path);
         /// <summary>
         /// Освобождает блокировку и удаляет временный каталог попытки.

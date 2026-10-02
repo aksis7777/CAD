@@ -16,7 +16,7 @@ namespace MiniPdm.Modules.Tests;
 public sealed class VersionMutationServiceTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «ReplaceComposition_merges_duplicate_children_and_persists_through_module_service».
+    /// Проверяет объединение повторных дочерних элементов и сохранение состава через сервис модуля.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -58,10 +58,16 @@ public sealed class VersionMutationServiceTests
             Context = new PdmDbContext(options);
         }
 
+        /// <summary>
+        /// Параметры SQLite-контекста базы данных тестовой фикстуры.
+        /// </summary>
         public DbContextOptions<PdmDbContext> Options
         {
             get;
         }
+        /// <summary>
+        /// Контекст базы данных, используемый тестовой фикстурой.
+        /// </summary>
         public PdmDbContext Context
         {
             get;

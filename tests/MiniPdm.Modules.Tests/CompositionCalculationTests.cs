@@ -11,7 +11,7 @@ namespace MiniPdm.Modules.Tests;
 public sealed class CompositionCalculationTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «CalculatesDiamondQuantitiesAcrossPathsAndGroupsByObject».
+    /// Проверяет подсчёт количеств по всем путям ромбовидного состава и группировку по объекту.
     /// </summary>
     [Fact]
     public void CalculatesDiamondQuantitiesAcrossPathsAndGroupsByObject()
@@ -40,7 +40,7 @@ public sealed class CompositionCalculationTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «MissingMassKeepsKnownQuantityAndBlocksAssemblyMass».
+    /// Проверяет сохранение известного количества и блокировку расчёта массы сборки при отсутствующей массе детали.
     /// </summary>
     [Fact]
     public void MissingMassKeepsKnownQuantityAndBlocksAssemblyMass()
@@ -61,7 +61,7 @@ public sealed class CompositionCalculationTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «MissingCurrentVersionBlocksAssemblyAndPreservesKnownLeafQuantity».
+    /// Проверяет блокировку расчёта сборки без текущей версии и сохранение известного количества листовой детали.
     /// </summary>
     [Fact]
     public void MissingCurrentVersionBlocksAssemblyAndPreservesKnownLeafQuantity()
@@ -91,7 +91,7 @@ public sealed class CompositionCalculationTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «CycleIsReportedAndCyclicOccurrenceIsExcludedFromSpecification».
+    /// Проверяет включение диагностики цикла и исключение циклического вхождения из спецификации.
     /// </summary>
     [Fact]
     public void CycleIsReportedAndCyclicOccurrenceIsExcludedFromSpecification()
@@ -113,7 +113,7 @@ public sealed class CompositionCalculationTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «EmptyAssemblyHasZeroMassAndEmptySpecification».
+    /// Проверяет нулевую массу и пустую спецификацию для пустой сборки.
     /// </summary>
     [Fact]
     public void EmptyAssemblyHasZeroMassAndEmptySpecification()
@@ -128,7 +128,7 @@ public sealed class CompositionCalculationTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «RootPartAppearsWithQuantityOne».
+    /// Проверяет включение корневой детали в спецификацию с количеством один.
     /// </summary>
     [Fact]
     public void RootPartAppearsWithQuantityOne()
@@ -144,7 +144,7 @@ public sealed class CompositionCalculationTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «StandardPartOccurrencesAreGroupedByObjectId».
+    /// Проверяет группировку вхождений стандартной детали по идентификатору объекта.
     /// </summary>
     [Fact]
     public void StandardPartOccurrencesAreGroupedByObjectId()
@@ -170,7 +170,7 @@ public sealed class CompositionCalculationTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «QuantityOverflowOnPathPropagatesWithoutRedundantDiagnostics».
+    /// Проверяет распространение переполнения количества по пути без повторных диагностик.
     /// </summary>
     [Fact]
     public void QuantityOverflowOnPathPropagatesWithoutRedundantDiagnostics()
@@ -196,7 +196,7 @@ public sealed class CompositionCalculationTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «GroupQuantityAdditionOverflowMakesGroupedQuantityUnknown».
+    /// Проверяет, что переполнение суммы сгруппированного количества делает итог неизвестным.
     /// </summary>
     [Fact]
     public void GroupQuantityAdditionOverflowMakesGroupedQuantityUnknown()
@@ -227,7 +227,7 @@ public sealed class CompositionCalculationTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «LineMassOverflowLeavesMassUnknown».
+    /// Проверяет, что переполнение массы строки оставляет массу неизвестной.
     /// </summary>
     [Fact]
     public void LineMassOverflowLeavesMassUnknown()
@@ -253,7 +253,7 @@ public sealed class CompositionCalculationTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «TotalMassAdditionOverflowBlocksTheReportedTotal».
+    /// Проверяет блокировку итоговой массы при переполнении суммы масс.
     /// </summary>
     [Fact]
     public void TotalMassAdditionOverflowBlocksTheReportedTotal()
@@ -275,7 +275,7 @@ public sealed class CompositionCalculationTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «NonRootOccurrenceWithoutParentPathIsRejected».
+    /// Проверяет отклонение вхождения не корневого узла без родительского пути.
     /// </summary>
     [Fact]
     public void NonRootOccurrenceWithoutParentPathIsRejected()

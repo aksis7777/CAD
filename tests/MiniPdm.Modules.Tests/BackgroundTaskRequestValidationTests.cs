@@ -10,7 +10,7 @@ namespace MiniPdm.Modules.Tests;
 public sealed class BackgroundTaskRequestValidationTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Schedule_interval_range_is_attached_to_record_constructor_parameter».
+    /// Проверяет наличие ограничения допустимого диапазона интервалов у параметра DTO расписания.
     /// </summary>
     [Fact]
     public void Schedule_interval_range_is_attached_to_record_constructor_parameter()

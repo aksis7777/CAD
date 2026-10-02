@@ -82,9 +82,67 @@ public sealed class VersionCompositionReadService(PdmDbContext context)
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown PDM object type.")
     };
 
+    /// <summary>
+    /// Результат проекции состава выбранной версии.
+    /// </summary>
     private sealed record VersionCompositionProjection(Guid ObjectId, int Version, Guid ConcurrencyToken,
-        List<VersionCompositionItemProjection> Items);
+        List<VersionCompositionItemProjection> Items)
+    {
+        /// <summary>
+        /// Идентификатор родительского объекта.
+        /// </summary>
+        public Guid ObjectId { get; init; } = ObjectId;
 
+        /// <summary>
+        /// Номер выбранной версии.
+        /// </summary>
+        public int Version { get; init; } = Version;
+
+        /// <summary>
+        /// Токен конкурентности родительского объекта.
+        /// </summary>
+        public Guid ConcurrencyToken { get; init; } = ConcurrencyToken;
+
+        /// <summary>
+        /// Строки состава выбранной версии.
+        /// </summary>
+        public List<VersionCompositionItemProjection> Items { get; init; } = Items;
+    }
+
+    /// <summary>
+    /// Результат проекции одной дочерней строки состава.
+    /// </summary>
     private sealed record VersionCompositionItemProjection(Guid ChildObjectId, int Quantity, PdmObjectType Type,
-        string? Designation, string? Name, bool NoCurrentVersion);
+        string? Designation, string? Name, bool NoCurrentVersion)
+    {
+        /// <summary>
+        /// Идентификатор дочернего объекта.
+        /// </summary>
+        public Guid ChildObjectId { get; init; } = ChildObjectId;
+
+        /// <summary>
+        /// Количество дочернего объекта в строке.
+        /// </summary>
+        public int Quantity { get; init; } = Quantity;
+
+        /// <summary>
+        /// Тип дочернего объекта PDM.
+        /// </summary>
+        public PdmObjectType Type { get; init; } = Type;
+
+        /// <summary>
+        /// Обозначение дочерней сборки или детали.
+        /// </summary>
+        public string? Designation { get; init; } = Designation;
+
+        /// <summary>
+        /// Имя дочернего объекта или его текущей версии.
+        /// </summary>
+        public string? Name { get; init; } = Name;
+
+        /// <summary>
+        /// Показывает, что дочерний объект не имеет текущей версии.
+        /// </summary>
+        public bool NoCurrentVersion { get; init; } = NoCurrentVersion;
+    }
 }

@@ -10,7 +10,7 @@ namespace MiniPdm.Storage.Tests;
 public sealed class DomainIdentityAndStateTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Validates_cyrillic_designation».
+    /// Проверяет допустимость обозначения с учётом требований к кириллическим символам.
     /// </summary>
     /// <param name="value">Обозначение, для которого проверяется допустимость кириллических символов.</param>
     /// <param name="expected">Ожидаемый результат проверки обозначения.</param>
@@ -22,7 +22,7 @@ public sealed class DomainIdentityAndStateTests
     public void Validates_cyrillic_designation(string value, bool expected) => Assert.Equal(expected, ObjectIdentity.IsValidDesignation(value));
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Standard_name_normalization_trims_collapses_and_ignores_case».
+    /// Проверяет обрезку, схлопывание пробелов и нечувствительность к регистру при нормализации стандартного наименования.
     /// </summary>
     [Fact]
     public void Standard_name_normalization_trims_collapses_and_ignores_case()
@@ -32,11 +32,11 @@ public sealed class DomainIdentityAndStateTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Enforces_the_allowed_version_state_transitions».
+    /// Проверяет, разрешены ли заданные переходы между состояниями версии.
     /// </summary>
-    /// <param name="from">Значение, используемое в проверяемом сценарии.</param>
-    /// <param name="to">Значение, используемое в проверяемом сценарии.</param>
-    /// <param name="expected">Значение, используемое в проверяемом сценарии.</param>
+    /// <param name="from">Исходное состояние версии.</param>
+    /// <param name="to">Целевое состояние версии.</param>
+    /// <param name="expected">Ожидаемый результат проверки.</param>
     [Theory]
     [InlineData(VersionState.InWork, VersionState.Approved, true)]
     [InlineData(VersionState.InWork, VersionState.Cancelled, true)]

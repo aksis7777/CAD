@@ -15,7 +15,7 @@ namespace MiniPdm.Modules.Tests;
 public sealed class BackgroundTaskCoordinatorTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Manual_run_is_persisted_before_acceptance_and_cannot_overlap_schedule_updates».
+    /// Проверяет сохранение ручного запуска до подтверждения и его взаимное исключение с изменением расписания.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -58,7 +58,7 @@ public sealed class BackgroundTaskCoordinatorTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Failed_start_persistence_does_not_run_the_job_or_return_accepted».
+    /// Проверяет, что ошибка сохранения начала не запускает задачу и не возвращает подтверждение.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -82,7 +82,7 @@ public sealed class BackgroundTaskCoordinatorTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Completion_status_write_retries_without_rerunning_job_and_shutdown_marks_cancellation_interrupted».
+    /// Проверяет повторную запись результата без повторного выполнения и фиксацию отмены при остановке.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -127,7 +127,7 @@ public sealed class BackgroundTaskCoordinatorTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Completion_storage_failure_keeps_status_running_until_recovery_or_restart».
+    /// Проверяет сохранение состояния «выполняется» до восстановления хранилища или перезапуска при сбое записи результата.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -201,29 +201,41 @@ public sealed class BackgroundTaskCoordinatorTests
     {
         private readonly object _sync = new();
         private readonly Dictionary<string, BackgroundTaskRow> _rows = new(StringComparer.Ordinal);
+        /// <summary>
+        /// Указывает, должен ли тестовый сервис завершать сохранение начала задачи ошибкой.
+        /// </summary>
         public bool FailStart
         {
             get; init;
         }
+        /// <summary>
+        /// Указывает, должен ли тестовый сервис завершать все записи результата ошибкой.
+        /// </summary>
         public bool FailEveryCompletion
         {
             get; init;
         }
+        /// <summary>
+        /// Число записей результата, которые тестовый сервис должен завершить ошибкой.
+        /// </summary>
         public int FailCompletions
         {
             get; set;
         }
+        /// <summary>
+        /// Число попыток сохранить результат выполнения задачи.
+        /// </summary>
         public int CompletionAttempts
         {
             get; private set;
         }
 
         /// <summary>
-        /// Проверяет ожидаемое поведение сценария «EnsureDefinitionsAsync».
+        /// Создаёт отсутствующие записи определений фоновых задач и обновляет зарегистрированные сведения.
         /// </summary>
-        /// <param name="definitions">Значение, используемое в проверяемом сценарии.</param>
-        /// <param name="now">Значение, используемое в проверяемом сценарии.</param>
-        /// <param name="ct">Значение, используемое в проверяемом сценарии.</param>
+        /// <param name="definitions">Определения зарегистрированных задач.</param>
+        /// <param name="now">Текущее время для операции.</param>
+        /// <param name="ct">Токен отмены операции.</param>
         /// <returns>Задача завершается после выполнения проверок теста.</returns>
         public Task EnsureDefinitionsAsync(IReadOnlyCollection<BackgroundTaskDefinitionRecord> definitions, DateTimeOffset now, CancellationToken ct)
         {

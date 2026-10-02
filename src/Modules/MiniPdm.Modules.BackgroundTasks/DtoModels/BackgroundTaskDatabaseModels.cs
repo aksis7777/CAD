@@ -3,26 +3,30 @@ namespace MiniPdm.Modules.BackgroundTasks.DtoModels;
 /// <summary>
 /// Описывает зарегистрированную фоновую задачу и её интервал запуска по умолчанию.
 /// </summary>
-/// <param name="Id">Уникальный идентификатор фоновой задачи.</param>
-/// <param name="Name">Отображаемое имя фоновой задачи.</param>
-/// <param name="DefaultIntervalMinutes">Интервал запуска задачи по умолчанию в минутах.</param>
 public sealed record BackgroundTaskDefinitionRecord(
     string Id,
     string Name,
-    int DefaultIntervalMinutes);
+    int DefaultIntervalMinutes)
+{
+    /// <summary>
+    /// Уникальный идентификатор фоновой задачи.
+    /// </summary>
+    public string Id { get; init; } = Id;
+
+    /// <summary>
+    /// Отображаемое имя фоновой задачи.
+    /// </summary>
+    public string Name { get; init; } = Name;
+
+    /// <summary>
+    /// Интервал запуска задачи по умолчанию в минутах.
+    /// </summary>
+    public int DefaultIntervalMinutes { get; init; } = DefaultIntervalMinutes;
+}
 
 /// <summary>
 /// Содержит сохранённое состояние фоновой задачи для отображения и планирования запусков.
 /// </summary>
-/// <param name="Id">Уникальный идентификатор фоновой задачи.</param>
-/// <param name="Name">Отображаемое имя фоновой задачи.</param>
-/// <param name="IntervalMinutes">Текущий интервал запуска задачи в минутах.</param>
-/// <param name="State">Текущее состояние фоновой задачи.</param>
-/// <param name="NextRunAt">Время следующего запланированного запуска или <see langword="null"/>, если запуск не запланирован.</param>
-/// <param name="LastStartedAt">Время последнего начала выполнения или <see langword="null"/>, если задача ещё не запускалась.</param>
-/// <param name="LastCompletedAt">Время последнего завершения выполнения или <see langword="null"/>, если выполнение ещё не завершалось.</param>
-/// <param name="LastResult">Результат последнего выполнения или <see langword="null"/>, если результата нет.</param>
-/// <param name="LastError">Описание последней ошибки или <see langword="null"/>, если ошибки нет.</param>
 public sealed record BackgroundTaskRow(
     string Id,
     string Name,
@@ -32,4 +36,50 @@ public sealed record BackgroundTaskRow(
     DateTimeOffset? LastStartedAt,
     DateTimeOffset? LastCompletedAt,
     string? LastResult,
-    string? LastError);
+    string? LastError)
+{
+    /// <summary>
+    /// Уникальный идентификатор фоновой задачи.
+    /// </summary>
+    public string Id { get; init; } = Id;
+
+    /// <summary>
+    /// Отображаемое имя фоновой задачи.
+    /// </summary>
+    public string Name { get; init; } = Name;
+
+    /// <summary>
+    /// Текущий интервал запуска задачи в минутах.
+    /// </summary>
+    public int IntervalMinutes { get; init; } = IntervalMinutes;
+
+    /// <summary>
+    /// Текущее состояние фоновой задачи.
+    /// </summary>
+    public string State { get; init; } = State;
+
+    /// <summary>
+    /// Время следующего запланированного запуска или <see langword="null"/>, если запуск не запланирован.
+    /// </summary>
+    public DateTimeOffset? NextRunAt { get; init; } = NextRunAt;
+
+    /// <summary>
+    /// Время последнего начала выполнения или <see langword="null"/>, если задача ещё не запускалась.
+    /// </summary>
+    public DateTimeOffset? LastStartedAt { get; init; } = LastStartedAt;
+
+    /// <summary>
+    /// Время последнего завершения выполнения или <see langword="null"/>, если выполнение ещё не завершалось.
+    /// </summary>
+    public DateTimeOffset? LastCompletedAt { get; init; } = LastCompletedAt;
+
+    /// <summary>
+    /// Результат последнего выполнения или <see langword="null"/>, если результата нет.
+    /// </summary>
+    public string? LastResult { get; init; } = LastResult;
+
+    /// <summary>
+    /// Описание последней ошибки или <see langword="null"/>, если ошибки нет.
+    /// </summary>
+    public string? LastError { get; init; } = LastError;
+}

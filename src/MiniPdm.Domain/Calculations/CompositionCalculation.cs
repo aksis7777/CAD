@@ -6,45 +6,6 @@ namespace MiniPdm.Domain.Calculations;
 /// <summary>
 ///     Вхождение объекта в развёрнутом дереве с данными для расчёта массы и спецификации.
 /// </summary>
-/// <param name="ObjectId">
-///     Идентификатор объекта в этом вхождении.
-/// </param>
-/// <param name="ObjectPath">
-///     Идентификаторы объектов от корня до этого вхождения.
-/// </param>
-/// <param name="ParentPath">
-///     Путь родительского вхождения; для корня равен null.
-/// </param>
-/// <param name="LocalQuantity">
-///     Положительное целое количество экземпляров на связи с родительским вхождением.
-/// </param>
-/// <param name="Type">
-///     Тип объекта PDM.
-/// </param>
-/// <param name="Designation">
-///     Обозначение детали или сборки, если оно применимо.
-/// </param>
-/// <param name="Name">
-///     Отображаемое наименование объекта, если оно задано.
-/// </param>
-/// <param name="Material">
-///     Материал текущей версии, если он применим.
-/// </param>
-/// <param name="VersionId">
-///     Идентификатор текущей версии; null, если действующей версии нет.
-/// </param>
-/// <param name="VersionNumber">
-///     Номер текущей версии, если он задан.
-/// </param>
-/// <param name="State">
-///     Состояние текущей версии, если она задана.
-/// </param>
-/// <param name="UnitMassKg">
-///     Масса одного изделия в килограммах, если она известна.
-/// </param>
-/// <param name="IsCycle">
-///     Замыкает ли это вхождение цикл состава.
-/// </param>
 public sealed record CompositionCalculationInput(
     Guid ObjectId,
     IReadOnlyList<Guid> ObjectPath,
@@ -58,41 +19,77 @@ public sealed record CompositionCalculationInput(
     int? VersionNumber,
     VersionState? State,
     decimal? UnitMassKg,
-    bool IsCycle);
+    bool IsCycle)
+{
+    /// <summary>
+    ///     Идентификатор объекта в этом вхождении.
+    /// </summary>
+    public Guid ObjectId { get; init; } = ObjectId;
+
+    /// <summary>
+    ///     Идентификаторы объектов от корня до этого вхождения.
+    /// </summary>
+    public IReadOnlyList<Guid> ObjectPath { get; init; } = ObjectPath;
+
+    /// <summary>
+    ///     Путь родительского вхождения; для корня равен null.
+    /// </summary>
+    public IReadOnlyList<Guid>? ParentPath { get; init; } = ParentPath;
+
+    /// <summary>
+    ///     Положительное целое количество экземпляров на связи с родительским вхождением.
+    /// </summary>
+    public int LocalQuantity { get; init; } = LocalQuantity;
+
+    /// <summary>
+    ///     Тип объекта PDM.
+    /// </summary>
+    public PdmObjectType Type { get; init; } = Type;
+
+    /// <summary>
+    ///     Обозначение детали или сборки, если оно применимо.
+    /// </summary>
+    public string? Designation { get; init; } = Designation;
+
+    /// <summary>
+    ///     Отображаемое наименование объекта, если оно задано.
+    /// </summary>
+    public string? Name { get; init; } = Name;
+
+    /// <summary>
+    ///     Материал текущей версии, если он применим.
+    /// </summary>
+    public string? Material { get; init; } = Material;
+
+    /// <summary>
+    ///     Идентификатор текущей версии; null, если действующей версии нет.
+    /// </summary>
+    public Guid? VersionId { get; init; } = VersionId;
+
+    /// <summary>
+    ///     Номер текущей версии, если он задан.
+    /// </summary>
+    public int? VersionNumber { get; init; } = VersionNumber;
+
+    /// <summary>
+    ///     Состояние текущей версии, если она задана.
+    /// </summary>
+    public VersionState? State { get; init; } = State;
+
+    /// <summary>
+    ///     Масса одного изделия в килограммах, если она известна.
+    /// </summary>
+    public decimal? UnitMassKg { get; init; } = UnitMassKg;
+
+    /// <summary>
+    ///     Замыкает ли это вхождение цикл состава.
+    /// </summary>
+    public bool IsCycle { get; init; } = IsCycle;
+}
 
 /// <summary>
 ///     Рассчитанная строка спецификации: количество указано в штуках, масса — в килограммах.
 /// </summary>
-/// <param name="ObjectId">
-///     Идентификатор объекта спецификации.
-/// </param>
-/// <param name="Type">
-///     Тип объекта PDM.
-/// </param>
-/// <param name="Designation">
-///     Обозначение детали или сборки, если оно применимо.
-/// </param>
-/// <param name="Name">
-///     Отображаемое наименование объекта, если оно задано.
-/// </param>
-/// <param name="Material">
-///     Материал текущей версии, если он применим.
-/// </param>
-/// <param name="VersionId">
-///     Идентификатор текущей версии; null, если действующей версии нет.
-/// </param>
-/// <param name="VersionNumber">
-///     Номер текущей версии, если он задан.
-/// </param>
-/// <param name="Quantity">
-///     Количество целых изделий, суммированное по всем путям; null означает, что хотя бы одно слагаемое неизвестно.
-/// </param>
-/// <param name="UnitMassKg">
-///     Масса одного изделия в килограммах, если она известна.
-/// </param>
-/// <param name="TotalMassKg">
-///     Количество, умноженное на массу одного изделия; null, если одно из значений неизвестно.
-/// </param>
 public sealed record CalculatedSpecificationItem(
     Guid ObjectId,
     PdmObjectType Type,
@@ -103,49 +100,120 @@ public sealed record CalculatedSpecificationItem(
     int? VersionNumber,
     decimal? Quantity,
     decimal? UnitMassKg,
-    decimal? TotalMassKg);
+    decimal? TotalMassKg)
+{
+    /// <summary>
+    ///     Идентификатор объекта спецификации.
+    /// </summary>
+    public Guid ObjectId { get; init; } = ObjectId;
+
+    /// <summary>
+    ///     Тип объекта PDM.
+    /// </summary>
+    public PdmObjectType Type { get; init; } = Type;
+
+    /// <summary>
+    ///     Обозначение детали или сборки, если оно применимо.
+    /// </summary>
+    public string? Designation { get; init; } = Designation;
+
+    /// <summary>
+    ///     Отображаемое наименование объекта, если оно задано.
+    /// </summary>
+    public string? Name { get; init; } = Name;
+
+    /// <summary>
+    ///     Материал текущей версии, если он применим.
+    /// </summary>
+    public string? Material { get; init; } = Material;
+
+    /// <summary>
+    ///     Идентификатор текущей версии; null, если действующей версии нет.
+    /// </summary>
+    public Guid? VersionId { get; init; } = VersionId;
+
+    /// <summary>
+    ///     Номер текущей версии, если он задан.
+    /// </summary>
+    public int? VersionNumber { get; init; } = VersionNumber;
+
+    /// <summary>
+    ///     Количество целых изделий, суммированное по всем путям; null означает, что хотя бы одно слагаемое неизвестно.
+    /// </summary>
+    public decimal? Quantity { get; init; } = Quantity;
+
+    /// <summary>
+    ///     Масса одного изделия в килограммах, если она известна.
+    /// </summary>
+    public decimal? UnitMassKg { get; init; } = UnitMassKg;
+
+    /// <summary>
+    ///     Количество, умноженное на массу одного изделия; null, если одно из значений неизвестно.
+    /// </summary>
+    public decimal? TotalMassKg { get; init; } = TotalMassKg;
+}
 
 /// <summary>
 ///     Описывает отсутствующее или неверное значение, из-за которого расчёт состава неполон.
 /// </summary>
-/// <param name="Code">
-///     Стабильный код диагностики, например <c>MissingMass</c> или <c>Cycle</c>.
-/// </param>
-/// <param name="ObjectId">
-///     Идентификатор объекта, связанного с проблемой.
-/// </param>
-/// <param name="ObjectPath">
-///     Путь от корневого объекта до проблемного вхождения.
-/// </param>
-/// <param name="Message">
-///     Понятное пользователю описание проблемы.
-/// </param>
-public sealed record CalculationDiagnostic(string Code, Guid ObjectId, IReadOnlyList<Guid> ObjectPath, string Message);
+public sealed record CalculationDiagnostic(string Code, Guid ObjectId, IReadOnlyList<Guid> ObjectPath, string Message)
+{
+    /// <summary>
+    ///     Стабильный код диагностики, например <c>MissingMass</c> или <c>Cycle</c>.
+    /// </summary>
+    public string Code { get; init; } = Code;
+
+    /// <summary>
+    ///     Идентификатор объекта, связанного с проблемой.
+    /// </summary>
+    public Guid ObjectId { get; init; } = ObjectId;
+
+    /// <summary>
+    ///     Путь от корневого объекта до проблемного вхождения.
+    /// </summary>
+    public IReadOnlyList<Guid> ObjectPath { get; init; } = ObjectPath;
+
+    /// <summary>
+    ///     Понятное пользователю описание проблемы.
+    /// </summary>
+    public string Message { get; init; } = Message;
+}
 
 /// <summary>
 ///     Результат расчёта спецификации и массы. При наличии диагностики общая масса считается неизвестной.
 /// </summary>
-/// <param name="RootObjectId">
-///     Идентификатор корневого объекта расчёта.
-/// </param>
-/// <param name="TotalMassKg">
-///     Рассчитанная общая масса; null, если возникла хотя бы одна диагностика.
-/// </param>
-/// <param name="IsComplete">
-///     Равно true только при отсутствии диагностик расчёта.
-/// </param>
-/// <param name="Items">
-///     Плоские строки спецификации, сгруппированные по объекту.
-/// </param>
-/// <param name="Diagnostics">
-///     Проблемы, обнаруженные при расчёте дерева объектов.
-/// </param>
 public sealed record CompositionCalculationResult(
     Guid RootObjectId,
     decimal? TotalMassKg,
     bool IsComplete,
     IReadOnlyList<CalculatedSpecificationItem> Items,
-    IReadOnlyList<CalculationDiagnostic> Diagnostics);
+    IReadOnlyList<CalculationDiagnostic> Diagnostics)
+{
+    /// <summary>
+    ///     Идентификатор корневого объекта расчёта.
+    /// </summary>
+    public Guid RootObjectId { get; init; } = RootObjectId;
+
+    /// <summary>
+    ///     Рассчитанная общая масса; null, если возникла хотя бы одна диагностика.
+    /// </summary>
+    public decimal? TotalMassKg { get; init; } = TotalMassKg;
+
+    /// <summary>
+    ///     Равно true только при отсутствии диагностик расчёта.
+    /// </summary>
+    public bool IsComplete { get; init; } = IsComplete;
+
+    /// <summary>
+    ///     Плоские строки спецификации, сгруппированные по объекту.
+    /// </summary>
+    public IReadOnlyList<CalculatedSpecificationItem> Items { get; init; } = Items;
+
+    /// <summary>
+    ///     Проблемы, обнаруженные при расчёте дерева объектов.
+    /// </summary>
+    public IReadOnlyList<CalculationDiagnostic> Diagnostics { get; init; } = Diagnostics;
+}
 
 /// <summary>
 ///     Рассчитывает количества в составе, массы деталей и плоскую спецификацию без обращения к хранилищу.
@@ -313,7 +381,14 @@ public static class CompositionCalculator
 
     private sealed class SpecificationAccumulator(CompositionCalculationInput first, decimal? quantity)
     {
+        /// <summary>
+        ///     Первое вхождение объекта, задающее остальные данные строки спецификации.
+        /// </summary>
         public CompositionCalculationInput First { get; } = first;
+
+        /// <summary>
+        ///     Суммарное количество по путям; null означает, что точное количество неизвестно.
+        /// </summary>
         public decimal? Quantity { get; set; } = quantity;
     }
 }

@@ -3,5 +3,10 @@ namespace MiniPdm.Modules.Import.DtoModels.Cad;
 /// <summary>
 /// Ссылка на CAD-документ внутри источника.
 /// </summary>
-/// <param name="FileName">Имя файла документа.</param>
-public sealed record CadDocumentRef(string FileName);
+public sealed record CadDocumentRef(string FileName)
+{
+    /// <summary>
+    /// Имя файла документа в CAD-источнике.
+    /// </summary>
+    public string FileName { get; init; } = FileName;
+}

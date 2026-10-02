@@ -7,16 +7,6 @@ namespace MiniPdm.Modules.Objects.DtoModels;
 /// Строка внутренней проекции поиска объектов.
 /// Содержит поля карточки, необходимые для выдачи страницы результатов.
 /// </summary>
-/// <param name="Id">Идентификатор объекта.</param>
-/// <param name="Type">Тип объекта PDM.</param>
-/// <param name="Designation">Обозначение сборки или детали.</param>
-/// <param name="Name">Отображаемое наименование объекта.</param>
-/// <param name="CurrentVersionId">Идентификатор текущей версии, если она есть.</param>
-/// <param name="VersionNumber">Номер текущей версии, если она есть.</param>
-/// <param name="State">Состояние текущей версии, если она есть.</param>
-/// <param name="UnitMassKg">Масса единицы объекта в килограммах, если известна.</param>
-/// <param name="ConcurrencyToken">Токен для обнаружения устаревших изменений.</param>
-/// <param name="NoCurrentVersion">Показывает, что у объекта нет текущей версии.</param>
 public sealed record ObjectSearchRow(
     Guid Id,
     PdmObjectType Type,
@@ -27,29 +17,90 @@ public sealed record ObjectSearchRow(
     VersionState? State,
     decimal? UnitMassKg,
     Guid ConcurrencyToken,
-    bool NoCurrentVersion);
+    bool NoCurrentVersion)
+{
+    /// <summary>
+    /// Идентификатор объекта.
+    /// </summary>
+    public Guid Id { get; init; } = Id;
+
+    /// <summary>
+    /// Тип объекта PDM.
+    /// </summary>
+    public PdmObjectType Type { get; init; } = Type;
+
+    /// <summary>
+    /// Обозначение сборки или детали.
+    /// </summary>
+    public string? Designation { get; init; } = Designation;
+
+    /// <summary>
+    /// Отображаемое наименование объекта.
+    /// </summary>
+    public string? Name { get; init; } = Name;
+
+    /// <summary>
+    /// Идентификатор текущей версии, если она есть.
+    /// </summary>
+    public Guid? CurrentVersionId { get; init; } = CurrentVersionId;
+
+    /// <summary>
+    /// Номер текущей версии, если она есть.
+    /// </summary>
+    public int? VersionNumber { get; init; } = VersionNumber;
+
+    /// <summary>
+    /// Состояние текущей версии, если она есть.
+    /// </summary>
+    public VersionState? State { get; init; } = State;
+
+    /// <summary>
+    /// Масса единицы объекта в килограммах, если известна.
+    /// </summary>
+    public decimal? UnitMassKg { get; init; } = UnitMassKg;
+
+    /// <summary>
+    /// Токен для обнаружения устаревших изменений.
+    /// </summary>
+    public Guid ConcurrencyToken { get; init; } = ConcurrencyToken;
+
+    /// <summary>
+    /// Показывает, что у объекта нет текущей версии.
+    /// </summary>
+    public bool NoCurrentVersion { get; init; } = NoCurrentVersion;
+}
 
 /// <summary>
 /// Страница внутренней проекции поиска объектов.
 /// Метаданные позволяют продолжить постраничную загрузку результатов.
 /// </summary>
-/// <param name="Items">Строки объектов на текущей странице.</param>
-/// <param name="Offset">Смещение первой строки в полном результате.</param>
-/// <param name="Limit">Максимальное число строк страницы.</param>
-/// <param name="HasMore">Указывает, что после страницы есть дополнительные строки.</param>
-public sealed record ObjectSearchPage(IReadOnlyList<ObjectSearchRow> Items, int Offset, int Limit, bool HasMore);
+public sealed record ObjectSearchPage(IReadOnlyList<ObjectSearchRow> Items, int Offset, int Limit, bool HasMore)
+{
+    /// <summary>
+    /// Строки объектов на текущей странице.
+    /// </summary>
+    public IReadOnlyList<ObjectSearchRow> Items { get; init; } = Items;
+
+    /// <summary>
+    /// Смещение первой строки в полном результате.
+    /// </summary>
+    public int Offset { get; init; } = Offset;
+
+    /// <summary>
+    /// Максимальное число строк страницы.
+    /// </summary>
+    public int Limit { get; init; } = Limit;
+
+    /// <summary>
+    /// Указывает, что после страницы есть дополнительные строки.
+    /// </summary>
+    public bool HasMore { get; init; } = HasMore;
+}
 
 /// <summary>
 /// Внутренняя проекция одной версии для карточки объекта.
 /// Включает атрибуты версии и ссылку на исходный файл.
 /// </summary>
-/// <param name="Id">Идентификатор записи версии.</param>
-/// <param name="Version">Порядковый номер версии внутри объекта.</param>
-/// <param name="State">Состояние версии.</param>
-/// <param name="Name">Наименование, сохранённое в версии.</param>
-/// <param name="Material">Материал версии, если задан.</param>
-/// <param name="Mass">Масса версии, если задана.</param>
-/// <param name="SourceReference">Ссылка на импортированный исходный файл.</param>
 public sealed record ObjectVersionReadRow(
     Guid Id,
     int Version,
@@ -57,20 +108,48 @@ public sealed record ObjectVersionReadRow(
     string? Name,
     string? Material,
     decimal? Mass,
-    string? SourceReference);
+    string? SourceReference)
+{
+    /// <summary>
+    /// Идентификатор записи версии.
+    /// </summary>
+    public Guid Id { get; init; } = Id;
+
+    /// <summary>
+    /// Порядковый номер версии внутри объекта.
+    /// </summary>
+    public int Version { get; init; } = Version;
+
+    /// <summary>
+    /// Состояние версии.
+    /// </summary>
+    public VersionState State { get; init; } = State;
+
+    /// <summary>
+    /// Наименование, сохранённое в версии.
+    /// </summary>
+    public string? Name { get; init; } = Name;
+
+    /// <summary>
+    /// Материал версии, если задан.
+    /// </summary>
+    public string? Material { get; init; } = Material;
+
+    /// <summary>
+    /// Масса версии, если задана.
+    /// </summary>
+    public decimal? Mass { get; init; } = Mass;
+
+    /// <summary>
+    /// Ссылка на импортированный исходный файл.
+    /// </summary>
+    public string? SourceReference { get; init; } = SourceReference;
+}
 
 /// <summary>
 /// Внутренняя проекция карточки объекта и списка его версий.
 /// Выбранная версия отсутствует, если её нет или она не была запрошена.
 /// </summary>
-/// <param name="Id">Идентификатор объекта.</param>
-/// <param name="Type">Тип объекта PDM.</param>
-/// <param name="Designation">Обозначение сборки или детали.</param>
-/// <param name="StandardName">Исходное имя стандартного изделия.</param>
-/// <param name="CurrentVersionId">Идентификатор текущей версии, если она есть.</param>
-/// <param name="ConcurrencyToken">Токен конкурентности объекта.</param>
-/// <param name="Versions">Краткие сведения обо всех версиях объекта.</param>
-/// <param name="SelectedVersion">Полные данные запрошенной или текущей версии.</param>
 public sealed record ObjectCardReadRow(
     Guid Id,
     PdmObjectType Type,
@@ -79,12 +158,66 @@ public sealed record ObjectCardReadRow(
     Guid? CurrentVersionId,
     Guid ConcurrencyToken,
     IReadOnlyList<ObjectVersionSummaryReadRow> Versions,
-    ObjectVersionReadRow? SelectedVersion);
+    ObjectVersionReadRow? SelectedVersion)
+{
+    /// <summary>
+    /// Идентификатор объекта.
+    /// </summary>
+    public Guid Id { get; init; } = Id;
+
+    /// <summary>
+    /// Тип объекта PDM.
+    /// </summary>
+    public PdmObjectType Type { get; init; } = Type;
+
+    /// <summary>
+    /// Обозначение сборки или детали.
+    /// </summary>
+    public string? Designation { get; init; } = Designation;
+
+    /// <summary>
+    /// Исходное имя стандартного изделия.
+    /// </summary>
+    public string? StandardName { get; init; } = StandardName;
+
+    /// <summary>
+    /// Идентификатор текущей версии, если она есть.
+    /// </summary>
+    public Guid? CurrentVersionId { get; init; } = CurrentVersionId;
+
+    /// <summary>
+    /// Токен конкурентности объекта.
+    /// </summary>
+    public Guid ConcurrencyToken { get; init; } = ConcurrencyToken;
+
+    /// <summary>
+    /// Краткие сведения обо всех версиях объекта.
+    /// </summary>
+    public IReadOnlyList<ObjectVersionSummaryReadRow> Versions { get; init; } = Versions;
+
+    /// <summary>
+    /// Полные данные запрошенной или текущей версии.
+    /// </summary>
+    public ObjectVersionReadRow? SelectedVersion { get; init; } = SelectedVersion;
+}
 
 /// <summary>
 /// Краткая внутренняя проекция версии для списка в карточке объекта.
 /// </summary>
-/// <param name="Id">Идентификатор записи версии.</param>
-/// <param name="Version">Порядковый номер версии.</param>
-/// <param name="State">Состояние версии.</param>
-public sealed record ObjectVersionSummaryReadRow(Guid Id, int Version, VersionState State);
+public sealed record ObjectVersionSummaryReadRow(Guid Id, int Version, VersionState State)
+{
+    /// <summary>
+    /// Идентификатор записи версии.
+    /// </summary>
+    public Guid Id { get; init; } = Id;
+
+    /// <summary>
+    /// Порядковый номер версии.
+    /// </summary>
+    public int Version { get; init; } = Version;
+
+    /// <summary>
+    /// Состояние версии.
+    /// </summary>
+    public VersionState State { get; init; } = State;
+}

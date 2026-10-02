@@ -12,7 +12,7 @@ namespace MiniPdm.Modules.Tests;
 public sealed class CompositionQueryTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «MapsDistinctOccurrencePathsInDiamond».
+    /// Проверяет отображение отдельных путей вхождения для ромбовидного состава.
     /// </summary>
     [Fact]
     public void MapsDistinctOccurrencePathsInDiamond()
@@ -40,7 +40,7 @@ public sealed class CompositionQueryTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «MapsRootOnlyComposition».
+    /// Проверяет отображение состава, содержащего только корневой объект.
     /// </summary>
     [Fact]
     public void MapsRootOnlyComposition()
@@ -52,7 +52,7 @@ public sealed class CompositionQueryTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «MapsNodeWithoutCurrentVersionWithDiagnostic».
+    /// Проверяет отображение узла без текущей версии с соответствующей диагностикой.
     /// </summary>
     [Fact]
     public void MapsNodeWithoutCurrentVersionWithDiagnostic()
@@ -74,7 +74,7 @@ public sealed class CompositionQueryTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «MapsCycleWithTheOccurrencePath».
+    /// Проверяет сообщение о цикле с путём вхождения, на котором он обнаружен.
     /// </summary>
     [Fact]
     public void MapsCycleWithTheOccurrencePath()

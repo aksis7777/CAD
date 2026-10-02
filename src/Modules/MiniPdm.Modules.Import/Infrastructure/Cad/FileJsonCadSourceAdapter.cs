@@ -12,7 +12,9 @@ public sealed class FileJsonCadSourceAdapter : ICadSourceAdapter
     /// Ключ файлового JSON-адаптера в описателях источника.
     /// </summary>
     public const string SourceKind = "file-json";
-    /// <inheritdoc />
+    /// <summary>
+    /// Ключ вида CAD-источника, который поддерживает данный адаптер.
+    /// </summary>
     public string Kind => SourceKind;
 
     /// <inheritdoc />

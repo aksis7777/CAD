@@ -189,7 +189,7 @@ public sealed class BrowserImportFolderPickerTests
     /// Создаёт HTTP-клиент для локального сервера выбора файлов.
     /// </summary>
     /// <param name="bridge">Сервер выбора файлов, к которому подключается клиент.</param>
-    /// <returns>Значение, сформированное для тестового сценария.</returns>
+    /// <returns>HTTP-клиент с базовым адресом запущенного локального сервера выбора файлов.</returns>
     private static HttpClient Client(BrowserImportFolderPicker bridge) =>
         new()
         {
@@ -200,7 +200,7 @@ public sealed class BrowserImportFolderPickerTests
     /// Ожидает появления ожидающего запроса выбора файлов и возвращает его сведения.
     /// </summary>
     /// <param name="http">HTTP-клиент для обращения к тестовому серверу.</param>
-    /// <returns>Асинхронный результат операции и данные, полученные в результате её выполнения.</returns>
+    /// <returns>Сведения о запросе выбора файлов, появившемся на локальном сервере до истечения срока ожидания.</returns>
     private static async Task<PendingDto> WaitForPendingAsync(HttpClient http)
     {
         var deadline = DateTime.UtcNow.AddSeconds(3);
@@ -220,7 +220,7 @@ public sealed class BrowserImportFolderPickerTests
     /// <param name="http">HTTP-клиент для обращения к тестовому серверу.</param>
     /// <param name="pending">Сведения об ожидающем запросе выбора файлов.</param>
     /// <param name="form">Multipart-форма с загружаемыми файлами.</param>
-    /// <returns>Асинхронный результат операции и данные, полученные в результате её выполнения.</returns>
+    /// <returns>HTTP-ответ сервера на загрузку формы для ожидающего запроса выбора файлов.</returns>
     private static async Task<HttpResponseMessage> UploadAsync(HttpClient http, PendingDto pending, MultipartFormDataContent form)
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, $"/pdm-picker/{pending.RequestId}/files") { Content = form };
@@ -292,7 +292,7 @@ public sealed class BrowserImportFolderPickerTests
     /// <summary>
     /// Резервирует свободный локальный TCP-порт для тестового сервера.
     /// </summary>
-    /// <returns>Значение, сформированное для тестового сценария.</returns>
+    /// <returns>Номер свободного TCP-порта на loopback-интерфейсе.</returns>
     private static int ReservePort()
     {
         using var listener = new TcpListener(IPAddress.Loopback, 0);
@@ -300,5 +300,24 @@ public sealed class BrowserImportFolderPickerTests
         return ((IPEndPoint)listener.LocalEndpoint).Port;
     }
 
-    private sealed record PendingDto(Guid RequestId, string Nonce, DateTimeOffset ExpiresAt);
+    /// <summary>
+    /// Представляет ожидающий запрос выбора папки импорта в тестовом обработчике.
+    /// </summary>
+    private sealed record PendingDto(Guid RequestId, string Nonce, DateTimeOffset ExpiresAt)
+    {
+        /// <summary>
+        /// Идентификатор запроса на выбор папки.
+        /// </summary>
+        public Guid RequestId { get; init; } = RequestId;
+
+        /// <summary>
+        /// Секретный маркер, связывающий запрос с его ответом.
+        /// </summary>
+        public string Nonce { get; init; } = Nonce;
+
+        /// <summary>
+        /// Момент истечения срока действия запроса.
+        /// </summary>
+        public DateTimeOffset ExpiresAt { get; init; } = ExpiresAt;
+    }
 }

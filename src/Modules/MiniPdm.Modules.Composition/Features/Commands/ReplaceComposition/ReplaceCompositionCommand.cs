@@ -8,12 +8,29 @@ namespace MiniPdm.Modules.Composition.Features.Commands.ReplaceComposition;
 /// Задаёт новый состав выбранной версии объекта.
 /// Команда содержит ожидаемый токен конкурентности для защиты от устаревшего изменения.
 /// </summary>
-/// <param name="ObjectId">Идентификатор объекта, состав версии которого заменяется.</param>
-/// <param name="Version">Положительный номер версии объекта.</param>
-/// <param name="Components">Новый состав в виде дочерних объектов и их количеств.</param>
-/// <param name="ExpectedConcurrencyToken">Токен объекта, прочитанный клиентом перед изменением.</param>
 public sealed record ReplaceCompositionCommand(Guid ObjectId, int Version, IReadOnlyList<CompositionItem> Components,
-    Guid ExpectedConcurrencyToken) : IRequest<VersionMutationResult>;
+    Guid ExpectedConcurrencyToken) : IRequest<VersionMutationResult>
+{
+    /// <summary>
+    /// Идентификатор объекта, состав версии которого заменяется.
+    /// </summary>
+    public Guid ObjectId { get; init; } = ObjectId;
+
+    /// <summary>
+    /// Положительный номер версии объекта.
+    /// </summary>
+    public int Version { get; init; } = Version;
+
+    /// <summary>
+    /// Новый состав в виде дочерних объектов и их количеств.
+    /// </summary>
+    public IReadOnlyList<CompositionItem> Components { get; init; } = Components;
+
+    /// <summary>
+    /// Токен объекта, прочитанный клиентом перед изменением.
+    /// </summary>
+    public Guid ExpectedConcurrencyToken { get; init; } = ExpectedConcurrencyToken;
+}
 
 /// <summary>
 /// Передаёт команду замены состава прикладному сервису мутаций версии.

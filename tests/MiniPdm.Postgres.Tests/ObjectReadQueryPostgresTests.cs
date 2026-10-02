@@ -163,7 +163,7 @@ public sealed class ObjectReadQueryPostgresTests
         /// Добавляет объекты в контекст фикстуры и сохраняет изменения.
         /// </summary>
         /// <param name="objects">Объекты для добавления в контекст фикстуры.</param>
-        /// <returns>Завершение асинхронной операции.</returns>
+        /// <returns>Задача завершается после добавления тестовых данных в базу.</returns>
         public async Task SaveObjectsAsync(params PdmObject[] objects)
         {
             Context.Objects.AddRange(objects);
@@ -174,7 +174,7 @@ public sealed class ObjectReadQueryPostgresTests
         /// Добавляет версии в контекст фикстуры и сохраняет изменения.
         /// </summary>
         /// <param name="versions">Версии для добавления в контекст фикстуры.</param>
-        /// <returns>Завершение асинхронной операции.</returns>
+        /// <returns>Задача завершается после сохранения версии объекта.</returns>
         public async Task SaveVersionsAsync(params ObjectVersion[] versions)
         {
             Context.Versions.AddRange(versions);
@@ -186,7 +186,7 @@ public sealed class ObjectReadQueryPostgresTests
         /// </summary>
         /// <param name="item">Объект, которому назначается текущая версия.</param>
         /// <param name="version">Версия, назначаемая текущей для объекта.</param>
-        /// <returns>Завершение асинхронной операции.</returns>
+        /// <returns>Задача завершается после установки текущей версии объекта.</returns>
         public async Task SetCurrentAsync(PdmObject item, ObjectVersion version)
         {
             item.CurrentVersionId = version.Id;
@@ -197,7 +197,7 @@ public sealed class ObjectReadQueryPostgresTests
         /// <summary>
         /// Освобождает контекст и соединение после отката тестовой транзакции.
         /// </summary>
-        /// <returns>Завершение асинхронной операции.</returns>
+        /// <returns>Задача завершается после освобождения ресурсов тестовой фикстуры.</returns>
         public async ValueTask DisposeAsync()
         {
             await Context.DisposeAsync();
@@ -210,9 +210,12 @@ public sealed class ObjectReadQueryPostgresTests
     private sealed class CommandCounter : DbCommandInterceptor
     {
         private int _count;
+        /// <summary>
+        /// Число выполненных SQL-команд, зарегистрированных перехватчиком.
+        /// </summary>
         public int Count => Volatile.Read(ref _count);
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Сбрасывает счётчик выполненных SQL-команд.
         /// </summary>
         public void Reset() => Interlocked.Exchange(ref _count, 0);
 

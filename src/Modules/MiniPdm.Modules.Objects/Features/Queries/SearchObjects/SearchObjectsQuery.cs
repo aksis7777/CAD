@@ -8,10 +8,23 @@ namespace MiniPdm.Modules.Objects.Features.Queries.SearchObjects;
 /// Запрашивает страницу объектов, соответствующих строке поиска.
 /// Параметры смещения и размера задают границы страницы.
 /// </summary>
-/// <param name="Search">Строка поиска по обозначению и имени объекта.</param>
-/// <param name="Offset">Число результатов, пропускаемых перед страницей.</param>
-/// <param name="Limit">Максимальное число результатов страницы.</param>
-public sealed record SearchObjectsQuery(string Search, int Offset, int Limit) : IRequest<ObjectSearchPageDto>;
+public sealed record SearchObjectsQuery(string Search, int Offset, int Limit) : IRequest<ObjectSearchPageDto>
+{
+    /// <summary>
+    /// Строка поиска по обозначению и имени объекта.
+    /// </summary>
+    public string Search { get; init; } = Search;
+
+    /// <summary>
+    /// Число результатов, пропускаемых перед страницей.
+    /// </summary>
+    public int Offset { get; init; } = Offset;
+
+    /// <summary>
+    /// Максимальное число результатов страницы.
+    /// </summary>
+    public int Limit { get; init; } = Limit;
+}
 
 /// <summary>
 /// Выполняет запрос поиска через службу чтения объектов.

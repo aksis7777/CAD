@@ -17,7 +17,7 @@ namespace MiniPdm.Storage.Tests;
 public sealed class VersionCompositionReadQueryTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «ReadsSelectedHistoricalOrCancelledBomInOneNoTrackingQueryAndRetainsEmptyVersions».
+    /// Проверяет чтение выбранного исторического или отменённого состава одним запросом без отслеживания и сохранение пустых версий.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -95,6 +95,9 @@ public sealed class VersionCompositionReadQueryTests
             _connection = connection;
             Context = context;
         }
+        /// <summary>
+        /// Контекст базы данных, используемый тестовой фикстурой.
+        /// </summary>
         public PdmDbContext Context
         {
             get;
@@ -119,13 +122,16 @@ public sealed class VersionCompositionReadQueryTests
 
     private sealed class SelectCountingInterceptor : DbCommandInterceptor
     {
+        /// <summary>
+        /// Число команд SELECT, перехваченных тестовым перехватчиком.
+        /// </summary>
         public int SelectCount
         {
             get; private set;
         }
 
         /// <summary>
-        /// Проверяет ожидаемое поведение сценария «Reset».
+        /// Сбрасывает счётчик команд SELECT, зарегистрированных перехватчиком.
         /// </summary>
         public void Reset() => SelectCount = 0;
 

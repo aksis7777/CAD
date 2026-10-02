@@ -12,7 +12,7 @@ namespace MiniPdm.Modules.Tests;
 public sealed class VersionMutationDomainTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «CloneCopiesDataAndUsesMaximumHistoricalNumberPlusOne».
+    /// Проверяет копирование данных версии и назначение номера выше максимального исторического.
     /// </summary>
     [Fact]
     public void CloneCopiesDataAndUsesMaximumHistoricalNumberPlusOne()
@@ -34,9 +34,9 @@ public sealed class VersionMutationDomainTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «ImmutableVersionsCannotBeEdited».
+    /// Проверяет запрет редактирования неизменяемых состояний версии.
     /// </summary>
-    /// <param name="state">Значение, используемое в проверяемом сценарии.</param>
+    /// <param name="state">Состояние версии.</param>
     [Theory]
     [InlineData(VersionState.Approved)]
     [InlineData(VersionState.Cancelled)]
@@ -49,7 +49,7 @@ public sealed class VersionMutationDomainTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «CancellingCurrentVersionFallsBackToHighestActiveHistoricalVersion».
+    /// Проверяет переключение на старшую действующую историческую версию после отмены текущей.
     /// </summary>
     [Fact]
     public void CancellingCurrentVersionFallsBackToHighestActiveHistoricalVersion()
@@ -66,7 +66,7 @@ public sealed class VersionMutationDomainTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «StateChangeThatMakesFallbackGraphCyclicConflictsWithClosedPath».
+    /// Проверяет отклонение смены состояния, если резервный действующий граф образует цикл.
     /// </summary>
     [Fact]
     public void StateChangeThatMakesFallbackGraphCyclicConflictsWithClosedPath()
@@ -94,7 +94,7 @@ public sealed class VersionMutationDomainTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «HistoricalInWorkCompositionEditDoesNotChangeCurrentPointer».
+    /// Проверяет, что изменение исторического состава версии в работе не меняет указатель текущей версии.
     /// </summary>
     [Fact]
     public void HistoricalInWorkCompositionEditDoesNotChangeCurrentPointer()
@@ -112,7 +112,7 @@ public sealed class VersionMutationDomainTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «ExistingChildWithoutCurrentVersionCanBeAddedAndRetainedLinksUpdateInPlace».
+    /// Проверяет добавление дочернего объекта без текущей версии и обновление сохранённых связей на месте.
     /// </summary>
     [Fact]
     public void ExistingChildWithoutCurrentVersionCanBeAddedAndRetainedLinksUpdateInPlace()
@@ -133,7 +133,7 @@ public sealed class VersionMutationDomainTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «CompositionCycleFailsWithoutChangingSelectedVersion».
+    /// Проверяет отклонение циклического состава без изменения выбранной версии.
     /// </summary>
     [Fact]
     public void CompositionCycleFailsWithoutChangingSelectedVersion()
@@ -152,7 +152,7 @@ public sealed class VersionMutationDomainTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «CompositionNormalizesValidDuplicatesAndRejectsInvalidRowsAndUnknownChildren».
+    /// Проверяет нормализацию корректных повторов состава и отклонение ошибочных строк и неизвестных дочерних объектов.
     /// </summary>
     [Fact]
     public void CompositionNormalizesValidDuplicatesAndRejectsInvalidRowsAndUnknownChildren()
@@ -173,7 +173,7 @@ public sealed class VersionMutationDomainTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «CloneOverflowAndAttributeTypeRulesAreInvalid».
+    /// Проверяет отклонение переполнения номера при клонировании и атрибутов неподходящего типа.
     /// </summary>
     [Fact]
     public void CloneOverflowAndAttributeTypeRulesAreInvalid()
@@ -196,7 +196,7 @@ public sealed class VersionMutationDomainTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «TypeSpecificInvalidAttributesFailWithoutChangingSelectedVersion».
+    /// Проверяет отклонение недопустимых типизированных атрибутов без смены выбранной версии.
     /// </summary>
     [Fact]
     public void TypeSpecificInvalidAttributesFailWithoutChangingSelectedVersion()
@@ -252,5 +252,29 @@ public sealed class VersionMutationDomainTests
             Name = "Old"
         };
 
-    private sealed record Fixture(PdmObject Object, ObjectVersion Selected, Guid ChildId, VersionMutationSnapshot Snapshot);
+    /// <summary>
+    /// Содержит объект, выбранную версию и снимок для теста изменения версии.
+    /// </summary>
+    private sealed record Fixture(PdmObject Object, ObjectVersion Selected, Guid ChildId, VersionMutationSnapshot Snapshot)
+    {
+        /// <summary>
+        /// Объект, используемый тестовым сценарием.
+        /// </summary>
+        public PdmObject Object { get; init; } = Object;
+
+        /// <summary>
+        /// Версия объекта, выбранная для изменения.
+        /// </summary>
+        public ObjectVersion Selected { get; init; } = Selected;
+
+        /// <summary>
+        /// Идентификатор дочернего объекта в снимке.
+        /// </summary>
+        public Guid ChildId { get; init; } = ChildId;
+
+        /// <summary>
+        /// Снимок состояния для проверки операции изменения версии.
+        /// </summary>
+        public VersionMutationSnapshot Snapshot { get; init; } = Snapshot;
+    }
 }

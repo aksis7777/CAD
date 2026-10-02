@@ -8,14 +8,39 @@ namespace MiniPdm.Modules.Objects.Features.Commands.UpdateVersionAttributes;
 /// Обновляет изменяемые атрибуты версии объекта.
 /// Изменение выполняется только при совпадении ожидаемого токена конкурентности.
 /// </summary>
-/// <param name="ObjectId">Идентификатор объекта.</param>
-/// <param name="Version">Положительный номер изменяемой версии.</param>
-/// <param name="Name">Новое наименование версии или <see langword="null"/>, если оно не задано.</param>
-/// <param name="Material">Новый материал версии или <see langword="null"/>, если он не задан.</param>
-/// <param name="Mass">Новая масса версии или <see langword="null"/>, если она не задана.</param>
-/// <param name="ExpectedConcurrencyToken">Токен объекта, прочитанный до отправки команды.</param>
 public sealed record UpdateVersionAttributesCommand(Guid ObjectId, int Version, string? Name, string? Material,
-    decimal? Mass, Guid ExpectedConcurrencyToken) : IRequest<VersionMutationResult>;
+    decimal? Mass, Guid ExpectedConcurrencyToken) : IRequest<VersionMutationResult>
+{
+    /// <summary>
+    /// Идентификатор объекта, версию которого обновляют.
+    /// </summary>
+    public Guid ObjectId { get; init; } = ObjectId;
+
+    /// <summary>
+    /// Положительный номер изменяемой версии.
+    /// </summary>
+    public int Version { get; init; } = Version;
+
+    /// <summary>
+    /// Новое наименование версии, если оно задаётся.
+    /// </summary>
+    public string? Name { get; init; } = Name;
+
+    /// <summary>
+    /// Новый материал версии, если он задаётся.
+    /// </summary>
+    public string? Material { get; init; } = Material;
+
+    /// <summary>
+    /// Новая масса версии, если она задаётся.
+    /// </summary>
+    public decimal? Mass { get; init; } = Mass;
+
+    /// <summary>
+    /// Токен объекта, по которому проверяется актуальность изменения.
+    /// </summary>
+    public Guid ExpectedConcurrencyToken { get; init; } = ExpectedConcurrencyToken;
+}
 
 /// <summary>
 /// Передаёт обновление атрибутов прикладному сервису мутаций версии.

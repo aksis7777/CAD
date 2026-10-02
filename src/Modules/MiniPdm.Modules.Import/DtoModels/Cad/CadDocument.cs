@@ -5,13 +5,6 @@ namespace MiniPdm.Modules.Import.DtoModels.Cad;
 /// <summary>
 /// Нормализованные сведения о CAD-документе и его составе.
 /// </summary>
-/// <param name="FileName">Имя исходного CAD-файла.</param>
-/// <param name="Type">Вид PDM-объекта, создаваемого из документа.</param>
-/// <param name="Designation">Обозначение документа, если задано.</param>
-/// <param name="Name">Наименование объекта.</param>
-/// <param name="Material">Материал, если указан.</param>
-/// <param name="Mass">Масса, если указана.</param>
-/// <param name="Components">Ссылки на файлы компонентов и их количества.</param>
 public sealed record CadDocument(
     string FileName,
     PdmObjectType Type,
@@ -19,11 +12,56 @@ public sealed record CadDocument(
     string Name,
     string? Material,
     decimal? Mass,
-    IReadOnlyList<CadComponent> Components);
+    IReadOnlyList<CadComponent> Components)
+{
+    /// <summary>
+    /// Имя исходного CAD-файла.
+    /// </summary>
+    public string FileName { get; init; } = FileName;
+
+    /// <summary>
+    /// Вид PDM-объекта, создаваемого из документа.
+    /// </summary>
+    public PdmObjectType Type { get; init; } = Type;
+
+    /// <summary>
+    /// Обозначение документа, если оно задано.
+    /// </summary>
+    public string? Designation { get; init; } = Designation;
+
+    /// <summary>
+    /// Наименование объекта.
+    /// </summary>
+    public string Name { get; init; } = Name;
+
+    /// <summary>
+    /// Материал объекта, если он указан.
+    /// </summary>
+    public string? Material { get; init; } = Material;
+
+    /// <summary>
+    /// Масса объекта, если она указана.
+    /// </summary>
+    public decimal? Mass { get; init; } = Mass;
+
+    /// <summary>
+    /// Ссылки на файлы компонентов и их количества.
+    /// </summary>
+    public IReadOnlyList<CadComponent> Components { get; init; } = Components;
+}
 
 /// <summary>
 /// Позиция состава CAD-документа, ссылающаяся на другой файл пакета.
 /// </summary>
-/// <param name="File">Имя файла компонента.</param>
-/// <param name="Count">Количество экземпляров компонента.</param>
-public sealed record CadComponent(string File, int Count);
+public sealed record CadComponent(string File, int Count)
+{
+    /// <summary>
+    /// Имя файла компонента.
+    /// </summary>
+    public string File { get; init; } = File;
+
+    /// <summary>
+    /// Количество экземпляров компонента.
+    /// </summary>
+    public int Count { get; init; } = Count;
+}

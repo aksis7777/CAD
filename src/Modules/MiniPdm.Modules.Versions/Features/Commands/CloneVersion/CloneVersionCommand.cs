@@ -7,11 +7,24 @@ namespace MiniPdm.Modules.Versions.Features.Commands.CloneVersion;
 /// <summary>
 /// Запрашивает создание новой версии на основе выбранной версии объекта.
 /// </summary>
-/// <param name="ObjectId">Идентификатор объекта.</param>
-/// <param name="SourceVersion">Номер версии-источника.</param>
-/// <param name="ExpectedConcurrencyToken">Токен объекта, прочитанный клиентом до изменения.</param>
 public sealed record CloneVersionCommand(Guid ObjectId, int SourceVersion, Guid ExpectedConcurrencyToken)
-    : IRequest<VersionMutationResult>;
+    : IRequest<VersionMutationResult>
+{
+    /// <summary>
+    /// Идентификатор объекта, чья версия клонируется.
+    /// </summary>
+    public Guid ObjectId { get; init; } = ObjectId;
+
+    /// <summary>
+    /// Номер версии-источника.
+    /// </summary>
+    public int SourceVersion { get; init; } = SourceVersion;
+
+    /// <summary>
+    /// Токен объекта, прочитанный клиентом до изменения.
+    /// </summary>
+    public Guid ExpectedConcurrencyToken { get; init; } = ExpectedConcurrencyToken;
+}
 
 /// <summary>
 /// Передаёт запрос клонирования сервису мутаций версий.

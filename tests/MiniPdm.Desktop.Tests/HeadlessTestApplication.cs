@@ -12,9 +12,9 @@ namespace MiniPdm.Desktop.Tests;
 public static class HeadlessTestApplicationBuilder
 {
     /// <summary>
-    /// Реализует операцию тестового помощника.
+    /// Создаёт конфигурацию Avalonia с headless-платформой для запуска интерфейсных тестов без графической среды.
     /// </summary>
-    /// <returns>Значение, сформированное для тестового сценария.</returns>
+    /// <returns>Конфигурацию Avalonia, настроенную для запуска тестов без графической среды.</returns>
     public static AppBuilder BuildAvaloniaApp() => AppBuilder.Configure<HeadlessTestApplication>()
         .WithInterFont()
         .UseSkia()

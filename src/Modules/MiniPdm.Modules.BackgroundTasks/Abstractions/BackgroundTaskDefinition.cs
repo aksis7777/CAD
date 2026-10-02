@@ -3,22 +3,48 @@ namespace MiniPdm.Modules.BackgroundTasks.Abstractions;
 /// <summary>
 /// Содержит итоговое сообщение и ошибки одного выполнения фоновой задачи.
 /// </summary>
-/// <param name="Summary">Краткое описание результата выполнения.</param>
-/// <param name="Errors">Ошибки, возникшие при обработке; пустой список означает выполнение без ошибок.</param>
-public sealed record BackgroundTaskExecutionResult(string Summary, IReadOnlyList<string> Errors);
+public sealed record BackgroundTaskExecutionResult(string Summary, IReadOnlyList<string> Errors)
+{
+    /// <summary>
+    /// Краткое описание результата выполнения.
+    /// </summary>
+    public string Summary { get; init; } = Summary;
+
+    /// <summary>
+    /// Ошибки, возникшие при обработке; пустой список означает выполнение без ошибок.
+    /// </summary>
+    public IReadOnlyList<string> Errors { get; init; } = Errors;
+}
 
 /// <summary>
 /// Описывает фоновую задачу, которую координатор регистрирует и запускает по расписанию или вручную.
 /// </summary>
-/// <param name="Id">Уникальный идентификатор задачи.</param>
-/// <param name="Name">Отображаемое имя задачи.</param>
-/// <param name="DefaultIntervalMinutes">Интервал запуска при первоначальной регистрации, в минутах.</param>
-/// <param name="ExecuteAsync">Делегат выполнения, получающий область служб и токен отмены.</param>
 public sealed record BackgroundTaskDefinition(
     string Id,
     string Name,
     int DefaultIntervalMinutes,
-    Func<IServiceProvider, CancellationToken, Task<BackgroundTaskExecutionResult>> ExecuteAsync);
+    Func<IServiceProvider, CancellationToken, Task<BackgroundTaskExecutionResult>> ExecuteAsync)
+{
+    /// <summary>
+    /// Уникальный идентификатор задачи.
+    /// </summary>
+    public string Id { get; init; } = Id;
+
+    /// <summary>
+    /// Отображаемое имя задачи.
+    /// </summary>
+    public string Name { get; init; } = Name;
+
+    /// <summary>
+    /// Интервал запуска при первоначальной регистрации, в минутах.
+    /// </summary>
+    public int DefaultIntervalMinutes { get; init; } = DefaultIntervalMinutes;
+
+    /// <summary>
+    /// Делегат выполнения, получающий область служб и токен отмены.
+    /// </summary>
+    public Func<IServiceProvider, CancellationToken, Task<BackgroundTaskExecutionResult>> ExecuteAsync { get; init; } = ExecuteAsync;
+}
 
 /// <summary>
 /// Задаёт результат запроса на ручной запуск фоновой задачи.
@@ -44,8 +70,13 @@ public enum BackgroundTaskRunRequestStatus
 /// <summary>
 /// Содержит статус запроса на ручной запуск.
 /// </summary>
-/// <param name="Status">Статус принятия запроса.</param>
-public sealed record BackgroundTaskRunRequestResult(BackgroundTaskRunRequestStatus Status);
+public sealed record BackgroundTaskRunRequestResult(BackgroundTaskRunRequestStatus Status)
+{
+    /// <summary>
+    /// Статус принятия запроса.
+    /// </summary>
+    public BackgroundTaskRunRequestStatus Status { get; init; } = Status;
+}
 
 /// <summary>
 /// Предоставляет операции чтения, настройки и ручного запуска фоновых задач.

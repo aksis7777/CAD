@@ -3,13 +3,18 @@ namespace MiniPdm.Domain.Composition;
 /// <summary>
 ///     Ориентированная связь от родительского объекта к дочернему в графе состава.
 /// </summary>
-/// <param name="ParentId">
-///     Идентификатор сборки, содержащей компонент.
-/// </param>
-/// <param name="ChildId">
-///     Идентификатор объекта-компонента.
-/// </param>
-public sealed record CompositionGraphEdge(Guid ParentId, Guid ChildId);
+public sealed record CompositionGraphEdge(Guid ParentId, Guid ChildId)
+{
+    /// <summary>
+    ///     Идентификатор сборки, содержащей компонент.
+    /// </summary>
+    public Guid ParentId { get; init; } = ParentId;
+
+    /// <summary>
+    ///     Идентификатор объекта-компонента.
+    /// </summary>
+    public Guid ChildId { get; init; } = ChildId;
+}
 
 /// <summary>
 /// Проверяет ориентированный граф состава и определяет узлы, участвующие в циклах.

@@ -7,9 +7,18 @@ namespace MiniPdm.Modules.Objects.Features.Queries.GetObject;
 /// <summary>
 /// Запрашивает карточку объекта с его текущей или выбранной исторической версией.
 /// </summary>
-/// <param name="ObjectId">Идентификатор объекта.</param>
-/// <param name="VersionNumber">Номер версии для чтения или <see langword="null"/> для текущей версии.</param>
-public sealed record GetObjectQuery(Guid ObjectId, int? VersionNumber) : IRequest<ObjectCardDto?>;
+public sealed record GetObjectQuery(Guid ObjectId, int? VersionNumber) : IRequest<ObjectCardDto?>
+{
+    /// <summary>
+    /// Идентификатор объекта для чтения.
+    /// </summary>
+    public Guid ObjectId { get; init; } = ObjectId;
+
+    /// <summary>
+    /// Номер версии для чтения или <see langword="null"/> для текущей версии.
+    /// </summary>
+    public int? VersionNumber { get; init; } = VersionNumber;
+}
 
 /// <summary>
 /// Выполняет запрос карточки объекта через службу чтения.

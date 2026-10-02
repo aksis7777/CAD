@@ -45,27 +45,58 @@ public enum ImportFileAction
 /// <summary>
 /// Результат обработки одного файла в пакете импорта.
 /// </summary>
-/// <param name="FileName">Имя обработанного файла.</param>
-/// <param name="Status">Статус обработки файла.</param>
-/// <param name="Reason">Причина отклонения либо <see langword="null"/>.</param>
-/// <param name="Action">Выполненное действие либо <see langword="null"/>, если файл отклонён.</param>
-/// <param name="Warnings">Предупреждения, сформированные при обработке файла.</param>
 public sealed record ImportFileResultDto(
     string FileName,
     ImportFileStatus Status,
     string? Reason,
     ImportFileAction? Action,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<string> Warnings)
+{
+    /// <summary>
+    /// Имя обработанного файла.
+    /// </summary>
+    public string FileName { get; init; } = FileName;
+
+    /// <summary>
+    /// Статус обработки файла.
+    /// </summary>
+    public ImportFileStatus Status { get; init; } = Status;
+
+    /// <summary>
+    /// Причина отклонения либо <see langword="null"/>.
+    /// </summary>
+    public string? Reason { get; init; } = Reason;
+
+    /// <summary>
+    /// Выполненное действие либо <see langword="null"/>, если файл отклонён.
+    /// </summary>
+    public ImportFileAction? Action { get; init; } = Action;
+
+    /// <summary>
+    /// Предупреждения, сформированные при обработке файла.
+    /// </summary>
+    public IReadOnlyList<string> Warnings { get; init; } = Warnings;
+
+}
 
 /// <summary>
 /// Сводный отчёт об обработке пакета импорта.
 /// </summary>
-/// <param name="ImportId">Идентификатор операции импорта.</param>
-/// <param name="Files">Результаты обработки отдельных файлов.</param>
 public sealed record ImportReportDto(
     Guid ImportId,
     IReadOnlyList<ImportFileResultDto> Files)
 {
+    /// <summary>
+    /// Идентификатор операции импорта.
+    /// </summary>
+    public Guid ImportId { get; init; } = ImportId;
+
+    /// <summary>
+    /// Результаты обработки отдельных файлов.
+    /// </summary>
+    public IReadOnlyList<ImportFileResultDto> Files { get; init; } = Files;
+
+
     /// <summary>
     /// Возвращает число файлов, принятых при импорте.
     /// </summary>

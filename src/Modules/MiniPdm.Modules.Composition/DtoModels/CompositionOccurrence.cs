@@ -7,19 +7,6 @@ namespace MiniPdm.Modules.Composition.DtoModels;
 /// Одно вхождение объекта на пути дерева состава.
 /// Данные включают путь, локальное количество и текущую версию объекта.
 /// </summary>
-/// <param name="ObjectId">Идентификатор объекта-вхождения.</param>
-/// <param name="ObjectPath">Путь от корня дерева до этого объекта включительно.</param>
-/// <param name="ParentPath">Путь до родительского объекта; для корня равен <see langword="null"/>.</param>
-/// <param name="LocalQuantity">Количество объекта относительно непосредственного родителя.</param>
-/// <param name="Type">Тип объекта PDM.</param>
-/// <param name="Designation">Обозначение сборки или детали.</param>
-/// <param name="Name">Отображаемое имя объекта.</param>
-/// <param name="Material">Материал текущей версии, если задан.</param>
-/// <param name="VersionId">Идентификатор текущей версии, если она есть.</param>
-/// <param name="VersionNumber">Номер текущей версии, если она есть.</param>
-/// <param name="State">Состояние текущей версии, если она есть.</param>
-/// <param name="UnitMassKg">Масса единицы объекта в килограммах, если известна.</param>
-/// <param name="IsCycle">Показывает, что объект повторно встретился на текущем пути.</param>
 public sealed record CompositionOccurrence(
     Guid ObjectId,
     Guid[] ObjectPath,
@@ -33,4 +20,73 @@ public sealed record CompositionOccurrence(
     int? VersionNumber,
     VersionState? State,
     decimal? UnitMassKg,
-    bool IsCycle);
+    bool IsCycle)
+{
+    /// <summary>
+    /// Идентификатор объекта, представленного этим вхождением дерева.
+    /// </summary>
+    public Guid ObjectId { get; init; } = ObjectId;
+
+    /// <summary>
+    /// Последовательность идентификаторов от корня дерева до данного объекта включительно.
+    /// </summary>
+    public Guid[] ObjectPath { get; init; } = ObjectPath;
+
+    /// <summary>
+    /// Последовательность идентификаторов от корня до родителя объекта.
+    /// Для корневого вхождения путь родителя отсутствует.
+    /// </summary>
+    public Guid[]? ParentPath { get; init; } = ParentPath;
+
+    /// <summary>
+    /// Количество объекта относительно его непосредственного родителя.
+    /// Для корневого вхождения значение равно единице.
+    /// </summary>
+    public int LocalQuantity { get; init; } = LocalQuantity;
+
+    /// <summary>
+    /// Тип объекта PDM, определяющий его свойства и правила расчёта.
+    /// </summary>
+    public PdmObjectType Type { get; init; } = Type;
+
+    /// <summary>
+    /// Обозначение сборки или детали; для стандартного изделия не задаётся.
+    /// </summary>
+    public string? Designation { get; init; } = Designation;
+
+    /// <summary>
+    /// Отображаемое имя объекта или имя его текущей версии.
+    /// </summary>
+    public string? Name { get; init; } = Name;
+
+    /// <summary>
+    /// Материал текущей версии, если он задан для объекта.
+    /// </summary>
+    public string? Material { get; init; } = Material;
+
+    /// <summary>
+    /// Идентификатор текущей версии объекта; равен null при её отсутствии.
+    /// </summary>
+    public Guid? VersionId { get; init; } = VersionId;
+
+    /// <summary>
+    /// Номер текущей версии объекта; равен null при её отсутствии.
+    /// </summary>
+    public int? VersionNumber { get; init; } = VersionNumber;
+
+    /// <summary>
+    /// Состояние текущей версии объекта, если она существует.
+    /// </summary>
+    public VersionState? State { get; init; } = State;
+
+    /// <summary>
+    /// Масса одной единицы объекта в килограммах, если она известна.
+    /// Масса сборки в этой проекции не вычисляется.
+    /// </summary>
+    public decimal? UnitMassKg { get; init; } = UnitMassKg;
+
+    /// <summary>
+    /// Показывает, что объект уже присутствует в пути и образует цикл.
+    /// </summary>
+    public bool IsCycle { get; init; } = IsCycle;
+}

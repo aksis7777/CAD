@@ -14,7 +14,7 @@ namespace MiniPdm.Storage.Tests;
 public sealed class BackgroundTaskPersistenceTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Schedule_and_run_status_persist_and_scheduled_time_uses_updated_interval».
+    /// Проверяет сохранение расписания и статуса выполнения, а также расчёт следующего запуска по обновлённому интервалу.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -61,7 +61,7 @@ public sealed class BackgroundTaskPersistenceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Existing_running_job_is_marked_interrupted_when_definitions_are_ensured_after_restart».
+    /// Проверяет перевод выполнявшейся задачи в состояние прерванной при повторной регистрации после перезапуска.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -85,10 +85,16 @@ public sealed class BackgroundTaskPersistenceTests
     private sealed class Fixture : IAsyncDisposable
     {
         private readonly SqliteConnection _connection;
+        /// <summary>
+        /// Параметры SQLite-контекста базы данных тестовой фикстуры.
+        /// </summary>
         public DbContextOptions<PdmDbContext> Options
         {
             get;
         }
+        /// <summary>
+        /// Контекст базы данных, используемый тестовой фикстурой.
+        /// </summary>
         public PdmDbContext Context
         {
             get;

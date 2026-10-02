@@ -18,7 +18,7 @@ namespace MiniPdm.Storage.Tests;
 public sealed class VersionMutationServiceTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Clone_persists_next_version_and_moves_current_pointer_atomically».
+    /// Проверяет сохранение следующей версии и атомарное перемещение указателя текущей версии.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -40,7 +40,7 @@ public sealed class VersionMutationServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Stale_token_returns_conflict_without_invoking_domain_callback».
+    /// Проверяет возврат конфликта по устаревшему токену до вызова доменного callback.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -65,7 +65,7 @@ public sealed class VersionMutationServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Rejected_plan_discards_callback_mutations_and_clears_tracker».
+    /// Проверяет отбрасывание изменений callback и очистку отслеживания после отклонения плана.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -89,7 +89,7 @@ public sealed class VersionMutationServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Composition_update_removes_old_links_before_saving_new_pointer_and_bulk_loads_children».
+    /// Проверяет удаление старых связей до сохранения нового указателя и пакетную загрузку дочерних объектов при изменении состава.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -132,7 +132,7 @@ public sealed class VersionMutationServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Clone_works_when_object_has_versions_but_no_current_pointer».
+    /// Проверяет клонирование объекта с историческими версиями без текущего указателя.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -155,14 +155,23 @@ public sealed class VersionMutationServiceTests
     private sealed class Fixture : IAsyncDisposable
     {
         private readonly SqliteConnection _connection;
+        /// <summary>
+        /// Параметры SQLite-контекста базы данных тестовой фикстуры.
+        /// </summary>
         public DbContextOptions<PdmDbContext> Options
         {
             get;
         }
+        /// <summary>
+        /// Контекст базы данных, используемый тестовой фикстурой.
+        /// </summary>
         public PdmDbContext Context
         {
             get;
         }
+        /// <summary>
+        /// Сервис сохранения изменений версий, связанный с контекстом фикстуры.
+        /// </summary>
         public VersionMutationService Persistence
         {
             get;

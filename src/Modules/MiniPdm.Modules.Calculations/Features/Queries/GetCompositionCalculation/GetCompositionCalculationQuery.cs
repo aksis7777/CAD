@@ -8,8 +8,13 @@ namespace MiniPdm.Modules.Calculations.Features.Queries.GetCompositionCalculatio
 /// Запрашивает расчёт массы и плоскую спецификацию корневого объекта.
 /// Результат содержит полноту расчёта и диагностику незавершённых ветвей.
 /// </summary>
-/// <param name="ObjectId">Идентификатор корневого объекта.</param>
-public sealed record GetCompositionCalculationQuery(Guid ObjectId) : IRequest<CompositionCalculationDto?>;
+public sealed record GetCompositionCalculationQuery(Guid ObjectId) : IRequest<CompositionCalculationDto?>
+{
+    /// <summary>
+    /// Идентификатор корневого объекта для расчёта.
+    /// </summary>
+    public Guid ObjectId { get; init; } = ObjectId;
+}
 
 /// <summary>
 /// Выполняет запрос расчёта через сервис расчётов состава.

@@ -78,7 +78,7 @@ public sealed class BackgroundTasksViewModelTests
     /// Ожидает выполнения условия или сообщает об истечении срока ожидания.
     /// </summary>
     /// <param name="condition">Условие завершения ожидания.</param>
-    /// <returns>Завершение асинхронной операции.</returns>
+    /// <returns>Завершение после загрузки ожидаемой задачи либо ошибка утверждения по истечении двух секунд.</returns>
     private static async Task WaitUntilAsync(Func<bool> condition)
     {
         var stop = DateTime.UtcNow.AddSeconds(2);
@@ -128,107 +128,107 @@ public sealed class BackgroundTasksViewModelTests
         public TaskCompletionSource ReleaseRun { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Этот тестовый клиент не поддерживает поиск объектов, поскольку сценарии проверяют только фоновые задачи.
         /// </summary>
-        /// <param name="search">Значение search, используемое в этой проверке.</param>
-        /// <param name="offset">Значение offset, используемое в этой проверке.</param>
-        /// <param name="limit">Значение limit, используемое в этой проверке.</param>
+        /// <param name="search">Текстовый фильтр поиска; в этой фикстуре он не применяется.</param>
+        /// <param name="offset">Число записей, пропускаемых перед страницей результатов.</param>
+        /// <param name="limit">Максимальное число записей на странице результатов.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача не возвращается: вызов метода выбрасывает NotSupportedException, так как операция не поддерживается этим тестовым клиентом.</returns>
         public Task<ObjectSearchPageDto> SearchObjectsAsync(string? search = null, int offset = 0, int limit = 50, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Этот тестовый клиент не поддерживает получение карточек объектов в сценариях фоновых задач.
         /// </summary>
-        /// <param name="objectId">Значение objectId, используемое в этой проверке.</param>
-        /// <param name="version">Версия, назначаемая текущей для объекта.</param>
+        /// <param name="objectId">Идентификатор объекта, для которого запрашиваются данные.</param>
+        /// <param name="version">Номер запрашиваемой версии объекта.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача не возвращается: вызов метода выбрасывает NotSupportedException, так как операция не поддерживается этим тестовым клиентом.</returns>
         public Task<ObjectCardDto> GetObjectAsync(Guid objectId, int? version = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Этот тестовый клиент не поддерживает чтение состава объектов в сценариях фоновых задач.
         /// </summary>
-        /// <param name="objectId">Значение objectId, используемое в этой проверке.</param>
+        /// <param name="objectId">Идентификатор объекта, для которого запрашиваются данные.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача не возвращается: вызов метода выбрасывает NotSupportedException, так как операция не поддерживается этим тестовым клиентом.</returns>
         public Task<CompositionTreeDto> GetCompositionAsync(Guid objectId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Этот тестовый клиент не поддерживает чтение состава версий в сценариях фоновых задач.
         /// </summary>
-        /// <param name="objectId">Значение objectId, используемое в этой проверке.</param>
-        /// <param name="version">Версия, назначаемая текущей для объекта.</param>
+        /// <param name="objectId">Идентификатор объекта, для которого запрашиваются данные.</param>
+        /// <param name="version">Номер запрашиваемой версии объекта.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача не возвращается: вызов метода выбрасывает NotSupportedException, так как операция не поддерживается этим тестовым клиентом.</returns>
         public Task<VersionCompositionDto> GetVersionCompositionAsync(Guid objectId, int version, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Этот тестовый клиент не поддерживает расчёт состава в сценариях фоновых задач.
         /// </summary>
-        /// <param name="objectId">Значение objectId, используемое в этой проверке.</param>
+        /// <param name="objectId">Идентификатор объекта, для которого запрашиваются данные.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача не возвращается: вызов метода выбрасывает NotSupportedException, так как операция не поддерживается этим тестовым клиентом.</returns>
         public Task<CompositionCalculationDto> GetCalculationAsync(Guid objectId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Этот тестовый клиент не поддерживает импорт файлов в сценариях фоновых задач.
         /// </summary>
-        /// <param name="importId">Значение importId, используемое в этой проверке.</param>
-        /// <param name="filePaths">Значение filePaths, используемое в этой проверке.</param>
+        /// <param name="importId">Идентификатор пакета импорта.</param>
+        /// <param name="filePaths">Пути файлов, включённых в пакет импорта.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача не возвращается: вызов метода выбрасывает NotSupportedException, так как операция не поддерживается этим тестовым клиентом.</returns>
         public Task<ImportReportDto> ImportFilesAsync(Guid importId, IReadOnlyList<string> filePaths, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Этот тестовый клиент не поддерживает получение отчётов импорта в сценариях фоновых задач.
         /// </summary>
-        /// <param name="importId">Значение importId, используемое в этой проверке.</param>
+        /// <param name="importId">Идентификатор пакета импорта.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача не возвращается: вызов метода выбрасывает NotSupportedException, так как операция не поддерживается этим тестовым клиентом.</returns>
         public Task<ImportReportDto> GetImportReportAsync(Guid importId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Этот тестовый клиент не поддерживает клонирование версий в сценариях фоновых задач.
         /// </summary>
-        /// <param name="objectId">Значение objectId, используемое в этой проверке.</param>
-        /// <param name="request">HTTP-запрос, отправленный тестовым клиентом.</param>
+        /// <param name="objectId">Идентификатор объекта, для которого запрашиваются данные.</param>
+        /// <param name="request">Параметры клонирования исходной версии.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача не возвращается: вызов метода выбрасывает NotSupportedException, так как операция не поддерживается этим тестовым клиентом.</returns>
         public Task<VersionMutationDto> CloneVersionAsync(Guid objectId, CloneVersionRequestDto request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Этот тестовый клиент не поддерживает изменение состояния версии в сценариях фоновых задач.
         /// </summary>
-        /// <param name="objectId">Значение objectId, используемое в этой проверке.</param>
-        /// <param name="version">Версия, назначаемая текущей для объекта.</param>
-        /// <param name="request">HTTP-запрос, отправленный тестовым клиентом.</param>
+        /// <param name="objectId">Идентификатор объекта, для которого запрашиваются данные.</param>
+        /// <param name="version">Номер запрашиваемой версии объекта.</param>
+        /// <param name="request">Новое состояние и токен конкурентного доступа.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача не возвращается: вызов метода выбрасывает NotSupportedException, так как операция не поддерживается этим тестовым клиентом.</returns>
         public Task<VersionMutationDto> ChangeVersionStateAsync(Guid objectId, int version, ChangeVersionStateRequestDto request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Этот тестовый клиент не поддерживает изменение атрибутов версии в сценариях фоновых задач.
         /// </summary>
-        /// <param name="objectId">Значение objectId, используемое в этой проверке.</param>
-        /// <param name="version">Версия, назначаемая текущей для объекта.</param>
-        /// <param name="request">HTTP-запрос, отправленный тестовым клиентом.</param>
+        /// <param name="objectId">Идентификатор объекта, для которого запрашиваются данные.</param>
+        /// <param name="version">Номер запрашиваемой версии объекта.</param>
+        /// <param name="request">Новые атрибуты версии и токен конкурентного доступа.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача не возвращается: вызов метода выбрасывает NotSupportedException, так как операция не поддерживается этим тестовым клиентом.</returns>
         public Task<VersionMutationDto> UpdateVersionAttributesAsync(Guid objectId, int version, UpdateVersionAttributesRequestDto request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Этот тестовый клиент не поддерживает изменение состава в сценариях фоновых задач.
         /// </summary>
-        /// <param name="objectId">Значение objectId, используемое в этой проверке.</param>
-        /// <param name="version">Версия, назначаемая текущей для объекта.</param>
-        /// <param name="request">HTTP-запрос, отправленный тестовым клиентом.</param>
+        /// <param name="objectId">Идентификатор объекта, для которого запрашиваются данные.</param>
+        /// <param name="version">Номер запрашиваемой версии объекта.</param>
+        /// <param name="request">Новый список компонентов и токен конкурентного доступа.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача не возвращается: вызов метода выбрасывает NotSupportedException, так как операция не поддерживается этим тестовым клиентом.</returns>
         public Task<VersionMutationDto> ReplaceCompositionAsync(Guid objectId, int version, ReplaceCompositionRequestDto request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Возвращает список с единственной фоновой задачей, хранящейся в тестовом клиенте.
         /// </summary>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Список, содержащий текущую тестовую фоновую задачу.</returns>
         public Task<IReadOnlyList<BackgroundTaskDto>> GetBackgroundTasksAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<BackgroundTaskDto>>([_task]);
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// При включённом флаге конфликта сообщает об ошибке 409; иначе сохраняет заданный интервал и возвращает обновлённую задачу.
         /// </summary>
-        /// <param name="taskId">Значение taskId, используемое в этой проверке.</param>
-        /// <param name="request">HTTP-запрос, отправленный тестовым клиентом.</param>
+        /// <param name="taskId">Идентификатор фоновой задачи.</param>
+        /// <param name="request">Новый интервал расписания задачи.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Обновлённое описание задачи с новым интервалом запуска.</returns>
         public Task<BackgroundTaskDto> UpdateBackgroundTaskScheduleAsync(string taskId, UpdateBackgroundTaskScheduleRequestDto request, CancellationToken cancellationToken = default)
         {
             if (ScheduleConflict)
@@ -241,11 +241,11 @@ public sealed class BackgroundTasksViewModelTests
             return Task.FromResult(_task);
         }
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Увеличивает счётчик запусков, подаёт сигнал ожидания и при необходимости ждёт разрешения теста перед возвратом подтверждения.
         /// </summary>
-        /// <param name="taskId">Значение taskId, используемое в этой проверке.</param>
+        /// <param name="taskId">Идентификатор фоновой задачи.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Подтверждение принятого ручного запуска с идентификатором задачи.</returns>
         public async Task<BackgroundTaskRunAcceptedDto> RunBackgroundTaskAsync(string taskId, CancellationToken cancellationToken = default)
         {
             RunCount++;

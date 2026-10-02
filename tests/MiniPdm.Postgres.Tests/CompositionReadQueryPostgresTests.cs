@@ -285,7 +285,7 @@ public sealed class CompositionReadQueryPostgresTests
     /// </summary>
     /// <param name="type">Тип создаваемого объекта.</param>
     /// <param name="designation">Обозначение создаваемого объекта.</param>
-    /// <returns>Значение, сформированное для тестового сценария.</returns>
+    /// <returns>Новый объект с указанным типом и обозначением.</returns>
     private static PdmObject NewObject(PdmObjectType type, string designation) => new()
     {
         Type = type,
@@ -297,13 +297,13 @@ public sealed class CompositionReadQueryPostgresTests
     /// <summary>
     /// Создаёт версию объекта с заданными атрибутами.
     /// </summary>
-    /// <param name="owner">Окно-владелец диалога выбора.</param>
+    /// <param name="owner">Объект, которому принадлежит создаваемая версия.</param>
     /// <param name="number">Номер создаваемой версии.</param>
     /// <param name="state">Состояние создаваемой версии.</param>
     /// <param name="name">Наименование создаваемой версии.</param>
     /// <param name="material">Материал версии, если он задан.</param>
     /// <param name="mass">Масса версии в килограммах, если она задана.</param>
-    /// <returns>Значение, сформированное для тестового сценария.</returns>
+    /// <returns>Новая версия с указанными состоянием и атрибутами.</returns>
     private static ObjectVersion NewVersion(PdmObject owner, int number, VersionState state, string name, string? material = null, decimal? mass = null) => new()
     {
         ObjectId = owner.Id,
@@ -320,7 +320,7 @@ public sealed class CompositionReadQueryPostgresTests
     /// <param name="parentVersionId">Идентификатор родительской версии состава.</param>
     /// <param name="childObjectId">Идентификатор дочернего объекта.</param>
     /// <param name="quantity">Количество дочернего объекта.</param>
-    /// <returns>Значение, сформированное для тестового сценария.</returns>
+    /// <returns>Новая связь состава с заданными родителем, дочерним объектом и количеством.</returns>
     private static BomLink Link(Guid parentVersionId, Guid childObjectId, int quantity) => new()
     {
         ParentVersionId = parentVersionId,
@@ -391,7 +391,7 @@ public sealed class CompositionReadQueryPostgresTests
         /// Добавляет объекты в контекст фикстуры и сохраняет изменения.
         /// </summary>
         /// <param name="objects">Объекты для добавления в контекст фикстуры.</param>
-        /// <returns>Завершение асинхронной операции.</returns>
+        /// <returns>Задача завершается после сохранения добавленных объектов.</returns>
         public async Task SaveObjectsAsync(params PdmObject[] objects)
         {
             Context.Objects.AddRange(objects);
@@ -402,7 +402,7 @@ public sealed class CompositionReadQueryPostgresTests
         /// Добавляет версии в контекст фикстуры и сохраняет изменения.
         /// </summary>
         /// <param name="versions">Версии для добавления в контекст фикстуры.</param>
-        /// <returns>Завершение асинхронной операции.</returns>
+        /// <returns>Задача завершается после сохранения добавленных версий.</returns>
         public async Task SaveVersionsAsync(params ObjectVersion[] versions)
         {
             Context.Versions.AddRange(versions);
@@ -413,7 +413,7 @@ public sealed class CompositionReadQueryPostgresTests
         /// Устанавливает текущие версии указанных объектов и сохраняет изменения.
         /// </summary>
         /// <param name="pointers">Пары объекта и версии, которые нужно назначить текущими.</param>
-        /// <returns>Завершение асинхронной операции.</returns>
+        /// <returns>Задача завершается после обновления текущей версии объекта.</returns>
         public async Task SetCurrentVersionsAsync(params (PdmObject Object, ObjectVersion Version)[] pointers)
         {
             foreach (var (obj, version) in pointers)
@@ -425,7 +425,7 @@ public sealed class CompositionReadQueryPostgresTests
         /// Добавляет связи состава в контекст фикстуры и сохраняет изменения.
         /// </summary>
         /// <param name="links">Связи состава для сохранения.</param>
-        /// <returns>Завершение асинхронной операции.</returns>
+        /// <returns>Задача завершается после освобождения контекста, транзакции и соединения.</returns>
         public async Task SaveLinksAsync(params BomLink[] links)
         {
             Context.BomLinks.AddRange(links);
@@ -448,9 +448,12 @@ public sealed class CompositionReadQueryPostgresTests
     private sealed class CountingCommandInterceptor : DbCommandInterceptor
     {
         private int _count;
+        /// <summary>
+        /// Число выполненных SQL-команд, зарегистрированных перехватчиком.
+        /// </summary>
         public int Count => Volatile.Read(ref _count);
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Сбрасывает счётчик выполненных SQL-команд.
         /// </summary>
         public void Reset() => Interlocked.Exchange(ref _count, 0);
 

@@ -8,8 +8,13 @@ namespace MiniPdm.Modules.Composition.Features.Queries.GetComposition;
 /// Запрашивает дерево состава, начинающееся с указанного объекта.
 /// В ответ входят вложенные вхождения и сведения об их текущих версиях.
 /// </summary>
-/// <param name="ObjectId">Идентификатор корневого объекта.</param>
-public sealed record GetCompositionQuery(Guid ObjectId) : IRequest<CompositionTreeDto?>;
+public sealed record GetCompositionQuery(Guid ObjectId) : IRequest<CompositionTreeDto?>
+{
+    /// <summary>
+    /// Идентификатор корневого объекта.
+    /// </summary>
+    public Guid ObjectId { get; init; } = ObjectId;
+}
 
 /// <summary>
 /// Получает дерево состава объекта через сервис чтения состава.

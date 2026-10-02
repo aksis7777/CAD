@@ -338,7 +338,7 @@ public sealed class DesktopWindowTests
     /// </summary>
     /// <param name="condition">Условие, выполнение которого завершает ожидание.</param>
     /// <param name="failureMessage">Сообщение, выводимое при истечении срока ожидания.</param>
-    /// <returns>Завершение асинхронного ожидания после выполнения условия.</returns>
+    /// <returns>Завершение ожидания после выполнения условия; если срок истекает раньше, утверждение теста завершается ошибкой.</returns>
     private static async Task WaitUntilAsync(Func<bool> condition, string failureMessage)
     {
         var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
@@ -378,8 +378,8 @@ public sealed class DesktopWindowTests
         /// Регистрирует начало выбора файлов и возвращает задачу с выбранным пакетом.
         /// </summary>
         /// <param name="owner">Окно-владелец диалога выбора.</param>
-        /// <param name="cancellationToken">Токен отмены операции выбора.</param>
-        /// <returns>Задача с выбранным пакетом файлов либо null при отмене.</returns>
+        /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
+        /// <returns>Задача с выбранным пакетом файлов либо null, если пользователь отменил выбор.</returns>
         public Task<SelectedImportPackage?> PickAsync(Window owner, CancellationToken cancellationToken = default)
         {
             Entered.TrySetResult();
@@ -407,8 +407,8 @@ public sealed class DesktopWindowTests
         /// Регистрирует начало выбора файлов и возвращает задачу с выбранным пакетом.
         /// </summary>
         /// <param name="owner">Окно-владелец диалога выбора.</param>
-        /// <param name="cancellationToken">Токен отмены операции выбора.</param>
-        /// <returns>Задача с выбранным пакетом файлов либо null при отмене.</returns>
+        /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
+        /// <returns>Задача с выбранным пакетом файлов либо null, если пользователь отменил выбор.</returns>
         public Task<SelectedImportPackage?> PickAsync(Window owner, CancellationToken cancellationToken = default)
         {
             CallCount++;
@@ -518,7 +518,7 @@ public sealed class DesktopWindowTests
         /// Создаёт карточку объекта для ответа тестового API.
         /// </summary>
         /// <param name="historical">Указывает, следует ли вернуть историческую версию.</param>
-        /// <returns>Карточка тестового объекта с текущей или исторической версией.</returns>
+        /// <returns>Тестовая карточка объекта с текущей или исторической версией.</returns>
         private ObjectCardDto CreateCard(bool historical)
         {
             var selectedId = historical ? HistoricalVersionId : CurrentVersionId;
@@ -538,7 +538,7 @@ public sealed class DesktopWindowTests
         /// Создаёт успешный HTTP-ответ с сериализованным JSON-телом.
         /// </summary>
         /// <param name="response">Объект, который сериализуется в тело ответа.</param>
-        /// <returns>HTTP-ответ со статусом 200 и JSON-содержимым.</returns>
+        /// <returns>HTTP-ответ со статусом 200 и JSON-телом.</returns>
         private static Task<HttpResponseMessage> Ok<T>(T response) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(JsonSerializer.Serialize(response, JsonOptions), Encoding.UTF8, "application/json")

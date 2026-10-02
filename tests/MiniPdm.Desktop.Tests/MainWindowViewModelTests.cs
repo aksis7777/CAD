@@ -167,7 +167,7 @@ public sealed class MainWindowViewModelTests
     /// Ожидает выполнения условия или сообщает об истечении срока ожидания.
     /// </summary>
     /// <param name="condition">Условие завершения ожидания.</param>
-    /// <returns>Завершение асинхронной операции.</returns>
+    /// <returns>Завершение после выполнения условия либо ошибка утверждения по истечении пяти секунд.</returns>
     private static async Task WaitUntilAsync(Func<bool> condition)
     {
         var limit = DateTime.UtcNow.AddSeconds(3);
@@ -177,24 +177,24 @@ public sealed class MainWindowViewModelTests
     }
 
     /// <summary>
-    /// Создаёт краткие сведения об объекте для тестового сценария.
+    /// Создаёт элемент результатов поиска для объекта с указанными идентификатором, обозначением и типом.
     /// </summary>
     /// <param name="id">Идентификатор объекта для чтения.</param>
     /// <param name="designation">Обозначение создаваемого объекта.</param>
     /// <param name="type">Тип создаваемого объекта.</param>
-    /// <returns>Значение, сформированное для тестового сценария.</returns>
+    /// <returns>Элемент поиска с указанными идентификатором, обозначением и типом объекта.</returns>
     private static ObjectSearchItemDto Item(Guid id, string designation, string type = "Part") =>
         new(id, type, designation, "Part", null, null, null, null, Guid.NewGuid(), true);
 
     /// <summary>
-    /// Создаёт карточку объекта с заданными сведениями о версии.
+    /// Создаёт карточку объекта с текущей либо указанной исторической версией.
     /// </summary>
     /// <param name="id">Идентификатор объекта для чтения.</param>
     /// <param name="name">Наименование создаваемой версии.</param>
-    /// <param name="token">Значение token, используемое в этой проверке.</param>
-    /// <param name="history">Значение history, используемое в этой проверке.</param>
+    /// <param name="token">Токен конкурентного доступа объекта.</param>
+    /// <param name="history">Краткая запись об исторической версии объекта либо null.</param>
     /// <param name="type">Тип создаваемого объекта.</param>
-    /// <returns>Значение, сформированное для тестового сценария.</returns>
+    /// <returns>Карточку объекта с указанными сведениями и версиями.</returns>
     private static ObjectCardDto Card(Guid id, string? name, Guid token, ObjectVersionSummaryDto? history = null, string type = "Part")
     {
         var selected = history is null ? Version(1, "InWork", name ?? "Part") : null;
@@ -205,25 +205,25 @@ public sealed class MainWindowViewModelTests
     }
 
     /// <summary>
-    /// Создаёт карточку объекта с заданными сведениями о версии.
+    /// Создаёт карточку объекта с текущей либо указанной исторической версией.
     /// </summary>
     /// <param name="id">Идентификатор объекта для чтения.</param>
     /// <param name="name">Наименование создаваемой версии.</param>
-    /// <param name="token">Значение token, используемое в этой проверке.</param>
-    /// <param name="selected">Значение selected, используемое в этой проверке.</param>
-    /// <param name="summaries">Значение summaries, используемое в этой проверке.</param>
-    /// <returns>Значение, сформированное для тестового сценария.</returns>
+    /// <param name="token">Токен конкурентного доступа объекта.</param>
+    /// <param name="selected">Версия, выбранная для карточки объекта, либо null.</param>
+    /// <param name="summaries">Сводные сведения о версиях объекта.</param>
+    /// <returns>Карточку объекта с указанными сведениями и версиями.</returns>
     private static ObjectCardDto Card(Guid id, string? name, Guid token, ObjectVersionDto? selected,
         IReadOnlyList<ObjectVersionSummaryDto> summaries) =>
         new(id, "Part", "АБВГ.301245.001", name, null, token, selected, summaries, null, null);
 
     /// <summary>
-    /// Создаёт краткие данные версии для тестового сценария.
+    /// Создаёт версию с указанным номером, состоянием и наименованием.
     /// </summary>
     /// <param name="number">Номер создаваемой версии.</param>
     /// <param name="state">Состояние создаваемой версии.</param>
     /// <param name="name">Наименование создаваемой версии.</param>
-    /// <returns>Значение, сформированное для тестового сценария.</returns>
+    /// <returns>Версию объекта с новым идентификатором и заданными атрибутами.</returns>
     private static ObjectVersionDto Version(int number, string state, string? name)
     {
         var id = Guid.NewGuid();
@@ -233,7 +233,7 @@ public sealed class MainWindowViewModelTests
     private sealed class DeleteFileLease(string path) : IDisposable
     {
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Удаляет файл аренды, если он всё ещё существует.
         /// </summary>
         public void Dispose()
         {
@@ -249,6 +249,10 @@ public sealed class MainWindowViewModelTests
         /// Карточки объектов, возвращаемые тестовым клиентом.
         /// </summary>
         public Dictionary<Guid, ObjectCardDto> Cards { get; } = [];
+
+        /// <summary>
+        /// Составы версий, возвращаемые тестовым клиентом.
+        /// </summary>
         public Dictionary<(Guid, int), VersionCompositionDto> VersionCompositions { get; } = [];
         /// <summary>
         /// Фабрика карточек объектов для тестовых ответов.
@@ -309,22 +313,22 @@ public sealed class MainWindowViewModelTests
         public List<string[]> UploadedFiles { get; } = [];
 
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Возвращает пустую страницу поиска с переданными смещением и размером страницы.
         /// </summary>
-        /// <param name="search">Значение search, используемое в этой проверке.</param>
-        /// <param name="offset">Значение offset, используемое в этой проверке.</param>
-        /// <param name="limit">Значение limit, используемое в этой проверке.</param>
+        /// <param name="search">Текстовый фильтр поиска; в этой фикстуре он не применяется.</param>
+        /// <param name="offset">Число записей, пропускаемых перед страницей результатов.</param>
+        /// <param name="limit">Максимальное число записей на странице результатов.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Пустую страницу результатов с сохранёнными значениями offset и limit.</returns>
         public Task<ObjectSearchPageDto> SearchObjectsAsync(string? search = null, int offset = 0, int limit = 50, CancellationToken cancellationToken = default) =>
             Task.FromResult(new ObjectSearchPageDto([], offset, limit, false));
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Возвращает карточку из переопределения, фабрики или набора тестовых карточек; при отсутствии данных создаёт карточку по умолчанию.
         /// </summary>
-        /// <param name="objectId">Значение objectId, используемое в этой проверке.</param>
-        /// <param name="version">Версия, назначаемая текущей для объекта.</param>
+        /// <param name="objectId">Идентификатор объекта, для которого запрашиваются данные.</param>
+        /// <param name="version">Номер запрашиваемой версии объекта.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Карточку из переопределения, фабрики или словаря; либо карточку по умолчанию.</returns>
         public Task<ObjectCardDto> GetObjectAsync(Guid objectId, int? version = null, CancellationToken cancellationToken = default)
         {
             var number = Interlocked.Increment(ref _cardCalls);
@@ -351,38 +355,38 @@ public sealed class MainWindowViewModelTests
                 card.ConcurrencyToken, selected, card.Versions, card.ErrorCode, card.Error));
         }
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Возвращает пустое дерево состава для указанного корневого объекта.
         /// </summary>
-        /// <param name="objectId">Значение objectId, используемое в этой проверке.</param>
+        /// <param name="objectId">Идентификатор объекта, для которого запрашиваются данные.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Пустое дерево состава с указанным корневым объектом.</returns>
         public Task<CompositionTreeDto> GetCompositionAsync(Guid objectId, CancellationToken cancellationToken = default) =>
             Task.FromResult(new CompositionTreeDto(objectId, []));
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Возвращает заданный для объекта и версии состав либо пустой состав с токеном известной карточки.
         /// </summary>
-        /// <param name="objectId">Значение objectId, используемое в этой проверке.</param>
-        /// <param name="version">Версия, назначаемая текущей для объекта.</param>
+        /// <param name="objectId">Идентификатор объекта, для которого запрашиваются данные.</param>
+        /// <param name="version">Номер запрашиваемой версии объекта.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Тестовый состав либо пустой состав с токеном известной карточки.</returns>
         public Task<VersionCompositionDto> GetVersionCompositionAsync(Guid objectId, int version, CancellationToken cancellationToken = default) =>
             Task.FromResult(VersionCompositions.GetValueOrDefault((objectId, version)) ?? new VersionCompositionDto(objectId, version,
                 Cards.GetValueOrDefault(objectId)?.ConcurrencyToken ?? Guid.Empty, []));
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Возвращает неполный расчёт без строк спецификации и диагностик для указанного объекта.
         /// </summary>
-        /// <param name="objectId">Значение objectId, используемое в этой проверке.</param>
+        /// <param name="objectId">Идентификатор объекта, для которого запрашиваются данные.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Расчёт без известной массы, строк спецификации и диагностик.</returns>
         public Task<CompositionCalculationDto> GetCalculationAsync(Guid objectId, CancellationToken cancellationToken = default) =>
             Task.FromResult(new CompositionCalculationDto(objectId, null, false, [], []));
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Записывает идентификатор импорта и пути файлов; при неизвестном исходе выбрасывает ошибку 503, иначе возвращает пустой отчёт.
         /// </summary>
-        /// <param name="importId">Значение importId, используемое в этой проверке.</param>
-        /// <param name="filePaths">Значение filePaths, используемое в этой проверке.</param>
+        /// <param name="importId">Идентификатор пакета импорта.</param>
+        /// <param name="filePaths">Пути файлов, включённых в пакет импорта.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Пустой отчёт импорта при известном результате операции.</returns>
         public Task<ImportReportDto> ImportFilesAsync(Guid importId, IReadOnlyList<string> filePaths, CancellationToken cancellationToken = default)
         {
             UploadIds.Add(importId);
@@ -392,11 +396,11 @@ public sealed class MainWindowViewModelTests
             return Task.FromResult(new ImportReportDto(importId, []));
         }
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Увеличивает счётчик запросов отчёта; если отчёт недоступен, выбрасывает ошибку 404, иначе возвращает пустой отчёт.
         /// </summary>
-        /// <param name="importId">Значение importId, используемое в этой проверке.</param>
+        /// <param name="importId">Идентификатор пакета импорта.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Пустой отчёт с указанным идентификатором, если отчёт доступен.</returns>
         public Task<ImportReportDto> GetImportReportAsync(Guid importId, CancellationToken cancellationToken = default)
         {
             ReportCount++;
@@ -405,30 +409,30 @@ public sealed class MainWindowViewModelTests
             return Task.FromResult(new ImportReportDto(importId, []));
         }
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Не поддерживает клонирование версии в этом тестовом клиенте и выбрасывает NotSupportedException.
         /// </summary>
-        /// <param name="objectId">Значение objectId, используемое в этой проверке.</param>
-        /// <param name="request">HTTP-запрос, отправленный тестовым клиентом.</param>
+        /// <param name="objectId">Идентификатор объекта, для которого запрашиваются данные.</param>
+        /// <param name="request">Параметры клонирования исходной версии.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача не возвращается: вызов метода выбрасывает NotSupportedException, так как клонирование версии не поддерживается этим тестовым клиентом.</returns>
         public Task<VersionMutationDto> CloneVersionAsync(Guid objectId, CloneVersionRequestDto request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Не поддерживает смену состояния версии в этом тестовом клиенте и выбрасывает NotSupportedException.
         /// </summary>
-        /// <param name="objectId">Значение objectId, используемое в этой проверке.</param>
-        /// <param name="version">Версия, назначаемая текущей для объекта.</param>
-        /// <param name="request">HTTP-запрос, отправленный тестовым клиентом.</param>
+        /// <param name="objectId">Идентификатор объекта, для которого запрашиваются данные.</param>
+        /// <param name="version">Номер запрашиваемой версии объекта.</param>
+        /// <param name="request">Новое состояние и токен конкурентного доступа.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача не возвращается: вызов метода выбрасывает NotSupportedException, так как изменение состояния версии не поддерживается этим тестовым клиентом.</returns>
         public Task<VersionMutationDto> ChangeVersionStateAsync(Guid objectId, int version, ChangeVersionStateRequestDto request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Увеличивает счётчик обновлений; при включённом флаге конфликта выбрасывает ошибку 409, иначе возвращает результат изменения версии.
         /// </summary>
-        /// <param name="objectId">Значение objectId, используемое в этой проверке.</param>
-        /// <param name="version">Версия, назначаемая текущей для объекта.</param>
-        /// <param name="request">HTTP-запрос, отправленный тестовым клиентом.</param>
+        /// <param name="objectId">Идентификатор объекта, для которого запрашиваются данные.</param>
+        /// <param name="version">Номер запрашиваемой версии объекта.</param>
+        /// <param name="request">Новые атрибуты версии и токен конкурентного доступа.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Результат изменения версии с новым идентификатором и токеном конкурентного доступа.</returns>
         public Task<VersionMutationDto> UpdateVersionAttributesAsync(Guid objectId, int version, UpdateVersionAttributesRequestDto request, CancellationToken cancellationToken = default)
         {
             UpdateCount++;
@@ -437,34 +441,34 @@ public sealed class MainWindowViewModelTests
             return Task.FromResult(new VersionMutationDto(objectId, Guid.NewGuid(), version, "InWork", null, Guid.NewGuid(), []));
         }
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Не поддерживает замену состава в этом тестовом клиенте и выбрасывает NotSupportedException.
         /// </summary>
-        /// <param name="objectId">Значение objectId, используемое в этой проверке.</param>
-        /// <param name="version">Версия, назначаемая текущей для объекта.</param>
-        /// <param name="request">HTTP-запрос, отправленный тестовым клиентом.</param>
+        /// <param name="objectId">Идентификатор объекта, для которого запрашиваются данные.</param>
+        /// <param name="version">Номер запрашиваемой версии объекта.</param>
+        /// <param name="request">Новый список компонентов и токен конкурентного доступа.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача не возвращается: вызов метода выбрасывает NotSupportedException, так как замена состава не поддерживается этим тестовым клиентом.</returns>
         public Task<VersionMutationDto> ReplaceCompositionAsync(Guid objectId, int version, ReplaceCompositionRequestDto request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Возвращает пустой список фоновых задач.
         /// </summary>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Пустой список фоновых задач.</returns>
         public Task<IReadOnlyList<BackgroundTaskDto>> GetBackgroundTasksAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyList<BackgroundTaskDto>>([]);
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Не поддерживает изменение расписания в этом тестовом клиенте и выбрасывает NotSupportedException.
         /// </summary>
-        /// <param name="taskId">Значение taskId, используемое в этой проверке.</param>
-        /// <param name="request">HTTP-запрос, отправленный тестовым клиентом.</param>
+        /// <param name="taskId">Идентификатор фоновой задачи.</param>
+        /// <param name="request">Новый интервал расписания задачи.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача не возвращается: вызов метода выбрасывает NotSupportedException, так как изменение расписания не поддерживается этим тестовым клиентом.</returns>
         public Task<BackgroundTaskDto> UpdateBackgroundTaskScheduleAsync(string taskId, UpdateBackgroundTaskScheduleRequestDto request, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Не поддерживает запуск фоновой задачи в этом тестовом клиенте и выбрасывает NotSupportedException.
         /// </summary>
-        /// <param name="taskId">Значение taskId, используемое в этой проверке.</param>
+        /// <param name="taskId">Идентификатор фоновой задачи.</param>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача не возвращается: вызов метода выбрасывает NotSupportedException, так как запуск фоновой задачи не поддерживается этим тестовым клиентом.</returns>
         public Task<BackgroundTaskRunAcceptedDto> RunBackgroundTaskAsync(string taskId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

@@ -9,8 +9,13 @@ namespace MiniPdm.Modules.Import.Features.Queries.GetImportReport;
 /// <summary>
 /// Запрашивает сохранённый отчёт импорта.
 /// </summary>
-/// <param name="ImportId">Идентификатор операции импорта.</param>
-public sealed record GetImportReportQuery(Guid ImportId) : IRequest<ImportReportDto?>;
+public sealed record GetImportReportQuery(Guid ImportId) : IRequest<ImportReportDto?>
+{
+    /// <summary>
+    /// Идентификатор операции импорта, чей отчёт запрашивается.
+    /// </summary>
+    public Guid ImportId { get; init; } = ImportId;
+}
 
 /// <summary>
 /// Загружает отчёт завершённого импорта из журнала операций.

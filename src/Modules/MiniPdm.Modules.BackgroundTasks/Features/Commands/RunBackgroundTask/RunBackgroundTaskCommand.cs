@@ -6,8 +6,13 @@ namespace MiniPdm.Modules.BackgroundTasks.Features.Commands.RunBackgroundTask;
 /// <summary>
 /// Представляет запрос на немедленный запуск фоновой задачи.
 /// </summary>
-/// <param name="TaskId">Идентификатор задачи.</param>
-public sealed record RunBackgroundTaskCommand(string TaskId) : IRequest<BackgroundTaskRunRequestResult>;
+public sealed record RunBackgroundTaskCommand(string TaskId) : IRequest<BackgroundTaskRunRequestResult>
+{
+    /// <summary>
+    /// Идентификатор задачи, для которой запрашивается запуск.
+    /// </summary>
+    public string TaskId { get; init; } = TaskId;
+}
 
 /// <summary>
 /// Передаёт запрос ручного запуска координатору.

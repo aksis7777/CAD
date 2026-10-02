@@ -8,12 +8,29 @@ namespace MiniPdm.Modules.Versions.Features.Commands.ChangeVersionState;
 /// <summary>
 /// Запрашивает изменение состояния существующей версии объекта.
 /// </summary>
-/// <param name="ObjectId">Идентификатор объекта.</param>
-/// <param name="Version">Номер изменяемой версии.</param>
-/// <param name="State">Новое состояние версии.</param>
-/// <param name="ExpectedConcurrencyToken">Ожидаемый токен конкурентного изменения объекта.</param>
 public sealed record ChangeVersionStateCommand(Guid ObjectId, int Version, VersionState State,
-    Guid ExpectedConcurrencyToken) : IRequest<VersionMutationResult>;
+    Guid ExpectedConcurrencyToken) : IRequest<VersionMutationResult>
+{
+    /// <summary>
+    /// Идентификатор объекта.
+    /// </summary>
+    public Guid ObjectId { get; init; } = ObjectId;
+
+    /// <summary>
+    /// Номер изменяемой версии.
+    /// </summary>
+    public int Version { get; init; } = Version;
+
+    /// <summary>
+    /// Новое состояние версии.
+    /// </summary>
+    public VersionState State { get; init; } = State;
+
+    /// <summary>
+    /// Ожидаемый токен конкурентного изменения объекта.
+    /// </summary>
+    public Guid ExpectedConcurrencyToken { get; init; } = ExpectedConcurrencyToken;
+}
 
 /// <summary>
 /// Передаёт запрос изменения состояния сервису мутаций версий.

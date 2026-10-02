@@ -18,7 +18,7 @@ namespace MiniPdm.Modules.Tests;
 public sealed class ImportServiceTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Duplicate_identities_are_all_rejected_and_parents_are_cascaded».
+    /// Проверяет, что дублирующиеся идентичности отклоняются все вместе, а родительские документы отклоняются каскадно.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -39,7 +39,7 @@ public sealed class ImportServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Missing_part_mass_is_accepted_with_warning».
+    /// Проверяет, что документ детали без массы принимается с предупреждением.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -56,7 +56,7 @@ public sealed class ImportServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Normalized_standard_name_duplicates_are_rejected_even_when_masses_differ».
+    /// Проверяет, что совпадающие нормализованные стандартные наименования отклоняются даже при разной массе.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -73,7 +73,7 @@ public sealed class ImportServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Invalid_quantity_document_still_rejects_valid_duplicate_identity».
+    /// Проверяет, что документ с недопустимым количеством не позволяет принять документ с дублирующей идентичностью.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -92,7 +92,7 @@ public sealed class ImportServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Partial_document_with_reader_error_still_rejects_valid_duplicate_identity».
+    /// Проверяет, что ошибка чтения частичного документа не отменяет отклонение дублирующей идентичности.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -114,7 +114,7 @@ public sealed class ImportServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Repeated_positive_component_rows_are_combined_and_reported».
+    /// Проверяет объединение повторных строк состава с положительным количеством и отражение объединения в отчёте.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -136,7 +136,7 @@ public sealed class ImportServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Single_invalid_quantity_does_not_claim_duplicate_rows_were_combined».
+    /// Проверяет, что единственная строка с недопустимым количеством не считается объединённой с дубликатами.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -154,7 +154,7 @@ public sealed class ImportServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Changed_version_gets_source_reference_for_its_package_file».
+    /// Проверяет сохранение ссылки на исходный файл пакета для изменённой версии.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -173,7 +173,7 @@ public sealed class ImportServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Reordered_components_do_not_create_a_version».
+    /// Проверяет, что изменение только порядка компонентов не создаёт новую версию.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -197,7 +197,7 @@ public sealed class ImportServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Changed_approved_object_gets_next_version_and_updated_inwork_object_is_reused».
+    /// Проверяет создание следующей версии утверждённого объекта и повторное использование обновлённого объекта в работе.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -220,7 +220,7 @@ public sealed class ImportServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «All_cancelled_object_uses_maximum_historical_version_plus_one».
+    /// Проверяет, что для объекта только с отменёнными версиями используется номер выше максимального исторического.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -238,7 +238,7 @@ public sealed class ImportServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Changed_designation_creates_a_new_object».
+    /// Проверяет создание нового объекта при изменении обозначения.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -255,7 +255,7 @@ public sealed class ImportServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Repeated_branch_is_valid_but_package_cycle_is_rejected_with_ancestors».
+    /// Проверяет допустимость повторной ветви и отклонение цикла пакета вместе с его предками.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -288,7 +288,7 @@ public sealed class ImportServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Database_only_cycle_blocks_import_before_file_promotion».
+    /// Проверяет, что цикл, найденный только в базе данных, останавливает импорт до продвижения файлов.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -306,7 +306,7 @@ public sealed class ImportServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Confirmed_rollback_compensates_promoted_files».
+    /// Проверяет компенсацию продвинутых файлов после подтверждённого отката транзакции.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -323,7 +323,7 @@ public sealed class ImportServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Completed_import_id_replays_report_without_reading_source_again».
+    /// Проверяет повторное получение отчёта завершённого импорта без повторного чтения источника.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -380,6 +380,9 @@ public sealed class ImportServiceTests
 
     private sealed class FakeCadFactory(IReadOnlyList<CadDocument> docs, IReadOnlyDictionary<string, string?>? errors = null) : ICadSourceFactory
     {
+        /// <summary>
+        /// Число открытий источника документов тестовым фабричным адаптером.
+        /// </summary>
         public int OpenCount
         {
             get; set;
@@ -393,7 +396,14 @@ public sealed class ImportServiceTests
 
     private sealed class FakeSession(IReadOnlyList<CadDocument> docs, IReadOnlyDictionary<string, string?> errors) : ICadSession
     {
+        /// <summary>
+        /// Источник документов, предоставляемый тестовой сессией.
+        /// </summary>
         public ICadDocumentSource Source { get; } = new FakeDocumentSource(docs);
+
+        /// <summary>
+        /// Читатель документов, предоставляемый тестовой сессией.
+        /// </summary>
         public ICadDocumentReader Reader { get; } = new FakeReader(docs, errors);
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
@@ -420,22 +430,28 @@ public sealed class ImportServiceTests
 
     private sealed class FakeSourceStorage : IImportSourceStorage
     {
+        /// <summary>
+        /// Число вызовов продвижения файлов в тестовом хранилище импорта.
+        /// </summary>
         public int PromoteCount
         {
             get; private set;
         }
+        /// <summary>
+        /// Число вызовов компенсации файлов в тестовом хранилище импорта.
+        /// </summary>
         public int CompensateCount
         {
             get; private set;
         }
 
         /// <summary>
-        /// Проверяет ожидаемое поведение сценария «PromoteAsync».
+        /// Копирует принятые файлы в постоянное хранилище для указанного импорта.
         /// </summary>
-        /// <param name="importId">Значение, используемое в проверяемом сценарии.</param>
-        /// <param name="source">Значение, используемое в проверяемом сценарии.</param>
-        /// <param name="acceptedFiles">Значение, используемое в проверяемом сценарии.</param>
-        /// <param name="ct">Значение, используемое в проверяемом сценарии.</param>
+        /// <param name="importId">Идентификатор импорта.</param>
+        /// <param name="source">Описание источника CAD.</param>
+        /// <param name="acceptedFiles">Имена принятых файлов.</param>
+        /// <param name="ct">Токен отмены операции.</param>
         /// <returns>Задача завершается после выполнения проверок теста.</returns>
         public Task PromoteAsync(Guid importId, CadSourceDescriptor source, IReadOnlyCollection<string> acceptedFiles, CancellationToken ct)
         {
@@ -445,10 +461,10 @@ public sealed class ImportServiceTests
         public string GetSourceReference(Guid importId, string fileName) => $"{importId}/{fileName}";
 
         /// <summary>
-        /// Проверяет ожидаемое поведение сценария «CompensateAsync».
+        /// Удаляет файлы, продвинутые для импорта, при компенсации отката.
         /// </summary>
-        /// <param name="importId">Значение, используемое в проверяемом сценарии.</param>
-        /// <param name="ct">Значение, используемое в проверяемом сценарии.</param>
+        /// <param name="importId">Идентификатор импорта.</param>
+        /// <param name="ct">Токен отмены операции.</param>
         /// <returns>Задача завершается после выполнения проверок теста.</returns>
         public Task CompensateAsync(Guid importId, CancellationToken ct)
         {
@@ -460,6 +476,9 @@ public sealed class ImportServiceTests
     private sealed class FakePersistence(IReadOnlyList<PdmObject> existing, IReadOnlyList<ActiveGraphEdge>? graph = null, bool rollback = false) : IImportDatabaseService
     {
         private readonly Dictionary<Guid, ImportPersistenceResult> _completed = [];
+        /// <summary>
+        /// Последний план записи, переданный тестовой реализации хранилища.
+        /// </summary>
         public ImportWritePlan? LastPlan
         {
             get; private set;

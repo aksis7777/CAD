@@ -200,7 +200,7 @@ public sealed class VersionMutationServicePostgresTests
     /// <summary>
     /// Создаёт параметры подключения контекста к выделенной тестовой базе данных.
     /// </summary>
-    /// <returns>Значение, сформированное для тестового сценария.</returns>
+    /// <returns>Параметры контекста, настроенного для PostgreSQL-тестов.</returns>
     private static DbContextOptions<PdmDbContext> Options()
     {
         var connectionString = Environment.GetEnvironmentVariable(ConnectionVariable);
@@ -214,7 +214,7 @@ public sealed class VersionMutationServicePostgresTests
     /// </summary>
     /// <param name="options">Параметры подключения к тестовой базе данных.</param>
     /// <param name="entities">Сущности, которые нужно сохранить для теста.</param>
-    /// <returns>Завершение асинхронной операции.</returns>
+    /// <returns>Задача завершается после сохранения тестовых объектов и версий.</returns>
     private static async Task SeedAsync(DbContextOptions<PdmDbContext> options, params object[] entities)
     {
         await using var context = new PdmDbContext(options);
@@ -301,21 +301,21 @@ public sealed class VersionMutationServicePostgresTests
     /// <summary>
     /// Создаёт уникальное обозначение для тестовых данных.
     /// </summary>
-    /// <returns>Значение, сформированное для тестового сценария.</returns>
+    /// <returns>Уникальное обозначение объекта в тестовом формате.</returns>
     private static string Designation() => $"АБВГ.30{Random.Shared.Next(1000, 9999):0000}.{Random.Shared.Next(0, 999):000}";
 
     private sealed class TestContextFactory(DbContextOptions<PdmDbContext> options) : IDbContextFactory<PdmDbContext>
     {
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Создаёт контекст базы данных с настроенными параметрами.
         /// </summary>
-        /// <returns>Значение, сформированное для тестового сценария.</returns>
+        /// <returns>Новый контекст базы данных PDM.</returns>
         public PdmDbContext CreateDbContext() => new(options);
         /// <summary>
-        /// Реализует операцию тестового помощника.
+        /// Асинхронно создаёт контекст базы данных с настроенными параметрами.
         /// </summary>
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
-        /// <returns>Задача, завершающая тестовую операцию и предоставляющая её результат.</returns>
+        /// <returns>Задача с новым контекстом базы данных PDM.</returns>
         public Task<PdmDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) => Task.FromResult(CreateDbContext());
     }
 }

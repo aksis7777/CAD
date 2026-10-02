@@ -5,14 +5,18 @@ namespace MiniPdm.Domain.Versions;
 /// <summary>
 ///     Результаты проверки атрибутов предлагаемой версии объекта.
 /// </summary>
-/// <param name="Errors">
-///     Значения, нарушающие ограничения типа объекта или хранилища.
-/// </param>
-/// <param name="Warnings">
-///     Допустимые значения, на которые следует обратить внимание оператора.
-/// </param>
 public sealed record VersionAttributeValidation(IReadOnlyList<string> Errors, IReadOnlyList<string> Warnings)
 {
+    /// <summary>
+    ///     Значения, нарушающие ограничения типа объекта или хранилища.
+    /// </summary>
+    public IReadOnlyList<string> Errors { get; init; } = Errors;
+
+    /// <summary>
+    ///     Допустимые значения, на которые следует обратить внимание оператора.
+    /// </summary>
+    public IReadOnlyList<string> Warnings { get; init; } = Warnings;
+
     /// <summary>
     ///     Показывает, завершилась ли проверка без ошибок.
     /// </summary>
@@ -21,9 +25,6 @@ public sealed record VersionAttributeValidation(IReadOnlyList<string> Errors, IR
 
 /// <summary>
 ///     Проверяет атрибуты версии с учётом типа объекта PDM.
-/// </summary>
-/// <summary>
-/// Проверяет атрибуты версии с учётом типа объекта и ограничений хранения.
 /// </summary>
 public static class VersionAttributeRules
 {

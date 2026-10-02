@@ -4,13 +4,6 @@ namespace MiniPdm.Contracts.Modules.Versions.DtoModels;
 /// Результат изменения версии объекта.
 /// История существующих версий сохраняется, а новая версия может стать текущей.
 /// </summary>
-/// <param name="ObjectId">Идентификатор изменённого объекта.</param>
-/// <param name="VersionId">Идентификатор созданной или изменённой версии.</param>
-/// <param name="VersionNumber">Номер версии.</param>
-/// <param name="State">Состояние версии после изменения.</param>
-/// <param name="CurrentVersionId">Идентификатор текущей версии после изменения либо <see langword="null"/>.</param>
-/// <param name="ConcurrencyToken">Новый токен конкурентного доступа объекта.</param>
-/// <param name="Warnings">Предупреждения, выявленные при выполнении операции.</param>
 public sealed record VersionMutationDto(
     Guid ObjectId,
     Guid VersionId,
@@ -18,15 +11,66 @@ public sealed record VersionMutationDto(
     string State,
     Guid? CurrentVersionId,
     Guid ConcurrencyToken,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<string> Warnings)
+{
+    /// <summary>
+    /// Идентификатор изменённого объекта.
+    /// </summary>
+    public Guid ObjectId { get; init; } = ObjectId;
+
+    /// <summary>
+    /// Идентификатор созданной или изменённой версии.
+    /// </summary>
+    public Guid VersionId { get; init; } = VersionId;
+
+    /// <summary>
+    /// Номер версии.
+    /// </summary>
+    public int VersionNumber { get; init; } = VersionNumber;
+
+    /// <summary>
+    /// Состояние версии после изменения.
+    /// </summary>
+    public string State { get; init; } = State;
+
+    /// <summary>
+    /// Идентификатор текущей версии после изменения либо <see langword="null"/>.
+    /// </summary>
+    public Guid? CurrentVersionId { get; init; } = CurrentVersionId;
+
+    /// <summary>
+    /// Новый токен конкурентного доступа объекта.
+    /// </summary>
+    public Guid ConcurrencyToken { get; init; } = ConcurrencyToken;
+
+    /// <summary>
+    /// Предупреждения, выявленные при выполнении операции.
+    /// </summary>
+    public IReadOnlyList<string> Warnings { get; init; } = Warnings;
+
+}
 
 /// <summary>
 /// Описывает ошибку изменения версии, включая путь цикла, если он обнаружен.
 /// </summary>
-/// <param name="Code">Машиночитаемый код ошибки.</param>
-/// <param name="Message">Понятное пользователю описание ошибки.</param>
-/// <param name="CyclePath">Идентификаторы объектов, образующие цикл, либо <see langword="null"/>.</param>
 public sealed record VersionMutationErrorDto(
     string Code,
     string Message,
-    Guid[]? CyclePath);
+    Guid[]? CyclePath)
+{
+    /// <summary>
+    /// Машиночитаемый код ошибки.
+    /// </summary>
+    public string Code { get; init; } = Code;
+
+    /// <summary>
+    /// Понятное пользователю описание ошибки.
+    /// </summary>
+    public string Message { get; init; } = Message;
+
+    /// <summary>
+    /// Идентификаторы объектов, образующие цикл, либо <see langword="null"/>.
+    /// </summary>
+    public Guid[]? CyclePath { get; init; } = CyclePath;
+
+}

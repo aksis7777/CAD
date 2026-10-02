@@ -173,10 +173,179 @@ public sealed class ObjectReadService(PdmDbContext context)
         .Replace("%", "\\%", StringComparison.Ordinal)
         .Replace("_", "\\_", StringComparison.Ordinal);
 
-    private sealed record CurrentVersionProjection(Guid Id, int Version, VersionState State, string? Name, decimal? Mass);
-    private sealed record ObjectSearchProjection(Guid Id, PdmObjectType Type, string? Designation, string? StandardName, Guid ConcurrencyToken, CurrentVersionProjection? CurrentVersion);
-    private sealed record VersionProjection(Guid Id, int Version, VersionState State, string? Name, string? Material, decimal? Mass, string? SourceReference);
-    private sealed record VersionSummaryProjection(Guid Id, int Version, VersionState State);
+    /// <summary>
+    /// Проекция полей текущей версии, используемых в строке поиска.
+    /// </summary>
+    private sealed record CurrentVersionProjection(Guid Id, int Version, VersionState State, string? Name, decimal? Mass)
+    {
+        /// <summary>
+        /// Идентификатор текущей версии.
+        /// </summary>
+        public Guid Id { get; init; } = Id;
+
+        /// <summary>
+        /// Номер текущей версии.
+        /// </summary>
+        public int Version { get; init; } = Version;
+
+        /// <summary>
+        /// Состояние текущей версии.
+        /// </summary>
+        public VersionState State { get; init; } = State;
+
+        /// <summary>
+        /// Имя текущей версии.
+        /// </summary>
+        public string? Name { get; init; } = Name;
+
+        /// <summary>
+        /// Масса текущей версии, если она известна.
+        /// </summary>
+        public decimal? Mass { get; init; } = Mass;
+    }
+
+    /// <summary>
+    /// Проекция объекта и его текущей версии для одной строки поиска.
+    /// </summary>
+    private sealed record ObjectSearchProjection(Guid Id, PdmObjectType Type, string? Designation, string? StandardName, Guid ConcurrencyToken, CurrentVersionProjection? CurrentVersion)
+    {
+        /// <summary>
+        /// Идентификатор объекта.
+        /// </summary>
+        public Guid Id { get; init; } = Id;
+
+        /// <summary>
+        /// Тип объекта PDM.
+        /// </summary>
+        public PdmObjectType Type { get; init; } = Type;
+
+        /// <summary>
+        /// Обозначение сборки или детали.
+        /// </summary>
+        public string? Designation { get; init; } = Designation;
+
+        /// <summary>
+        /// Исходное имя стандартного изделия.
+        /// </summary>
+        public string? StandardName { get; init; } = StandardName;
+
+        /// <summary>
+        /// Токен конкурентности объекта.
+        /// </summary>
+        public Guid ConcurrencyToken { get; init; } = ConcurrencyToken;
+
+        /// <summary>
+        /// Проекция текущей версии или null, если действующей версии нет.
+        /// </summary>
+        public CurrentVersionProjection? CurrentVersion { get; init; } = CurrentVersion;
+    }
+
+    /// <summary>
+    /// Проекция выбранной версии объекта для карточки.
+    /// </summary>
+    private sealed record VersionProjection(Guid Id, int Version, VersionState State, string? Name, string? Material, decimal? Mass, string? SourceReference)
+    {
+        /// <summary>
+        /// Идентификатор версии.
+        /// </summary>
+        public Guid Id { get; init; } = Id;
+
+        /// <summary>
+        /// Номер версии внутри объекта.
+        /// </summary>
+        public int Version { get; init; } = Version;
+
+        /// <summary>
+        /// Состояние версии.
+        /// </summary>
+        public VersionState State { get; init; } = State;
+
+        /// <summary>
+        /// Наименование, записанное в версии.
+        /// </summary>
+        public string? Name { get; init; } = Name;
+
+        /// <summary>
+        /// Материал версии, если задан.
+        /// </summary>
+        public string? Material { get; init; } = Material;
+
+        /// <summary>
+        /// Масса версии, если задана.
+        /// </summary>
+        public decimal? Mass { get; init; } = Mass;
+
+        /// <summary>
+        /// Ссылка на исходный файл версии.
+        /// </summary>
+        public string? SourceReference { get; init; } = SourceReference;
+    }
+
+    /// <summary>
+    /// Краткая проекция версии для истории в карточке объекта.
+    /// </summary>
+    private sealed record VersionSummaryProjection(Guid Id, int Version, VersionState State)
+    {
+        /// <summary>
+        /// Идентификатор версии.
+        /// </summary>
+        public Guid Id { get; init; } = Id;
+
+        /// <summary>
+        /// Номер версии.
+        /// </summary>
+        public int Version { get; init; } = Version;
+
+        /// <summary>
+        /// Состояние версии.
+        /// </summary>
+        public VersionState State { get; init; } = State;
+    }
+
+    /// <summary>
+    /// Полная проекция карточки объекта с историей и выбранной версией.
+    /// </summary>
     private sealed record ObjectCardProjection(Guid Id, PdmObjectType Type, string? Designation, string? StandardName, Guid? CurrentVersionId, Guid ConcurrencyToken,
-        List<VersionSummaryProjection> Versions, VersionProjection? SelectedVersion);
+        List<VersionSummaryProjection> Versions, VersionProjection? SelectedVersion)
+    {
+        /// <summary>
+        /// Идентификатор объекта.
+        /// </summary>
+        public Guid Id { get; init; } = Id;
+
+        /// <summary>
+        /// Тип объекта PDM.
+        /// </summary>
+        public PdmObjectType Type { get; init; } = Type;
+
+        /// <summary>
+        /// Обозначение сборки или детали.
+        /// </summary>
+        public string? Designation { get; init; } = Designation;
+
+        /// <summary>
+        /// Исходное имя стандартного изделия.
+        /// </summary>
+        public string? StandardName { get; init; } = StandardName;
+
+        /// <summary>
+        /// Идентификатор текущей версии, если она есть.
+        /// </summary>
+        public Guid? CurrentVersionId { get; init; } = CurrentVersionId;
+
+        /// <summary>
+        /// Токен конкурентности объекта.
+        /// </summary>
+        public Guid ConcurrencyToken { get; init; } = ConcurrencyToken;
+
+        /// <summary>
+        /// Краткие сведения об истории версий.
+        /// </summary>
+        public List<VersionSummaryProjection> Versions { get; init; } = Versions;
+
+        /// <summary>
+        /// Проекция запрошенной или текущей версии.
+        /// </summary>
+        public VersionProjection? SelectedVersion { get; init; } = SelectedVersion;
+    }
 }

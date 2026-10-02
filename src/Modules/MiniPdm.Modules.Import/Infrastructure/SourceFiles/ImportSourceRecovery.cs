@@ -6,9 +6,6 @@ using MiniPdm.Modules.Import.DtoModels.Database;
 namespace MiniPdm.Modules.Import.Infrastructure.SourceFiles;
 
 /// <summary>
-/// Reconciles durable and abandoned folders against the import journal and upload leases.
-/// </summary>
-/// <summary>
 /// Сверяет сохранённые и заброшенные каталоги с журналом импорта и арендой загрузки.
 /// </summary>
 /// <param name="options">Настройки корня файлового хранилища.</param>
@@ -24,9 +21,6 @@ public sealed class ImportSourceRecovery(
     private readonly string _importsRoot = Path.Combine(Path.GetFullPath(string.IsNullOrWhiteSpace(options.Value.DataRoot)
         ? Path.Combine(AppContext.BaseDirectory, "data") : options.Value.DataRoot), "imports");
 
-    /// <summary>
-    /// Compatibility wrapper for callers that only need the number of removed folders.
-    /// </summary>
     /// <summary>
     /// Удаляет подтверждённо заброшенные каталоги и возвращает их количество.
     /// </summary>

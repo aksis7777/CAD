@@ -11,7 +11,7 @@ namespace MiniPdm.Modules.Tests;
 public sealed class CadAdapterTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «SourceListsOnlySupportedCadFilesByDiskFileName».
+    /// Проверяет перечисление только поддерживаемых CAD-файлов с использованием имени файла на диске.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -31,7 +31,7 @@ public sealed class CadAdapterTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «ReaderUsesDiskFileNameAndPreservesOptionalNullValues».
+    /// Проверяет использование имени файла на диске и сохранение пустых необязательных значений.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -54,10 +54,10 @@ public sealed class CadAdapterTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «ReaderReturnsDiagnosticsForInvalidDocuments».
+    /// Проверяет возврат диагностик для документов с некорректным содержимым.
     /// </summary>
-    /// <param name="contents">Значение, используемое в проверяемом сценарии.</param>
-    /// <param name="expectedError">Значение, используемое в проверяемом сценарии.</param>
+    /// <param name="contents">Содержимое документа или тестового файла.</param>
+    /// <param name="expectedError">Ожидаемое сообщение диагностики.</param>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Theory]
     [InlineData("{", "invalid JSON")]
@@ -76,7 +76,7 @@ public sealed class CadAdapterTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «ReaderRejectsExtensionTypeMismatchAndMissingFile».
+    /// Проверяет отклонение файла с несовпадающим расширением и отсутствующего файла.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -96,7 +96,7 @@ public sealed class CadAdapterTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «ReaderRejectsPathTraversalReference».
+    /// Проверяет отклонение ссылки на файл, выходящей за пределы исходного каталога.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -111,7 +111,7 @@ public sealed class CadAdapterTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «ReaderPreservesBusinessInvalidNameAndCountForCoreValidation».
+    /// Проверяет передачу бизнес-некорректных имени и количества на основную валидацию.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -132,7 +132,7 @@ public sealed class CadAdapterTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «ReaderPreservesIdentityOnInvalidComponentSchema».
+    /// Проверяет сохранение идентичности документа при некорректной схеме компонента.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -154,7 +154,7 @@ public sealed class CadAdapterTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «ReaderAcceptsUtf8ByteOrderMark».
+    /// Проверяет чтение JSON-файла с меткой порядка байтов UTF-8.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -183,7 +183,7 @@ public sealed class CadAdapterTests
         }
 
         /// <summary>
-        /// Проверяет ожидаемое поведение сценария «WriteAsync».
+        /// Записывает содержимое в тестовый CAD-файл с указанным именем.
         /// </summary>
         /// <param name="fileName">Имя файла тестового источника.</param>
         /// <param name="contents">Текст, записываемый в файл тестового источника.</param>
@@ -191,10 +191,10 @@ public sealed class CadAdapterTests
         public Task WriteAsync(string fileName, string contents) => File.WriteAllTextAsync(Path.Combine(directory, fileName), contents);
 
         /// <summary>
-        /// Проверяет ожидаемое поведение сценария «WriteUtf8BomAsync».
+        /// Записывает тестовый файл UTF-8 с меткой порядка байтов.
         /// </summary>
-        /// <param name="fileName">Значение, используемое в проверяемом сценарии.</param>
-        /// <param name="contents">Значение, используемое в проверяемом сценарии.</param>
+        /// <param name="fileName">Имя тестового файла.</param>
+        /// <param name="contents">Содержимое документа или тестового файла.</param>
         /// <returns>Задача завершается после выполнения проверок теста.</returns>
         public Task WriteUtf8BomAsync(string fileName, string contents)
         {

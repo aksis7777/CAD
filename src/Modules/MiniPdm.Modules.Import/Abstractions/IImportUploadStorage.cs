@@ -6,9 +6,18 @@ namespace MiniPdm.Modules.Import.Abstractions;
 /// <summary>
 /// Поток содержимого загружаемого файла и его исходное имя.
 /// </summary>
-/// <param name="FileName">Имя файла, переданное клиентом.</param>
-/// <param name="Content">Поток байтов файла.</param>
-public sealed record ImportUploadFile(string FileName, Stream Content);
+public sealed record ImportUploadFile(string FileName, Stream Content)
+{
+    /// <summary>
+    /// Имя файла, переданное клиентом.
+    /// </summary>
+    public string FileName { get; init; } = FileName;
+
+    /// <summary>
+    /// Поток байтов загружаемого файла.
+    /// </summary>
+    public Stream Content { get; init; } = Content;
+}
 
 /// <summary>
 /// Временная попытка загрузки, удерживающая staged-файлы до завершения импорта.

@@ -15,7 +15,7 @@ namespace MiniPdm.Modules.Tests;
 public sealed class ObjectReadServiceTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «GetObject_maps_standard_name_current_version_and_history_from_database».
+    /// Проверяет перенос стандартного наименования, текущей версии и истории из базы данных в карточку объекта.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -41,7 +41,7 @@ public sealed class ObjectReadServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «GetObject_keeps_object_without_current_version_and_returns_null_for_missing_object_or_version».
+    /// Проверяет возврат объекта без текущей версии и пустой результат для неизвестного объекта или версии.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -61,7 +61,7 @@ public sealed class ObjectReadServiceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Search_returns_public_dtos_with_stable_paging_and_current_version_fields».
+    /// Проверяет выдачу публичных DTO со стабильной пагинацией и данными текущей версии.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -97,6 +97,9 @@ public sealed class ObjectReadServiceTests
             Context = context;
         }
 
+        /// <summary>
+        /// Контекст базы данных, используемый тестовой фикстурой.
+        /// </summary>
         public PdmDbContext Context
         {
             get;
@@ -132,13 +135,13 @@ public sealed class ObjectReadServiceTests
         }
 
         /// <summary>
-        /// Проверяет ожидаемое поведение сценария «AddVersionAsync».
+        /// Создаёт и сохраняет тестовую версию объекта с заданными параметрами.
         /// </summary>
-        /// <param name="item">Значение, используемое в проверяемом сценарии.</param>
-        /// <param name="number">Значение, используемое в проверяемом сценарии.</param>
-        /// <param name="state">Значение, используемое в проверяемом сценарии.</param>
-        /// <param name="name">Значение, используемое в проверяемом сценарии.</param>
-        /// <param name="makeCurrent">Значение, используемое в проверяемом сценарии.</param>
+        /// <param name="item">Объект, для которого создаётся версия.</param>
+        /// <param name="number">Номер создаваемой версии.</param>
+        /// <param name="state">Состояние версии.</param>
+        /// <param name="name">Наименование версии.</param>
+        /// <param name="makeCurrent">Указывает, следует ли назначить версию текущей.</param>
         /// <returns>Задача завершается после выполнения проверок теста.</returns>
         public async Task AddVersionAsync(PdmObject item, int number, VersionState state, string name, bool makeCurrent)
         {

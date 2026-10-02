@@ -13,7 +13,7 @@ namespace MiniPdm.Modules.Tests;
 public sealed class ImportSourceFilesTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «UploadAttemptsAreIsolatedAndDisposedIndependently».
+    /// Проверяет независимость каталогов и очистки отдельных попыток загрузки.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -32,9 +32,9 @@ public sealed class ImportSourceFilesTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «UploadRejectsUnsafeNames».
+    /// Проверяет отклонение имён файлов, небезопасных для загрузки.
     /// </summary>
-    /// <param name="fileName">Значение, используемое в проверяемом сценарии.</param>
+    /// <param name="fileName">Имя тестового файла.</param>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Theory]
     [InlineData("../escape.m3d")]
@@ -49,7 +49,7 @@ public sealed class ImportSourceFilesTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «UploadEnforcesStreamingSizeLimitAndCleansPartialAttempt».
+    /// Проверяет ограничение размера при потоковой загрузке и очистку незавершённой попытки.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -66,7 +66,7 @@ public sealed class ImportSourceFilesTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «CancelledUploadCleansItsAttemptDirectory».
+    /// Проверяет удаление каталога попытки при отмене загрузки.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -81,7 +81,7 @@ public sealed class ImportSourceFilesTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «PromotionCopiesOnlyAcceptedFilesAndCompensationIsImportScoped».
+    /// Проверяет копирование только принятых файлов и ограничение компенсации одним импортом.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -104,7 +104,7 @@ public sealed class ImportSourceFilesTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «PromotionNeverOverwritesExistingImportFolder».
+    /// Проверяет, что продвижение файлов не перезаписывает существующую папку импорта.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -120,7 +120,7 @@ public sealed class ImportSourceFilesTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «RecoveryDeletesOrphanPromotionsAndConfirmedRollbackFoldersOnly».
+    /// Проверяет удаление только потерянных продвижений и папок подтверждённого отката при восстановлении.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -152,7 +152,7 @@ public sealed class ImportSourceFilesTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «DetailedRecoveryReportsDatabaseFailureAndRetainsFolders».
+    /// Проверяет сообщение о сбое базы данных и сохранение папок при подробном восстановлении.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -175,7 +175,7 @@ public sealed class ImportSourceFilesTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «PromotionFolderWithUnknownDatabaseOutcomeIsRetained».
+    /// Проверяет сохранение папки продвижения при неизвестном результате операции базы данных.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -197,7 +197,7 @@ public sealed class ImportSourceFilesTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «RecoverySkipsActiveUploadLeaseAndDeletesAbandonedAttempt».
+    /// Проверяет пропуск активной аренды загрузки и удаление оставленной попытки.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -221,11 +221,14 @@ public sealed class ImportSourceFilesTests
 
     private sealed class Fixture : IDisposable
     {
+        /// <summary>
+        /// Корневой временный каталог файлового хранилища теста.
+        /// </summary>
         public string Root { get; } = Path.Combine(Path.GetTempPath(), $"import-storage-{Guid.NewGuid():N}");
         public FileImportStorage CreateStorage(ImportStorageOptions? options = null) => new(Options.Create(options ?? new ImportStorageOptions { DataRoot = Root }));
 
         /// <summary>
-        /// Проверяет ожидаемое поведение сценария «Dispose».
+        /// Удаляет временный каталог файлов после завершения теста.
         /// </summary>
         public void Dispose()
         {

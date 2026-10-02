@@ -14,7 +14,7 @@ namespace MiniPdm.Storage.Tests;
 public sealed class ObjectReadQueryTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Search_uses_literal_ascii_substrings_current_versions_and_stable_paging_without_tracking».
+    /// Проверяет поиск по буквальным ASCII-подстрокам, текущим версиям и стабильной пагинации без отслеживания.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -40,7 +40,7 @@ public sealed class ObjectReadQueryTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Search_finds_designation_and_standard_name_and_ignores_cancelled_current_version».
+    /// Проверяет поиск по обозначению и стандартному наименованию без выбора отменённой текущей версии.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -64,7 +64,7 @@ public sealed class ObjectReadQueryTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Card_returns_current_only_when_valid_and_keeps_cancelled_versions_in_history».
+    /// Проверяет выдачу текущей версии только при её допустимом состоянии и сохранение отменённых версий в истории.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -99,6 +99,9 @@ public sealed class ObjectReadQueryTests
             _connection = connection;
             Context = context;
         }
+        /// <summary>
+        /// Контекст базы данных, используемый тестовой фикстурой.
+        /// </summary>
         public PdmDbContext Context
         {
             get;

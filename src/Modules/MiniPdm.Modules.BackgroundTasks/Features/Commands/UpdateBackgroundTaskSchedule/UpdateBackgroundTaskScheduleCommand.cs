@@ -7,9 +7,18 @@ namespace MiniPdm.Modules.BackgroundTasks.Features.Commands.UpdateBackgroundTask
 /// <summary>
 /// Представляет запрос на изменение интервала запуска фоновой задачи.
 /// </summary>
-/// <param name="TaskId">Идентификатор задачи.</param>
-/// <param name="IntervalMinutes">Новый интервал запуска в минутах.</param>
-public sealed record UpdateBackgroundTaskScheduleCommand(string TaskId, int IntervalMinutes) : IRequest<BackgroundTaskDto?>;
+public sealed record UpdateBackgroundTaskScheduleCommand(string TaskId, int IntervalMinutes) : IRequest<BackgroundTaskDto?>
+{
+    /// <summary>
+    /// Идентификатор задачи, для которой меняется расписание.
+    /// </summary>
+    public string TaskId { get; init; } = TaskId;
+
+    /// <summary>
+    /// Новый интервал запуска в минутах.
+    /// </summary>
+    public int IntervalMinutes { get; init; } = IntervalMinutes;
+}
 
 /// <summary>
 /// Передаёт запрос изменения расписания координатору.

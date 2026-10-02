@@ -6,17 +6,24 @@ namespace MiniPdm.Domain.Composition;
 /// <typeparam name="TKey">
 ///     Тип ключа, однозначно обозначающего объект-компонент.
 /// </typeparam>
-/// <param name="Items">
-///     Уникальные ключи компонентов и суммарные количества.
-/// </param>
-/// <param name="Errors">
-///     Ошибки неверного количества или переполнения.
-/// </param>
-/// <param name="Warnings">
-///     Предупреждения о допустимых изменениях при нормализации данных.
-/// </param>
 public sealed record CompositionNormalization<TKey>(IReadOnlyDictionary<TKey, int> Items,
-    IReadOnlyList<string> Errors, IReadOnlyList<string> Warnings) where TKey : notnull;
+    IReadOnlyList<string> Errors, IReadOnlyList<string> Warnings) where TKey : notnull
+{
+    /// <summary>
+    ///     Уникальные ключи компонентов и суммарные количества.
+    /// </summary>
+    public IReadOnlyDictionary<TKey, int> Items { get; init; } = Items;
+
+    /// <summary>
+    ///     Ошибки неверного количества или переполнения.
+    /// </summary>
+    public IReadOnlyList<string> Errors { get; init; } = Errors;
+
+    /// <summary>
+    ///     Предупреждения о допустимых изменениях при нормализации данных.
+    /// </summary>
+    public IReadOnlyList<string> Warnings { get; init; } = Warnings;
+}
 
 /// <summary>
 /// Проверяет строки состава и объединяет повторные вхождения одного компонента.

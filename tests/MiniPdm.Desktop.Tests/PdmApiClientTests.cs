@@ -127,7 +127,7 @@ public sealed class PdmApiClientTests
     /// </summary>
     /// <param name="status">Код состояния HTTP-ответа.</param>
     /// <param name="content">Текст содержимого HTTP-ответа.</param>
-    /// <returns>Значение, сформированное для тестового сценария.</returns>
+    /// <returns>HTTP-ответ с указанным кодом состояния и JSON-содержимым.</returns>
     private static HttpResponseMessage Json(HttpStatusCode status, string content) => new(status)
     {
         Content = new StringContent(content, Encoding.UTF8, "application/json")

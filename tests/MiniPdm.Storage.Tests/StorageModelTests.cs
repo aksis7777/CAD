@@ -16,7 +16,7 @@ namespace MiniPdm.Storage.Tests;
 public sealed class StorageModelTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Maps_unique_keys_checks_and_same_object_current_version_foreign_key».
+    /// Проверяет настройку уникальных ключей, ограничений и связи текущей версии с тем же объектом.
     /// </summary>
     [Fact]
     public void Maps_unique_keys_checks_and_same_object_current_version_foreign_key()
@@ -40,7 +40,7 @@ public sealed class StorageModelTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Sqlite_enforces_positive_quantity_and_same_object_current_version».
+    /// Проверяет ограничения SQLite на положительное количество и связь текущей версии с тем же объектом.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -68,7 +68,7 @@ public sealed class StorageModelTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Adding_a_link_bumps_parent_token_even_when_parent_was_not_loaded».
+    /// Проверяет изменение токена родителя при добавлении связи, даже если родитель не загружен в контекст.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -95,7 +95,7 @@ public sealed class StorageModelTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Concurrent_writers_using_stale_object_token_cannot_both_save».
+    /// Проверяет, что две конкурентные записи с устаревшим токеном объекта не могут сохраниться одновременно.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -129,7 +129,7 @@ public sealed class StorageModelTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Rejects_mass_that_would_be_rounded_by_numeric_18_6».
+    /// Проверяет отклонение массы, которая потеряла бы точность при округлении до numeric(18,6).
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]

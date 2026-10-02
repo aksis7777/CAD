@@ -155,54 +155,96 @@ public sealed class CompositionReadService(PdmDbContext context)
             row.IsCycle)).ToArray();
     }
 
-    // EF Core maps this private result type directly from the SQL projection; enum values are converted client-side.
+    /// <summary>
+    /// Вспомогательная проекция результата SQL для EF Core.
+    /// Числовые значения перечислений преобразуются в CLR-типы после чтения.
+    /// </summary>
     private sealed class CompositionRow
     {
+        /// <summary>
+        /// Идентификатор объекта текущего вхождения.
+        /// </summary>
         public Guid ObjectId
         {
             get; set;
         }
+        /// <summary>
+        /// Идентификаторы объектов от корня до текущего вхождения.
+        /// </summary>
         public Guid[] ObjectPath { get; set; } = [];
+        /// <summary>
+        /// Идентификаторы объектов от корня до родительского вхождения.
+        /// </summary>
         public Guid[]? ParentPath
         {
             get; set;
         }
+        /// <summary>
+        /// Количество текущего объекта относительно родителя.
+        /// </summary>
         public int LocalQuantity
         {
             get; set;
         }
+        /// <summary>
+        /// Числовое значение типа объекта из результата SQL.
+        /// </summary>
         public int TypeValue
         {
             get; set;
         }
+        /// <summary>
+        /// Обозначение объекта, если оно предусмотрено его типом.
+        /// </summary>
         public string? Designation
         {
             get; set;
         }
+        /// <summary>
+        /// Имя объекта либо имя его текущей версии.
+        /// </summary>
         public string? Name
         {
             get; set;
         }
+        /// <summary>
+        /// Материал текущей версии, если он задан.
+        /// </summary>
         public string? Material
         {
             get; set;
         }
+        /// <summary>
+        /// Идентификатор текущей версии, если она существует.
+        /// </summary>
         public Guid? VersionId
         {
             get; set;
         }
+        /// <summary>
+        /// Номер текущей версии, если она существует.
+        /// </summary>
         public int? VersionNumber
         {
             get; set;
         }
+        /// <summary>
+        /// Числовое значение состояния версии из результата SQL.
+        /// </summary>
         public int? StateValue
         {
             get; set;
         }
+        /// <summary>
+        /// Масса одной единицы объекта в килограммах, если она известна.
+        /// </summary>
         public decimal? UnitMassKg
         {
             get; set;
         }
+        /// <summary>
+        /// Показывает, что объект образует цикл в текущем пути.
+        /// </summary>
         public bool IsCycle
         {
             get; set;

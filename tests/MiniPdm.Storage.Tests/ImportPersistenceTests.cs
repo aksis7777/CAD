@@ -18,7 +18,7 @@ namespace MiniPdm.Storage.Tests;
 public sealed class ImportPersistenceTests
 {
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Writes_new_objects_versions_current_pointer_and_journal_atomically».
+    /// Проверяет атомарную запись новых объектов, версий, текущих указателей и журнала импорта.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -44,7 +44,7 @@ public sealed class ImportPersistenceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Replays_journal_without_invoking_prepare_again».
+    /// Проверяет повторное использование журнала без повторного вызова этапа подготовки.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -68,7 +68,7 @@ public sealed class ImportPersistenceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Failed_prepare_rolls_back_without_rows_or_journal».
+    /// Проверяет откат неудачной подготовки без сохранения строк и записи журнала.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -86,7 +86,7 @@ public sealed class ImportPersistenceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Completed_import_is_never_compensated».
+    /// Проверяет, что завершённый импорт не компенсируется.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -108,7 +108,7 @@ public sealed class ImportPersistenceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Failed_save_rolls_back_callback_mutations_to_existing_current_version».
+    /// Проверяет откат изменений callback в существующей текущей версии при неудачном сохранении.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -148,7 +148,7 @@ public sealed class ImportPersistenceTests
     }
 
     /// <summary>
-    /// Проверяет ожидаемое поведение сценария «Removes_old_bom_links_before_advancing_current_version».
+    /// Проверяет удаление старых связей состава до переключения текущей версии.
     /// </summary>
     /// <returns>Задача завершается после выполнения проверок теста.</returns>
     [Fact]
@@ -203,14 +203,23 @@ public sealed class ImportPersistenceTests
     private sealed class Fixture : IAsyncDisposable
     {
         private readonly SqliteConnection _connection;
+        /// <summary>
+        /// Параметры SQLite-контекста базы данных тестовой фикстуры.
+        /// </summary>
         public DbContextOptions<PdmDbContext> Options
         {
             get;
         }
+        /// <summary>
+        /// Контекст базы данных для проверки операций импорта.
+        /// </summary>
         private PdmDbContext Context
         {
             get;
         }
+        /// <summary>
+        /// Сервис сохранения импорта, связанный с контекстом фикстуры.
+        /// </summary>
         public ImportDatabaseService Persistence
         {
             get;

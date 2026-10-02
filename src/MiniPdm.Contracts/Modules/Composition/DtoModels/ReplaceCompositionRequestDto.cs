@@ -3,18 +3,38 @@ namespace MiniPdm.Contracts.Modules.Composition.DtoModels;
 /// <summary>
 /// Задаёт дочерний объект и его количество в составе.
 /// </summary>
-/// <param name="ChildObjectId">Идентификатор дочернего объекта.</param>
-/// <param name="Quantity">Количество дочернего объекта.</param>
 public sealed record CompositionItemDto(
     Guid ChildObjectId,
-    int Quantity);
+    int Quantity)
+{
+    /// <summary>
+    /// Идентификатор дочернего объекта.
+    /// </summary>
+    public Guid ChildObjectId { get; init; } = ChildObjectId;
+
+    /// <summary>
+    /// Количество дочернего объекта.
+    /// </summary>
+    public int Quantity { get; init; } = Quantity;
+
+}
 
 /// <summary>
 /// Запрос на полную замену состава объекта.
 /// Для выполнения обновления используется токен конкурентного доступа.
 /// </summary>
-/// <param name="Components">Новый список компонентов либо <see langword="null"/>.</param>
-/// <param name="ExpectedConcurrencyToken">Токен конкурентного доступа, полученный при чтении состава.</param>
 public sealed record ReplaceCompositionRequestDto(
     IReadOnlyList<CompositionItemDto>? Components,
-    Guid ExpectedConcurrencyToken);
+    Guid ExpectedConcurrencyToken)
+{
+    /// <summary>
+    /// Новый список компонентов либо <see langword="null"/>.
+    /// </summary>
+    public IReadOnlyList<CompositionItemDto>? Components { get; init; } = Components;
+
+    /// <summary>
+    /// Токен конкурентного доступа, полученный при чтении состава.
+    /// </summary>
+    public Guid ExpectedConcurrencyToken { get; init; } = ExpectedConcurrencyToken;
+
+}

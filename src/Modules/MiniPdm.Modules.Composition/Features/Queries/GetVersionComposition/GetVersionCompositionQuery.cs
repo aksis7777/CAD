@@ -8,10 +8,19 @@ namespace MiniPdm.Modules.Composition.Features.Queries.GetVersionComposition;
 /// Запрашивает состав конкретной версии объекта.
 /// Результат сохраняет номер версии и её токен конкурентности.
 /// </summary>
-/// <param name="ObjectId">Идентификатор объекта.</param>
-/// <param name="Version">Положительный номер запрашиваемой версии.</param>
 public sealed record GetVersionCompositionQuery(Guid ObjectId, int Version)
-    : IRequest<VersionCompositionDto?>;
+    : IRequest<VersionCompositionDto?>
+{
+    /// <summary>
+    /// Идентификатор объекта.
+    /// </summary>
+    public Guid ObjectId { get; init; } = ObjectId;
+
+    /// <summary>
+    /// Положительный номер запрашиваемой версии.
+    /// </summary>
+    public int Version { get; init; } = Version;
+}
 
 /// <summary>
 /// Получает состав версии через сервис чтения истории состава.
