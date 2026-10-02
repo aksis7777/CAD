@@ -171,8 +171,8 @@
           </Grid>
         </TabItem>
 
-        <TabItem x:Name="ImportReportTab" Header="Отчёт импорта" DataContext="{Binding Import}">
-          <Grid RowDefinitions="Auto,*" Margin="12" RowSpacing="8">
+        <TabItem x:Name="ImportReportTab" Header="Отчёт импорта">
+          <Grid x:Name="ImportReportContent" DataContext="{Binding Import}" RowDefinitions="Auto,*" Margin="12" RowSpacing="8">
             <TextBlock Text="Отчёт импорта" Classes="heading"/>
             <StackPanel Grid.Row="1" Spacing="8">
               <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap"/>
@@ -181,7 +181,7 @@
                 <Button Content="Отказаться от повтора этого пакета" Command="{Binding AbandonPendingCommand}" IsVisible="{Binding HasPendingImport}"/>
                 <Button Content="Отменить запрос" Command="{Binding CancelCommand}" IsVisible="{Binding IsBusy}" IsEnabled="{Binding IsBusy}"/>
               </StackPanel>
-              <ListBox ItemsSource="{Binding Files}" MaxHeight="650">
+              <ListBox x:Name="ImportReportFiles" ItemsSource="{Binding Files}" MaxHeight="650">
               <ListBox.ItemTemplate>
                 <DataTemplate>
                   <Border Classes="card" Margin="0,3">
