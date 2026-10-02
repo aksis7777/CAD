@@ -3,16 +3,19 @@ using MiniPdm.Domain.Objects;
 using MiniPdm.Domain.Versions;
 using MiniPdm.Domain.Versions.Mutations;
 using MiniPdm.Storage;
-using MiniPdm.Storage.Abstractions.Import;
-using MiniPdm.Storage.Abstractions.Versions;
+using MiniPdm.Modules.Import.Abstractions.Database;
+using MiniPdm.Modules.Import.DtoModels.Database;
+using MiniPdm.Modules.Import.Services.Database;
+using MiniPdm.Modules.Versions.DtoModels;
+using MiniPdm.Modules.Versions.Services;
 using MiniPdm.Storage.Concurrency;
-using MiniPdm.Storage.Repositories;
+
 using Npgsql;
 using Xunit;
 
 namespace MiniPdm.Postgres.Tests;
 
-public sealed class VersionWritePersistencePostgresTests
+public sealed class VersionMutationServicePostgresTests
 {
     private const string ConnectionVariable = "PDM_TEST_POSTGRES_CONNECTION";
 
@@ -30,7 +33,7 @@ public sealed class VersionWritePersistencePostgresTests
             async Task<VersionMutationResult> CloneAsync()
             {
                 await using var context = new PdmDbContext(options);
-                return await new VersionWritePersistence(context).ExecuteAsync(
+                return await new VersionMutationService(context).ExecuteAsync(
                     new VersionWriteRequest(item.Id, 1, token, []), VersionMutationPlanner.Clone, CancellationToken.None);
             }
 
@@ -66,7 +69,7 @@ public sealed class VersionWritePersistencePostgresTests
             async Task<VersionMutationResult> ComposeAsync(PdmObject parent, ObjectVersion version, Guid token, Guid childId)
             {
                 await using var context = new PdmDbContext(options);
-                return await new VersionWritePersistence(context).ExecuteAsync(
+                return await new VersionMutationService(context).ExecuteAsync(
                     new VersionWriteRequest(parent.Id, version.Version, token, [childId]),
                     snapshot => VersionMutationPlanner.ReplaceComposition(snapshot, [new CompositionItem(childId, 1)]),
                     CancellationToken.None);
@@ -115,7 +118,7 @@ public sealed class VersionWritePersistencePostgresTests
                 await context.Database.OpenConnectionAsync();
                 importWaitingPid.TrySetResult(((NpgsqlConnection)context.Database.GetDbConnection()).ProcessID);
                 var factory = new TestContextFactory(options);
-                var persistence = new ImportPersistence(context, factory);
+                var persistence = new ImportDatabaseService(context, factory);
                 return await persistence.ExecuteAsync(importId, new ImportLookup([], []), (_, _) =>
                 {
                     importEntered.TrySetResult(true);
@@ -128,7 +131,7 @@ public sealed class VersionWritePersistencePostgresTests
                 await using var context = new PdmDbContext(options);
                 await context.Database.OpenConnectionAsync();
                 versionWaitingPid.TrySetResult(((NpgsqlConnection)context.Database.GetDbConnection()).ProcessID);
-                return await new VersionWritePersistence(context).ExecuteAsync(
+                return await new VersionMutationService(context).ExecuteAsync(
                     new VersionWriteRequest(item.Id, 1, token, []), snapshot =>
                     {
                         versionEntered.TrySetResult(true);

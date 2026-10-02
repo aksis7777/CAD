@@ -1,9 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
+using MiniPdm.Modules.Import.Abstractions.Database;
 using MiniPdm.Modules.Import.Abstractions;
 using MiniPdm.Modules.Import.Abstractions.Cad;
 using MiniPdm.Modules.Import.Infrastructure.Cad;
 using MiniPdm.Modules.Import.Infrastructure.SourceFiles;
 using MiniPdm.Modules.Import.Services;
+using MiniPdm.Modules.Import.Services.Database;
 
 namespace MiniPdm.Modules.Import.Extensions;
 
@@ -21,6 +23,7 @@ public static class ModuleRegistration
         services.AddSingleton<IImportUploadStorage>(sp => sp.GetRequiredService<FileImportStorage>());
         services.AddScoped<ImportSourceRecovery>();
         services.AddScoped<ImportService>();
+        services.AddScoped<IImportDatabaseService, ImportDatabaseService>();
         return services;
     }
 }

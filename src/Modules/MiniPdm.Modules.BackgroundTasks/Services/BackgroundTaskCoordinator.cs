@@ -3,7 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MiniPdm.Contracts.Modules.BackgroundTasks.DtoModels;
-using MiniPdm.Storage.Abstractions.BackgroundTasks;
+using MiniPdm.Modules.BackgroundTasks.Abstractions.Database;
+using MiniPdm.Modules.BackgroundTasks.DtoModels;
 using MiniPdm.Modules.BackgroundTasks.Abstractions;
 
 namespace MiniPdm.Modules.BackgroundTasks.Services;
@@ -83,7 +84,7 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
         try
         {
             using var scope = _scopeFactory.CreateScope();
-            var rows = await scope.ServiceProvider.GetRequiredService<IBackgroundTaskPersistence>().ListAsync(ct);
+            var rows = await scope.ServiceProvider.GetRequiredService<IBackgroundTaskDatabaseService>().ListAsync(ct);
             return rows.Select(ToDto).ToArray();
         }
         catch (Exception ex) when (ex is not OperationCanceledException and not BackgroundTaskPersistenceUnavailableException)
@@ -99,7 +100,7 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
         try
         {
             using var scope = _scopeFactory.CreateScope();
-            var persistence = scope.ServiceProvider.GetRequiredService<IBackgroundTaskPersistence>();
+            var persistence = scope.ServiceProvider.GetRequiredService<IBackgroundTaskDatabaseService>();
             var persistenceLock = _persistenceLocks[taskId];
             await persistenceLock.WaitAsync(ct);
             try
@@ -168,7 +169,7 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
             try
             {
                 using var scope = _scopeFactory.CreateScope();
-                rows = await scope.ServiceProvider.GetRequiredService<IBackgroundTaskPersistence>().ListAsync(stoppingToken);
+                rows = await scope.ServiceProvider.GetRequiredService<IBackgroundTaskDatabaseService>().ListAsync(stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
             catch (Exception ex)
@@ -207,7 +208,7 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
         try
         {
             using var scope = _scopeFactory.CreateScope();
-            var persistence = scope.ServiceProvider.GetRequiredService<IBackgroundTaskPersistence>();
+            var persistence = scope.ServiceProvider.GetRequiredService<IBackgroundTaskDatabaseService>();
             var persistenceLock = _persistenceLocks[definition.Id];
             using var startTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             await persistenceLock.WaitAsync(startTimeout.Token);
@@ -266,7 +267,7 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
                     bool saved;
                     try
                     {
-                        saved = await scope.ServiceProvider.GetRequiredService<IBackgroundTaskPersistence>()
+                        saved = await scope.ServiceProvider.GetRequiredService<IBackgroundTaskDatabaseService>()
                             .CompleteAsync(definition.Id, state, completedAt, result, error, saveTimeout.Token);
                     }
                     finally { persistenceLock.Release(); }
@@ -298,7 +299,7 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
         {
             if (_initialized) return;
             using var scope = _scopeFactory.CreateScope();
-            await scope.ServiceProvider.GetRequiredService<IBackgroundTaskPersistence>()
+            await scope.ServiceProvider.GetRequiredService<IBackgroundTaskDatabaseService>()
                 .EnsureDefinitionsAsync(_definitions.Values.Select(x => new BackgroundTaskDefinitionRecord(x.Id, x.Name, x.DefaultIntervalMinutes)).ToArray(), _clock.GetUtcNow(), ct);
             _initialized = true;
         }

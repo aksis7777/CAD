@@ -4,10 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using MiniPdm.Contracts.Modules.Objects.DtoModels;
 using MiniPdm.Contracts.Modules.Versions.DtoModels;
 using MiniPdm.Domain.Versions.Mutations;
-using MiniPdm.Modules.Objects.Features.GetObject;
-using MiniPdm.Modules.Objects.Features.SearchObjects;
-using MiniPdm.Modules.Objects.Features.UpdateVersionAttributes;
-using MiniPdm.Storage.Abstractions.Versions;
+using MiniPdm.Modules.Objects.Features.Queries.GetObject;
+using MiniPdm.Modules.Objects.Features.Queries.SearchObjects;
+using MiniPdm.Modules.Objects.Features.Commands.UpdateVersionAttributes;
+using MiniPdm.Modules.Versions.Services;
 
 namespace MiniPdm.Modules.Objects.Controllers;
 

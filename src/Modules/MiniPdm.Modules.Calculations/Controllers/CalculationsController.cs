@@ -2,7 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MiniPdm.Contracts.Modules.Calculations.DtoModels;
-using MiniPdm.Modules.Calculations.Features.GetCompositionCalculation;
+using MiniPdm.Modules.Calculations.Features.Queries.GetCompositionCalculation;
 
 namespace MiniPdm.Modules.Calculations.Controllers;
 

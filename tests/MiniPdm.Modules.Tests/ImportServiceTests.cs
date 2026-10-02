@@ -6,7 +6,8 @@ using MiniPdm.Modules.Import.Abstractions;
 using MiniPdm.Modules.Import.Abstractions.Cad;
 using MiniPdm.Modules.Import.DtoModels.Cad;
 using MiniPdm.Modules.Import.Services;
-using MiniPdm.Storage.Abstractions.Import;
+using MiniPdm.Modules.Import.Abstractions.Database;
+using MiniPdm.Modules.Import.DtoModels.Database;
 using Xunit;
 
 namespace MiniPdm.Modules.Tests;
@@ -351,7 +352,7 @@ public sealed class ImportServiceTests
         { CompensateCount++; return Task.CompletedTask; }
     }
 
-    private sealed class FakePersistence(IReadOnlyList<PdmObject> existing, IReadOnlyList<ActiveGraphEdge>? graph = null, bool rollback = false) : IImportPersistence
+    private sealed class FakePersistence(IReadOnlyList<PdmObject> existing, IReadOnlyList<ActiveGraphEdge>? graph = null, bool rollback = false) : IImportDatabaseService
     {
         private readonly Dictionary<Guid, ImportPersistenceResult> _completed = [];
         public ImportWritePlan? LastPlan { get; private set; }

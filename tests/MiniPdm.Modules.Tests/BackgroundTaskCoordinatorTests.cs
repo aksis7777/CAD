@@ -3,7 +3,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using MiniPdm.Contracts.Modules.BackgroundTasks.DtoModels;
 using MiniPdm.Modules.BackgroundTasks.Abstractions;
 using MiniPdm.Modules.BackgroundTasks.Services;
-using MiniPdm.Storage.Abstractions.BackgroundTasks;
+using MiniPdm.Modules.BackgroundTasks.Abstractions.Database;
+using MiniPdm.Modules.BackgroundTasks.DtoModels;
 using Xunit;
 
 namespace MiniPdm.Modules.Tests;
@@ -143,7 +144,7 @@ public sealed class BackgroundTaskCoordinatorTests
         services.AddLogging();
         services.AddSingleton<TimeProvider>(TimeProvider.System);
         services.AddSingleton(persistence);
-        services.AddScoped<IBackgroundTaskPersistence>(sp => sp.GetRequiredService<FakePersistence>());
+        services.AddScoped<IBackgroundTaskDatabaseService>(sp => sp.GetRequiredService<FakePersistence>());
         return services.BuildServiceProvider();
     }
 
@@ -175,7 +176,7 @@ public sealed class BackgroundTaskCoordinatorTests
         throw new TimeoutException("The coordinator did not attempt to persist completion.");
     }
 
-    private sealed class FakePersistence : IBackgroundTaskPersistence
+    private sealed class FakePersistence : IBackgroundTaskDatabaseService
     {
         private readonly object _sync = new();
         private readonly Dictionary<string, BackgroundTaskRow> _rows = new(StringComparer.Ordinal);

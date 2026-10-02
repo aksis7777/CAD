@@ -6,7 +6,7 @@ using MiniPdm.Domain.Composition;
 using MiniPdm.Domain.Objects;
 using MiniPdm.Domain.Versions;
 using MiniPdm.Storage;
-using MiniPdm.Storage.Queries;
+using MiniPdm.Modules.Composition.Services;
 using Xunit;
 
 namespace MiniPdm.Storage.Tests;
@@ -40,7 +40,7 @@ public sealed class VersionCompositionReadQueryTests
         var token = parent.ConcurrencyToken;
         fixture.Context.ChangeTracker.Clear();
         interceptor.Reset();
-        var query = new VersionCompositionReadQuery(fixture.Context);
+        var query = new VersionCompositionReadService(fixture.Context);
 
         var historicalResult = await query.ReadAsync(parent.Id, 1, CancellationToken.None);
         Assert.Equal(1, interceptor.SelectCount);
@@ -54,6 +54,15 @@ public sealed class VersionCompositionReadQueryTests
         Assert.Null(partItem.Name);
         Assert.Equal("Bearing Original", standardItem.Name);
         Assert.Empty(fixture.Context.ChangeTracker.Entries());
+
+        interceptor.Reset();
+        var historicalDto = await query.GetVersionCompositionAsync(parent.Id, 1, CancellationToken.None);
+        Assert.Equal(1, interceptor.SelectCount);
+        Assert.NotNull(historicalDto);
+        Assert.Equal(token, historicalDto!.ConcurrencyToken);
+        Assert.Equal(2, historicalDto.Items.Count);
+        Assert.True(historicalDto.Items.Single(x => x.ChildObjectId == part.Id).NoCurrentVersion);
+        Assert.Equal("StandardPart", historicalDto.Items.Single(x => x.ChildObjectId == standard.Id).Type);
 
         interceptor.Reset();
         var emptyResult = await query.ReadAsync(parent.Id, 3, CancellationToken.None);

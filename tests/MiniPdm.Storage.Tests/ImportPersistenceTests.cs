@@ -5,8 +5,9 @@ using MiniPdm.Domain.Composition;
 using MiniPdm.Domain.Objects;
 using MiniPdm.Domain.Versions;
 using MiniPdm.Storage;
-using MiniPdm.Storage.Abstractions.Import;
-using MiniPdm.Storage.Repositories;
+using MiniPdm.Modules.Import.Abstractions.Database;
+using MiniPdm.Modules.Import.DtoModels.Database;
+using MiniPdm.Modules.Import.Services.Database;
 using Xunit;
 
 namespace MiniPdm.Storage.Tests;
@@ -169,7 +170,7 @@ public sealed class ImportPersistenceTests
 
     private static ImportLookup Lookup(string designation = "АБВГ.301245.001") => new([designation], []);
 
-    private static Task<ImportPersistenceResult> CompleteEmptyImport(IImportPersistence persistence, Guid id) =>
+    private static Task<ImportPersistenceResult> CompleteEmptyImport(IImportDatabaseService persistence, Guid id) =>
         persistence.ExecuteAsync(id, Lookup(), (_, _) => Task.FromResult(new ImportWritePlan([], [], [], "{}")), CancellationToken.None);
 
     private sealed class Fixture : IAsyncDisposable
@@ -177,14 +178,14 @@ public sealed class ImportPersistenceTests
         private readonly SqliteConnection _connection;
         public DbContextOptions<PdmDbContext> Options { get; }
         private PdmDbContext Context { get; }
-        public ImportPersistence Persistence { get; }
+        public ImportDatabaseService Persistence { get; }
 
         private Fixture(SqliteConnection connection, DbContextOptions<PdmDbContext> options)
         {
             _connection = connection;
             Options = options;
             Context = new PdmDbContext(options);
-            Persistence = new ImportPersistence(Context, new TestContextFactory(options));
+            Persistence = new ImportDatabaseService(Context, new TestContextFactory(options));
         }
 
         public static async Task<Fixture> CreateAsync()

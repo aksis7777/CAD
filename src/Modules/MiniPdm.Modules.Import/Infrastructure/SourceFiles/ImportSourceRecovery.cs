@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using MiniPdm.Modules.Import.Abstractions;
-using MiniPdm.Storage.Abstractions.Import;
+using MiniPdm.Modules.Import.Abstractions.Database;
+using MiniPdm.Modules.Import.DtoModels.Database;
 
 namespace MiniPdm.Modules.Import.Infrastructure.SourceFiles;
 
@@ -9,7 +10,7 @@ public sealed class ImportSourceRecovery(
     IOptions<ImportStorageOptions> options,
     FileImportStorage fileStorage,
     IImportSourceStorage sourceStorage,
-    IImportPersistence persistence)
+    IImportDatabaseService persistence)
 {
     private readonly string _importsRoot = Path.Combine(Path.GetFullPath(string.IsNullOrWhiteSpace(options.Value.DataRoot)
         ? Path.Combine(AppContext.BaseDirectory, "data") : options.Value.DataRoot), "imports");

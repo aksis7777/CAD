@@ -28,6 +28,12 @@ docker compose up -d --build --no-deps desktop
 
 Проверить состояние и логи можно командами `docker compose ps` и `docker compose logs -f api desktop migrations`. Остановить приложение: `docker compose down`. Команда `docker compose down -v` удаляет volumes с базой и исходниками.
 
+## Как устроен код
+
+`MiniPdm.Api` — запускаемый ASP.NET Core API, `MiniPdm.Desktop` — приложение Avalonia, `MiniPdm.Contracts` — общие HTTP DTO, `MiniPdm.Domain` — бизнес-правила, `MiniPdm.Storage` — `PdmDbContext`, EF Core mapping/миграции, DI-регистрация и общий graph lock. Функциональность находится в `src/Modules/MiniPdm.Modules.*`.
+
+В каждом backend-модуле HTTP endpoints собраны в `Controllers`, а CQRS сообщения и их handlers разнесены по `Features/Commands` и `Features/Queries`. Контроллер отправляет сообщение через MediatR, handler вызывает service своего модуля, service работает со scoped `PdmDbContext` через EF Core. Например, поиск объектов находится в `Modules/MiniPdm.Modules.Objects/Services/ObjectReadService.cs`, а редактирование версий — в `Modules/MiniPdm.Modules.Versions/Services/VersionMutationService.cs`. Компоненты saga импорта и singleton фонового координатора используют отдельные scoped database services, чтобы сохранять свежие границы DbContext.
+
 ## Сборка и тесты
 
 Требуется .NET SDK 10.0.100 или новее в feature band 10. `global.json` разрешает SDK 10.0.401 и последующие feature band версии .NET 10.
@@ -42,7 +48,9 @@ Storage-тесты используют SQLite в памяти и не треб�
 
 Отдельный проект интеграционных тестов PostgreSQL `tests/MiniPdm.Postgres.Tests` не входит в solution и запускается отдельно. Для него задайте `PDM_TEST_POSTGRES_CONNECTION`, указывающий на выделенную тестовую PostgreSQL-базу с применёнными миграциями. Транзакционные тесты чтения откатывают свои транзакции; тесты конкурентной записи создают случайные собственные объекты и в `finally` удаляют только созданные ими объекты, версии, связи и журнал импорта. Тесты не очищают таблицы, не удаляют чужие данные и не запускают миграции.
 
-`dotnet test MiniPdm.sln --no-restore` прошёл: 133 теста без пропусков — 79 Modules, 33 Storage и 21 Desktop. Отдельный PostgreSQL suite ранее прошёл 11 тестов на выделенной временной БД. Browser picker extension прошёл Chromium-сценарий с реальными Kestrel bridge, ImportViewModel, API и свежей PostgreSQL: 35 принятых, 10 отклонённых, одно предупреждение, 45 строк отчёта; временные staging-файлы удалены. Новые Desktop UI-тесты покрывают привязку контекста отчёта, два последовательных импорта, отмену выбора, фактическое состояние кнопки и восстановление повтора после неопределённого ответа. На локальном Mac после пересборки Desktop через браузер виден отчёт прежнего импорта, а отмена picker вернула HTTP 204. Второй полноценный браузерный импорт не подтверждён: macOS заблокировала компьютерное управление во время системного выбора папки.
+После переноса EF операций в services модулей `dotnet build MiniPdm.sln` завершился с 0 warnings и 0 errors. Прошли 130 тестов solution и 11 PostgreSQL tests — всего 141. Все три EF Core миграции применены к свежей PostgreSQL 17; `has-pending-model-changes` подтвердил, что новая миграция не нужна. HTTP smoke текущей версии проверил импорт (35 принято, 10 отклонено, одно предупреждение), повторный импорт (33 без изменений, 2 новые версии), конкурентное клонирование (201/409), правки атрибутов/BOM, циклы и отмену версии. BackgroundTasks HTTP проверил список, расписание и ручной запуск `202`/`Succeeded`. Avalonia shell и редактор проверены headlessly. Browser picker extension прошёл Chromium-сценарий с подменённым noVNC DOM и реальными Kestrel bridge, ImportViewModel, API и свежей PostgreSQL: 35 принятых, 10 отклонённых, одно предупреждение и 45 строк отчёта; временные staging-файлы удалены. Native GUI с display server в текущем окружении не запускался; результаты локального noVNC приведены ниже.
+
+Browser picker extension прошёл Chromium-сценарий с реальными Kestrel bridge, ImportViewModel, API и свежей PostgreSQL: 35 принятых, 10 отклонённых, одно предупреждение, 45 строк отчёта; временные staging-файлы удалены. Новые Desktop UI-тесты покрывают привязку контекста отчёта, два последовательных импорта, отмену выбора, фактическое состояние кнопки и восстановление повтора после неопределённого ответа. На локальном Mac после пересборки Desktop через браузер виден отчёт прежнего импорта, а отмена picker вернула HTTP 204. Второй полноценный браузерный импорт не подтверждён: macOS заблокировала компьютерное управление во время системного выбора папки.
 
 Изолированные проверки browser picker можно повторить без запуска API или Compose, если Node.js, Playwright и Chromium уже доступны:
 
@@ -124,7 +132,7 @@ HTTP smoke-проверка на временной PostgreSQL подтверд�
 
 ## Чтение состава и расчёты
 
-`GET /api/objects/{objectId}/composition` возвращает плоский список вхождений дерева. Один запрос Storage использует PostgreSQL recursive CTE; пути `ObjectPath` и `ParentPath` сохраняют структуру дерева, а повторное вхождение того же объекта в разных ветках остаётся отдельной строкой. `LocalQuantity` — количество непосредственно в строке состава. Отсутствующая текущая версия представлена пустыми полями версии и диагностикой `NoCurrentVersion`; `Cycle` отмечает цикл, обнаруженный защитной проверкой чтения.
+`GET /api/objects/{objectId}/composition` возвращает плоский список вхождений дерева. `MiniPdm.Modules.Composition.Services.CompositionReadService` выполняет один PostgreSQL recursive CTE через scoped `PdmDbContext`; пути `ObjectPath` и `ParentPath` сохраняют структуру дерева, а повторное вхождение того же объекта в разных ветках остаётся отдельной строкой. `LocalQuantity` — количество непосредственно в строке состава. Отсутствующая текущая версия представлена пустыми полями версии и диагностикой `NoCurrentVersion`; `Cycle` отмечает цикл, обнаруженный защитной проверкой чтения.
 
 `GET /api/objects/{objectId}/calculations` возвращает в одном ответе итоговую массу и плоскую спецификацию, также полученные из одного CTE. Пример формы ответа:
 

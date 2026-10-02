@@ -6,7 +6,8 @@ using MiniPdm.Domain.Versions;
 using MiniPdm.Modules.Import.Abstractions.Cad;
 using MiniPdm.Modules.Import.DtoModels.Cad;
 using MiniPdm.Modules.Import.Abstractions;
-using MiniPdm.Storage.Abstractions.Import;
+using MiniPdm.Modules.Import.Abstractions.Database;
+using MiniPdm.Modules.Import.DtoModels.Database;
 
 namespace MiniPdm.Modules.Import.Services;
 

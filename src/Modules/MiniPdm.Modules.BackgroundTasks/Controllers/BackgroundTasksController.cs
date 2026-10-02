@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MiniPdm.Contracts.Modules.BackgroundTasks.DtoModels;
 using MiniPdm.Modules.BackgroundTasks.Abstractions;
-using MiniPdm.Modules.BackgroundTasks.Features.ListBackgroundTasks;
-using MiniPdm.Modules.BackgroundTasks.Features.RunBackgroundTask;
-using MiniPdm.Modules.BackgroundTasks.Features.UpdateBackgroundTaskSchedule;
+using MiniPdm.Modules.BackgroundTasks.Features.Queries.ListBackgroundTasks;
+using MiniPdm.Modules.BackgroundTasks.Features.Commands.RunBackgroundTask;
+using MiniPdm.Modules.BackgroundTasks.Features.Commands.UpdateBackgroundTaskSchedule;
 
 namespace MiniPdm.Modules.BackgroundTasks.Controllers;
 

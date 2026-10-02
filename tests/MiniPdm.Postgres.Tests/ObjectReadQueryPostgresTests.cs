@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using MiniPdm.Domain.Objects;
 using MiniPdm.Domain.Versions;
 using MiniPdm.Storage;
-using MiniPdm.Storage.Queries;
+using MiniPdm.Modules.Objects.Services;
 using Npgsql;
 using Xunit;
 
@@ -40,7 +40,7 @@ public sealed class ObjectReadQueryPostgresTests
         var controlVersion = new ObjectVersion { ObjectId = control.Id, Version = 1, State = VersionState.Approved, Mass = 0.1m };
         await fixture.SaveVersionsAsync(controlVersion);
         await fixture.SetCurrentAsync(control, controlVersion);
-        var query = new ObjectReadQuery(fixture.Context);
+        var query = new ObjectReadService(fixture.Context);
 
         foreach (var term in new[] { $"корпус {marker}", $"{marker} 50%_", $"{marker} 50%_\\X" })
         {
@@ -49,6 +49,13 @@ public sealed class ObjectReadQueryPostgresTests
             Assert.Equal(1, fixture.Commands.Count);
             Assert.Equal(item.Id, Assert.Single(page.Items).Id);
         }
+
+        fixture.Commands.Reset();
+        var publicPage = await query.SearchObjectsAsync($"корпус {marker}", 0, 20, CancellationToken.None);
+        Assert.Equal(1, fixture.Commands.Count);
+        Assert.Equal(item.Id, Assert.Single(publicPage.Items).Id);
+        Assert.Equal("StandardPart", publicPage.Items[0].Type);
+        Assert.Equal(standardName, publicPage.Items[0].Name);
 
         var cancelled = new ObjectVersion
         {
@@ -80,6 +87,13 @@ public sealed class ObjectReadQueryPostgresTests
         Assert.Equal(card.CurrentVersionId, card.Versions.Single(v => v.Version == 1).Id);
         Assert.NotEqual(card.CurrentVersionId, card.Versions.Single(v => v.Version == 2).Id);
         Assert.Empty(fixture.Context.ChangeTracker.Entries());
+
+        fixture.Commands.Reset();
+        var publicCard = await query.GetObjectAsync(item.Id, 2, CancellationToken.None);
+        Assert.Equal(1, fixture.Commands.Count);
+        Assert.Equal(standardName, publicCard!.Name);
+        Assert.Equal(standardName, publicCard.SelectedVersion!.Name);
+        Assert.False(publicCard.SelectedVersion.IsCurrent);
     }
 
     private sealed class Fixture : IAsyncDisposable

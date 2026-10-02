@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MiniPdm.Domain.Objects;
 using MiniPdm.Domain.Versions;
 using MiniPdm.Storage;
-using MiniPdm.Storage.Queries;
+using MiniPdm.Modules.Objects.Services;
 using Xunit;
 
 namespace MiniPdm.Storage.Tests;
@@ -17,7 +17,7 @@ public sealed class ObjectReadQueryTests
         var a = await fixture.CreateAsync(PdmObjectType.Part, "A_001", "Alpha", VersionState.Approved, 1.25m);
         var b = await fixture.CreateAsync(PdmObjectType.Part, "A_002", "Beta", VersionState.InWork, 2m);
         await fixture.CreateAsync(PdmObjectType.Part, "C_003", "Gamma", VersionState.Cancelled, 3m);
-        var query = new ObjectReadQuery(fixture.Context);
+        var query = new ObjectReadService(fixture.Context);
 
         var first = await query.SearchAsync("A_", 0, 1, CancellationToken.None);
         var next = await query.SearchAsync("A_", 1, 1, CancellationToken.None);
@@ -39,7 +39,7 @@ public sealed class ObjectReadQueryTests
         var designation = await fixture.CreateAsync(PdmObjectType.Part, "MATCH-DES", "Other", VersionState.InWork, null);
         var standard = await fixture.CreateStandardAsync("Fastener X", "Fastener X");
         var cancelled = await fixture.CreateAsync(PdmObjectType.Part, "NO-CURRENT", "Hidden word", VersionState.Cancelled, null);
-        var query = new ObjectReadQuery(fixture.Context);
+        var query = new ObjectReadService(fixture.Context);
 
         Assert.Equal(designation.Id, Assert.Single((await query.SearchAsync("match-des", 0, 20, CancellationToken.None)).Items).Id);
         Assert.Equal(standard.Id, Assert.Single((await query.SearchAsync("fastener x", 0, 20, CancellationToken.None)).Items).Id);
@@ -61,7 +61,7 @@ public sealed class ObjectReadQueryTests
         fixture.Context.Versions.Add(newer);
         await fixture.Context.SaveChangesAsync();
         fixture.Context.ChangeTracker.Clear();
-        var query = new ObjectReadQuery(fixture.Context);
+        var query = new ObjectReadService(fixture.Context);
 
         var current = await query.GetAsync(item.Id, null, CancellationToken.None);
         var history = await query.GetAsync(item.Id, 2, CancellationToken.None);

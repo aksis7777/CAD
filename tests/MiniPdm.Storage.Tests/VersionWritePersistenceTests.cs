@@ -4,13 +4,15 @@ using MiniPdm.Domain.Objects;
 using MiniPdm.Domain.Versions;
 using MiniPdm.Domain.Versions.Mutations;
 using MiniPdm.Storage;
-using MiniPdm.Storage.Abstractions.Versions;
-using MiniPdm.Storage.Repositories;
+using MiniPdm.Modules.Versions.DtoModels;
+using MiniPdm.Modules.Versions.Abstractions;
+using MiniPdm.Modules.Versions.Services;
+
 using Xunit;
 
 namespace MiniPdm.Storage.Tests;
 
-public sealed class VersionWritePersistenceTests
+public sealed class VersionMutationServiceTests
 {
     [Fact]
     public async Task Clone_persists_next_version_and_moves_current_pointer_atomically()
@@ -132,14 +134,14 @@ public sealed class VersionWritePersistenceTests
         private readonly SqliteConnection _connection;
         public DbContextOptions<PdmDbContext> Options { get; }
         public PdmDbContext Context { get; }
-        public IVersionWritePersistence Persistence { get; }
+        public VersionMutationService Persistence { get; }
 
         private Fixture(SqliteConnection connection, DbContextOptions<PdmDbContext> options)
         {
             _connection = connection;
             Options = options;
             Context = new PdmDbContext(options);
-            Persistence = new VersionWritePersistence(Context);
+            Persistence = new VersionMutationService(Context);
         }
 
         public static async Task<Fixture> CreateAsync()

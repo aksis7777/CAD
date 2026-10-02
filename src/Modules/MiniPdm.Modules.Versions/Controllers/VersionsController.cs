@@ -4,9 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using MiniPdm.Contracts.Modules.Versions.DtoModels;
 using MiniPdm.Domain.Versions;
 using MiniPdm.Domain.Versions.Mutations;
-using MiniPdm.Modules.Versions.Features.ChangeVersionState;
-using MiniPdm.Modules.Versions.Features.CloneVersion;
-using MiniPdm.Storage.Abstractions.Versions;
+using MiniPdm.Modules.Versions.Features.Commands.ChangeVersionState;
+using MiniPdm.Modules.Versions.Features.Commands.CloneVersion;
+using MiniPdm.Modules.Versions.Services;
 
 namespace MiniPdm.Modules.Versions.Controllers;
 

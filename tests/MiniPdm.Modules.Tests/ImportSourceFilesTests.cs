@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Options;
 using MiniPdm.Modules.Import.Abstractions;
 using MiniPdm.Modules.Import.Infrastructure.SourceFiles;
-using MiniPdm.Storage.Abstractions.Import;
+using MiniPdm.Modules.Import.Abstractions.Database;
+using MiniPdm.Modules.Import.DtoModels.Database;
 using Xunit;
 
 namespace MiniPdm.Modules.Tests;
@@ -181,10 +182,10 @@ public sealed class ImportSourceFilesTests
         public void Dispose() { if (Directory.Exists(Root)) Directory.Delete(Root, recursive: true); }
     }
 
-    private static ImportSourceRecovery CreateRecovery(Fixture fixture, FileImportStorage storage, IImportPersistence persistence) =>
+    private static ImportSourceRecovery CreateRecovery(Fixture fixture, FileImportStorage storage, IImportDatabaseService persistence) =>
         new(Options.Create(new ImportStorageOptions { DataRoot = fixture.Root }), storage, storage, persistence);
 
-    private sealed class FakeImportPersistence(Func<Guid, ImportPersistenceResult> resolve) : IImportPersistence
+    private sealed class FakeImportPersistence(Func<Guid, ImportPersistenceResult> resolve) : IImportDatabaseService
     {
         public Task<ImportPersistenceResult> ExecuteAsync(Guid importId, ImportLookup lookup, Func<ImportSnapshot, CancellationToken, Task<ImportWritePlan>> prepare, CancellationToken ct) => throw new NotSupportedException();
         public Task<ImportPersistenceResult?> FindAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();

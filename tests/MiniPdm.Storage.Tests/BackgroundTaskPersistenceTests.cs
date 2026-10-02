@@ -1,8 +1,9 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using MiniPdm.Storage;
-using MiniPdm.Storage.Abstractions.BackgroundTasks;
-using MiniPdm.Storage.Repositories;
+using MiniPdm.Modules.BackgroundTasks.Abstractions.Database;
+using MiniPdm.Modules.BackgroundTasks.DtoModels;
+using MiniPdm.Modules.BackgroundTasks.Services.Database;
 using Xunit;
 
 namespace MiniPdm.Storage.Tests;
@@ -15,34 +16,34 @@ public sealed class BackgroundTaskPersistenceTests
         await using var fixture = await Fixture.CreateAsync();
         var definition = new BackgroundTaskDefinitionRecord("test-job", "Test job", 1440);
         var createdAt = DateTimeOffset.Parse("2026-10-01T10:00:00Z");
-        await new BackgroundTaskPersistence(fixture.Context).EnsureDefinitionsAsync([definition], createdAt, CancellationToken.None);
+        await new BackgroundTaskDatabaseService(fixture.Context).EnsureDefinitionsAsync([definition], createdAt, CancellationToken.None);
 
-        var initial = await new BackgroundTaskPersistence(fixture.Context).GetAsync(definition.Id, CancellationToken.None);
+        var initial = await new BackgroundTaskDatabaseService(fixture.Context).GetAsync(definition.Id, CancellationToken.None);
         Assert.Equal("Idle", initial!.State);
         Assert.Equal(1440, initial.IntervalMinutes);
         Assert.Equal(createdAt, initial.NextRunAt);
 
         var scheduleChangedAt = createdAt.AddMinutes(2);
-        Assert.True(await new BackgroundTaskPersistence(fixture.Context).UpdateScheduleAsync(definition.Id, 15, scheduleChangedAt, CancellationToken.None));
-        var scheduled = await new BackgroundTaskPersistence(fixture.Context).GetAsync(definition.Id, CancellationToken.None);
+        Assert.True(await new BackgroundTaskDatabaseService(fixture.Context).UpdateScheduleAsync(definition.Id, 15, scheduleChangedAt, CancellationToken.None));
+        var scheduled = await new BackgroundTaskDatabaseService(fixture.Context).GetAsync(definition.Id, CancellationToken.None);
         var nextRunDuringRun = scheduled!.NextRunAt;
         Assert.Equal(scheduleChangedAt.AddMinutes(15), nextRunDuringRun);
 
         var startedAt = scheduleChangedAt.AddMinutes(1);
-        Assert.True(await new BackgroundTaskPersistence(fixture.Context).TryStartAsync(definition.Id, startedAt, CancellationToken.None));
-        Assert.False(await new BackgroundTaskPersistence(fixture.Context).TryStartAsync(definition.Id, startedAt.AddSeconds(1), CancellationToken.None));
-        Assert.True(await new BackgroundTaskPersistence(fixture.Context).UpdateScheduleAsync(definition.Id, 30, startedAt, CancellationToken.None));
-        var running = await new BackgroundTaskPersistence(fixture.Context).GetAsync(definition.Id, CancellationToken.None);
+        Assert.True(await new BackgroundTaskDatabaseService(fixture.Context).TryStartAsync(definition.Id, startedAt, CancellationToken.None));
+        Assert.False(await new BackgroundTaskDatabaseService(fixture.Context).TryStartAsync(definition.Id, startedAt.AddSeconds(1), CancellationToken.None));
+        Assert.True(await new BackgroundTaskDatabaseService(fixture.Context).UpdateScheduleAsync(definition.Id, 30, startedAt, CancellationToken.None));
+        var running = await new BackgroundTaskDatabaseService(fixture.Context).GetAsync(definition.Id, CancellationToken.None);
         Assert.Equal("Running", running!.State);
         Assert.Equal(startedAt, running.LastStartedAt);
         Assert.Equal(nextRunDuringRun, running.NextRunAt);
 
         var completedAt = startedAt.AddSeconds(12);
-        Assert.True(await new BackgroundTaskPersistence(fixture.Context).CompleteAsync(
+        Assert.True(await new BackgroundTaskDatabaseService(fixture.Context).CompleteAsync(
             definition.Id, "PartiallySucceeded", completedAt, "Removed 2 entries.", "One source folder was inaccessible.", CancellationToken.None));
 
         await using var verify = new PdmDbContext(fixture.Options);
-        var persisted = await new BackgroundTaskPersistence(verify).GetAsync(definition.Id, CancellationToken.None);
+        var persisted = await new BackgroundTaskDatabaseService(verify).GetAsync(definition.Id, CancellationToken.None);
         Assert.Equal("PartiallySucceeded", persisted!.State);
         Assert.Equal(30, persisted.IntervalMinutes);
         Assert.Equal(startedAt, persisted.LastStartedAt);
@@ -58,7 +59,7 @@ public sealed class BackgroundTaskPersistenceTests
         await using var fixture = await Fixture.CreateAsync();
         var definition = new BackgroundTaskDefinitionRecord("test-job", "Test job", 1440);
         var now = DateTimeOffset.Parse("2026-10-01T10:00:00Z");
-        var repository = new BackgroundTaskPersistence(fixture.Context);
+        var repository = new BackgroundTaskDatabaseService(fixture.Context);
         await repository.EnsureDefinitionsAsync([definition], now, CancellationToken.None);
         Assert.True(await repository.TryStartAsync(definition.Id, now, CancellationToken.None));
 

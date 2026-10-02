@@ -5,8 +5,9 @@ using MiniPdm.Domain.Composition;
 using MiniPdm.Domain.Objects;
 using MiniPdm.Domain.Versions;
 using MiniPdm.Storage;
-using MiniPdm.Storage.Abstractions.Composition;
-using MiniPdm.Storage.Queries;
+using MiniPdm.Storage.Concurrency;
+using MiniPdm.Modules.Composition.DtoModels;
+using MiniPdm.Modules.Composition.Services;
 using Npgsql;
 using Xunit;
 
@@ -20,7 +21,7 @@ public sealed class CompositionReadQueryPostgresTests
     public async Task Missing_root_and_empty_root_have_expected_occurrences_in_one_statement()
     {
         await using var fixture = await Fixture.OpenAsync();
-        var query = new CompositionReadQuery(fixture.Context);
+        var query = new CompositionReadService(fixture.Context);
 
         var missingRootId = Guid.NewGuid();
         fixture.Commands.Reset();
@@ -93,7 +94,7 @@ public sealed class CompositionReadQueryPostgresTests
             Link(leftVersion.Id, leaf.Id, 4), Link(rightVersion.Id, leaf.Id, 5));
 
         fixture.Commands.Reset();
-        var rows = await new CompositionReadQuery(fixture.Context).ReadAsync(root.Id, CancellationToken.None);
+        var rows = await new CompositionReadService(fixture.Context).ReadAsync(root.Id, CancellationToken.None);
 
         Assert.Equal(1, fixture.Commands.Count);
         Assert.Equal(5, rows.Count);
@@ -117,6 +118,15 @@ public sealed class CompositionReadQueryPostgresTests
         Assert.Equal("Shared part", throughLeft.Name);
         Assert.Equal("Aluminium", throughLeft.Material);
         Assert.Equal(1.25m, throughLeft.UnitMassKg);
+
+        fixture.Commands.Reset();
+        var tree = await new CompositionReadService(fixture.Context).GetCompositionAsync(root.Id, CancellationToken.None);
+        Assert.Equal(1, fixture.Commands.Count);
+        var sharedOccurrences = tree!.Nodes.Where(x => x.ObjectId == leaf.Id).ToArray();
+        Assert.Equal(2, sharedOccurrences.Length);
+        Assert.All(sharedOccurrences, node => Assert.Equal("Part", node.Type));
+        Assert.Contains(sharedOccurrences, node => node.ObjectPath.SequenceEqual(new[] { root.Id, left.Id, leaf.Id }));
+        Assert.Contains(sharedOccurrences, node => node.ObjectPath.SequenceEqual(new[] { root.Id, right.Id, leaf.Id }));
     }
 
     [Fact]
@@ -132,7 +142,7 @@ public sealed class CompositionReadQueryPostgresTests
         await fixture.SetCurrentVersionsAsync((root, rootVersion), (child, childVersion));
         await fixture.SaveLinksAsync(Link(rootVersion.Id, child.Id, 6));
 
-        var query = new CompositionReadQuery(fixture.Context);
+        var query = new CompositionReadService(fixture.Context);
         var initial = await query.ReadAsync(root.Id, CancellationToken.None);
         Assert.Equal("Parent before", Assert.Single(initial, x => x.ObjectId == root.Id).Name);
         Assert.Equal("Child approved", Assert.Single(initial, x => x.ObjectId == child.Id).Name);
@@ -183,7 +193,7 @@ public sealed class CompositionReadQueryPostgresTests
         await fixture.SaveObjectsAsync([root]);
 
         fixture.Commands.Reset();
-        var rows = await new CompositionReadQuery(fixture.Context).ReadAsync(root.Id, CancellationToken.None);
+        var rows = await new CompositionReadService(fixture.Context).ReadAsync(root.Id, CancellationToken.None);
 
         Assert.Equal(1, fixture.Commands.Count);
         var row = Assert.Single(rows);
@@ -207,7 +217,7 @@ public sealed class CompositionReadQueryPostgresTests
         await fixture.SaveLinksAsync(Link(av.Id, b.Id, 2), Link(bv.Id, a.Id, 3));
 
         fixture.Commands.Reset();
-        var rows = await new CompositionReadQuery(fixture.Context).ReadAsync(a.Id, CancellationToken.None);
+        var rows = await new CompositionReadService(fixture.Context).ReadAsync(a.Id, CancellationToken.None);
 
         Assert.Equal(1, fixture.Commands.Count);
         Assert.Equal(3, rows.Count);
@@ -228,7 +238,7 @@ public sealed class CompositionReadQueryPostgresTests
         await fixture.SetCurrentVersionsAsync((root, version));
 
         fixture.Commands.Reset();
-        var rows = await new CompositionReadQuery(fixture.Context).ReadAsync(root.Id, CancellationToken.None);
+        var rows = await new CompositionReadService(fixture.Context).ReadAsync(root.Id, CancellationToken.None);
 
         Assert.Equal(1, fixture.Commands.Count);
         var row = Assert.Single(rows);
