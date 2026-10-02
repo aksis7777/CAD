@@ -4,30 +4,37 @@ namespace MiniPdm.Contracts.Modules.Objects.DtoModels;
 /// Содержит значения атрибутов версии, которые нужно обновить.
 /// Токен позволяет проверить, что версия не изменилась после её чтения.
 /// </summary>
-public sealed record UpdateVersionAttributesRequestDto(
-    string? Name,
-    string? Material,
-    decimal? Mass,
-    Guid ExpectedConcurrencyToken)
+public sealed record UpdateVersionAttributesRequestDto
 {
     /// <summary>
     /// Новое наименование версии или <see langword="null"/>, если наименование менять не нужно.
     /// </summary>
-    public string? Name { get; init; } = Name;
+    public string? Name
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Новый материал версии или <see langword="null"/>, если материал менять не нужно.
     /// </summary>
-    public string? Material { get; init; } = Material;
+    public string? Material
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Новая масса единицы в килограммах или <see langword="null"/>, если массу менять не нужно.
     /// </summary>
-    public decimal? Mass { get; init; } = Mass;
+    public decimal? Mass
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Токен конкурентного доступа, полученный при чтении версии.
     /// </summary>
-    public Guid ExpectedConcurrencyToken { get; init; } = ExpectedConcurrencyToken;
-
+    public Guid ExpectedConcurrencyToken
+    {
+        get; init;
+    }
 }

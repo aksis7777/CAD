@@ -14,7 +14,7 @@ public sealed class FileJsonCadDocumentReader(string directory) : ICadDocumentRe
     private static readonly JsonDocumentOptions JsonOptions = new() { CommentHandling = JsonCommentHandling.Disallow };
 
     /// <inheritdoc />
-    public async Task<CadReadResult> ReadAsync(CadDocumentRef document, CancellationToken cancellationToken)
+    public async Task<CadReadResultDto> ReadAsync(CadDocumentRefDto document, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(document);
         cancellationToken.ThrowIfCancellationRequested();
@@ -81,10 +81,18 @@ public sealed class FileJsonCadDocumentReader(string directory) : ICadDocumentRe
                 return Failure(designationError);
 
             var name = nameElement.GetString()!;
-            CadDocument Partial(string? partialMaterial = null, decimal? partialMass = null,
-                IReadOnlyList<CadComponent>? partialComponents = null) =>
-                new(document.FileName, type.Value, designation, name, partialMaterial, partialMass,
-                    partialComponents ?? Array.Empty<CadComponent>());
+            CadDocumentDto Partial(string? partialMaterial = null, decimal? partialMass = null,
+                IReadOnlyList<CadComponentDto>? partialComponents = null) =>
+                new()
+                {
+                    FileName = document.FileName,
+                    Type = type.Value,
+                    Designation = designation,
+                    Name = name,
+                    Material = partialMaterial,
+                    Mass = partialMass,
+                    Components = partialComponents ?? Array.Empty<CadComponentDto>()
+                };
 
             var extension = Path.GetExtension(document.FileName);
             if ((type == PdmObjectType.Assembly && !extension.Equals(".a3d", StringComparison.OrdinalIgnoreCase)) ||
@@ -111,7 +119,7 @@ public sealed class FileJsonCadDocumentReader(string directory) : ICadDocumentRe
             if (!root.TryGetProperty("components", out var componentsElement) || componentsElement.ValueKind != JsonValueKind.Array)
                 return Failure("components must be an array.", Partial(material, mass));
 
-            var components = new List<CadComponent>();
+            var components = new List<CadComponentDto> { };
             foreach (var component in componentsElement.EnumerateArray())
             {
                 if (component.ValueKind != JsonValueKind.Object ||
@@ -120,10 +128,18 @@ public sealed class FileJsonCadDocumentReader(string directory) : ICadDocumentRe
                     !component.TryGetProperty("count", out var countElement) || countElement.ValueKind != JsonValueKind.Number ||
                     !countElement.TryGetInt32(out var count))
                     return Failure("Each component must have a file name and an integer count.", Partial(material, mass, components));
-                components.Add(new CadComponent(fileElement.GetString()!, count));
+                components.Add(new CadComponentDto
+                {
+                    File = fileElement.GetString()!,
+                    Count = count
+                });
             }
 
-            return new CadReadResult(Partial(material, mass, components), null);
+            return new CadReadResultDto
+            {
+                Document = Partial(material, mass, components),
+                Error = null
+            };
         }
         catch (JsonException ex)
         {
@@ -148,5 +164,9 @@ public sealed class FileJsonCadDocumentReader(string directory) : ICadDocumentRe
         string.Equals(value, Path.GetFileName(value), StringComparison.Ordinal) &&
         !value.Contains('/') && !value.Contains('\\') && value is not "." and not "..";
 
-    private static CadReadResult Failure(string error, CadDocument? partialDocument = null) => new(partialDocument, error);
+    private static CadReadResultDto Failure(string error, CadDocumentDto? partialDocument = null) => new()
+    {
+        Document = partialDocument,
+        Error = error
+    };
 }

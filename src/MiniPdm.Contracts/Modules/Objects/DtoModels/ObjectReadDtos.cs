@@ -4,250 +4,299 @@ namespace MiniPdm.Contracts.Modules.Objects.DtoModels;
 /// Страница результатов поиска объектов.
 /// Значения смещения и размера страницы позволяют продолжить чтение списка.
 /// </summary>
-public sealed record ObjectSearchPageDto(
-    IReadOnlyList<ObjectSearchItemDto> Items,
-    int Offset,
-    int Limit,
-    bool HasMore)
+public sealed record ObjectSearchPageDto
 {
     /// <summary>
     /// Найденные объекты на текущей странице.
     /// </summary>
-    public IReadOnlyList<ObjectSearchItemDto> Items { get; init; } = Items;
+    public IReadOnlyList<ObjectSearchItemDto> Items { get; init; } = default!;
 
     /// <summary>
     /// Число записей, пропущенных перед этой страницей.
     /// </summary>
-    public int Offset { get; init; } = Offset;
+    public int Offset
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Максимальное число записей, запрошенное для страницы.
     /// </summary>
-    public int Limit { get; init; } = Limit;
+    public int Limit
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Указывает, есть ли записи после текущей страницы.
     /// </summary>
-    public bool HasMore { get; init; } = HasMore;
-
+    public bool HasMore
+    {
+        get; init;
+    }
 }
 
 /// <summary>
 /// Краткие сведения об объекте, найденном при поиске.
 /// </summary>
-public sealed record ObjectSearchItemDto(
-    Guid Id,
-    string Type,
-    string? Designation,
-    string? Name,
-    Guid? CurrentVersionId,
-    int? VersionNumber,
-    string? State,
-    decimal? UnitMassKg,
-    Guid ConcurrencyToken,
-    bool NoCurrentVersion)
+public sealed record ObjectSearchItemDto
 {
     /// <summary>
     /// Идентификатор объекта.
     /// </summary>
-    public Guid Id { get; init; } = Id;
+    public Guid Id
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Тип объекта, например сборка, деталь или стандартное изделие.
     /// </summary>
-    public string Type { get; init; } = Type;
+    public string Type { get; init; } = default!;
 
     /// <summary>
     /// Обозначение объекта либо <see langword="null"/>.
     /// </summary>
-    public string? Designation { get; init; } = Designation;
+    public string? Designation
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Наименование объекта либо <see langword="null"/>.
     /// </summary>
-    public string? Name { get; init; } = Name;
+    public string? Name
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Идентификатор текущей версии либо <see langword="null"/>, если у объекта нет текущей версии.
     /// </summary>
-    public Guid? CurrentVersionId { get; init; } = CurrentVersionId;
+    public Guid? CurrentVersionId
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Номер текущей версии либо <see langword="null"/>.
     /// </summary>
-    public int? VersionNumber { get; init; } = VersionNumber;
+    public int? VersionNumber
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Состояние текущей версии либо <see langword="null"/>.
     /// </summary>
-    public string? State { get; init; } = State;
+    public string? State
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Масса единицы текущей версии в килограммах либо <see langword="null"/>.
     /// </summary>
-    public decimal? UnitMassKg { get; init; } = UnitMassKg;
+    public decimal? UnitMassKg
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Токен конкурентного доступа объекта.
     /// </summary>
-    public Guid ConcurrencyToken { get; init; } = ConcurrencyToken;
+    public Guid ConcurrencyToken
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Указывает, что у объекта отсутствует текущая версия.
     /// </summary>
-    public bool NoCurrentVersion { get; init; } = NoCurrentVersion;
-
+    public bool NoCurrentVersion
+    {
+        get; init;
+    }
 }
 
 /// <summary>
 /// Карточка объекта с выбранной версией и перечнем его версий.
 /// </summary>
-public sealed record ObjectCardDto(
-    Guid Id,
-    string Type,
-    string? Designation,
-    string? Name,
-    Guid? CurrentVersionId,
-    Guid ConcurrencyToken,
-    ObjectVersionDto? SelectedVersion,
-    IReadOnlyList<ObjectVersionSummaryDto> Versions,
-    string? ErrorCode,
-    string? Error)
+public sealed record ObjectCardDto
 {
     /// <summary>
     /// Идентификатор объекта.
     /// </summary>
-    public Guid Id { get; init; } = Id;
+    public Guid Id
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Тип объекта.
     /// </summary>
-    public string Type { get; init; } = Type;
+    public string Type { get; init; } = default!;
 
     /// <summary>
     /// Обозначение объекта либо <see langword="null"/>.
     /// </summary>
-    public string? Designation { get; init; } = Designation;
+    public string? Designation
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Наименование объекта либо <see langword="null"/>.
     /// </summary>
-    public string? Name { get; init; } = Name;
+    public string? Name
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Идентификатор текущей версии либо <see langword="null"/>.
     /// </summary>
-    public Guid? CurrentVersionId { get; init; } = CurrentVersionId;
+    public Guid? CurrentVersionId
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Токен конкурентного доступа объекта.
     /// </summary>
-    public Guid ConcurrencyToken { get; init; } = ConcurrencyToken;
+    public Guid ConcurrencyToken
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Сведения о выбранной версии либо <see langword="null"/>.
     /// </summary>
-    public ObjectVersionDto? SelectedVersion { get; init; } = SelectedVersion;
+    public ObjectVersionDto? SelectedVersion
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Список доступных версий объекта.
     /// </summary>
-    public IReadOnlyList<ObjectVersionSummaryDto> Versions { get; init; } = Versions;
+    public IReadOnlyList<ObjectVersionSummaryDto> Versions { get; init; } = default!;
 
     /// <summary>
     /// Код ошибки получения выбранной версии либо <see langword="null"/>.
     /// </summary>
-    public string? ErrorCode { get; init; } = ErrorCode;
+    public string? ErrorCode
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Описание ошибки получения выбранной версии либо <see langword="null"/>.
     /// </summary>
-    public string? Error { get; init; } = Error;
-
+    public string? Error
+    {
+        get; init;
+    }
 }
 
 /// <summary>
 /// Подробные сведения о версии объекта.
 /// </summary>
-public sealed record ObjectVersionDto(
-    Guid Id,
-    int Version,
-    string State,
-    string? Name,
-    string? Material,
-    decimal? UnitMassKg,
-    string? SourceReference,
-    bool IsCurrent)
+public sealed record ObjectVersionDto
 {
     /// <summary>
     /// Идентификатор версии.
     /// </summary>
-    public Guid Id { get; init; } = Id;
+    public Guid Id
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Порядковый номер версии.
     /// </summary>
-    public int Version { get; init; } = Version;
+    public int Version
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Состояние версии.
     /// </summary>
-    public string State { get; init; } = State;
+    public string State { get; init; } = default!;
 
     /// <summary>
     /// Наименование версии либо <see langword="null"/>.
     /// </summary>
-    public string? Name { get; init; } = Name;
+    public string? Name
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Материал версии либо <see langword="null"/>.
     /// </summary>
-    public string? Material { get; init; } = Material;
+    public string? Material
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Масса единицы в килограммах либо <see langword="null"/>.
     /// </summary>
-    public decimal? UnitMassKg { get; init; } = UnitMassKg;
+    public decimal? UnitMassKg
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Ссылка на исходный файл либо <see langword="null"/>.
     /// </summary>
-    public string? SourceReference { get; init; } = SourceReference;
+    public string? SourceReference
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Указывает, является ли версия текущей.
     /// </summary>
-    public bool IsCurrent { get; init; } = IsCurrent;
-
+    public bool IsCurrent
+    {
+        get; init;
+    }
 }
 
 /// <summary>
 /// Краткие сведения о версии объекта для отображения в списке.
 /// </summary>
-public sealed record ObjectVersionSummaryDto(
-    Guid Id,
-    int Version,
-    string State,
-    bool IsCurrent)
+public sealed record ObjectVersionSummaryDto
 {
     /// <summary>
     /// Идентификатор версии.
     /// </summary>
-    public Guid Id { get; init; } = Id;
+    public Guid Id
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Порядковый номер версии.
     /// </summary>
-    public int Version { get; init; } = Version;
+    public int Version
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Состояние версии.
     /// </summary>
-    public string State { get; init; } = State;
+    public string State { get; init; } = default!;
 
     /// <summary>
     /// Указывает, является ли версия текущей.
     /// </summary>
-    public bool IsCurrent { get; init; } = IsCurrent;
-
+    public bool IsCurrent
+    {
+        get; init;
+    }
 }

@@ -153,7 +153,12 @@ public sealed class BackgroundTaskCoordinatorTests
 
         await coordinator.StopAsync(CancellationToken.None);
         Assert.Equal("Running", (await persistence.GetAsync(definition.Id, CancellationToken.None))!.State);
-        await persistence.EnsureDefinitionsAsync([new(definition.Id, definition.Name, definition.DefaultIntervalMinutes)], DateTimeOffset.UtcNow, CancellationToken.None);
+        await persistence.EnsureDefinitionsAsync([new BackgroundTaskDefinitionRecordDto
+        {
+                        Id = definition.Id,
+                        Name = definition.Name,
+                        DefaultIntervalMinutes = definition.DefaultIntervalMinutes
+        }], DateTimeOffset.UtcNow, CancellationToken.None);
         Assert.Equal("Interrupted", (await persistence.GetAsync(definition.Id, CancellationToken.None))!.State);
     }
 
@@ -172,7 +177,7 @@ public sealed class BackgroundTaskCoordinatorTests
         new([definition], services.GetRequiredService<IServiceScopeFactory>(), NullLogger<BackgroundTaskCoordinator>.Instance,
             TimeProvider.System, options ?? BackgroundTaskCoordinatorOptions.Default);
 
-    private static async Task<BackgroundTaskRow> WaitForStateAsync(FakePersistence persistence, string state)
+    private static async Task<BackgroundTaskRowDto> WaitForStateAsync(FakePersistence persistence, string state)
     {
         var deadline = DateTime.UtcNow.AddSeconds(5);
         while (DateTime.UtcNow < deadline)
@@ -200,7 +205,7 @@ public sealed class BackgroundTaskCoordinatorTests
     private sealed class FakePersistence : IBackgroundTaskDatabaseService
     {
         private readonly object _sync = new();
-        private readonly Dictionary<string, BackgroundTaskRow> _rows = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, BackgroundTaskRowDto> _rows = new(StringComparer.Ordinal);
         /// <summary>
         /// Указывает, должен ли тестовый сервис завершать сохранение начала задачи ошибкой.
         /// </summary>
@@ -237,13 +242,24 @@ public sealed class BackgroundTaskCoordinatorTests
         /// <param name="now">Текущее время для операции.</param>
         /// <param name="ct">Токен отмены операции.</param>
         /// <returns>Задача завершается после выполнения проверок теста.</returns>
-        public Task EnsureDefinitionsAsync(IReadOnlyCollection<BackgroundTaskDefinitionRecord> definitions, DateTimeOffset now, CancellationToken ct)
+        public Task EnsureDefinitionsAsync(IReadOnlyCollection<BackgroundTaskDefinitionRecordDto> definitions, DateTimeOffset now, CancellationToken ct)
         {
             lock (_sync)
                 foreach (var definition in definitions)
                 {
                     if (!_rows.TryGetValue(definition.Id, out var row))
-                        _rows.Add(definition.Id, new(definition.Id, definition.Name, definition.DefaultIntervalMinutes, "Idle", now, null, null, null, null));
+                        _rows.Add(definition.Id, new BackgroundTaskRowDto
+                        {
+                            Id = definition.Id,
+                            Name = definition.Name,
+                            IntervalMinutes = definition.DefaultIntervalMinutes,
+                            State = "Idle",
+                            NextRunAt = now,
+                            LastStartedAt = null,
+                            LastCompletedAt = null,
+                            LastResult = null,
+                            LastError = null
+                        });
                     else if (row.State == "Running")
                         _rows[definition.Id] = row with
                         {
@@ -254,13 +270,13 @@ public sealed class BackgroundTaskCoordinatorTests
             return Task.CompletedTask;
         }
 
-        public Task<IReadOnlyList<BackgroundTaskRow>> ListAsync(CancellationToken ct)
+        public Task<IReadOnlyList<BackgroundTaskRowDto>> ListAsync(CancellationToken ct)
         {
             lock (_sync)
-                return Task.FromResult<IReadOnlyList<BackgroundTaskRow>>(_rows.Values.ToArray());
+                return Task.FromResult<IReadOnlyList<BackgroundTaskRowDto>>(_rows.Values.ToArray());
         }
 
-        public Task<BackgroundTaskRow?> GetAsync(string id, CancellationToken ct)
+        public Task<BackgroundTaskRowDto?> GetAsync(string id, CancellationToken ct)
         {
             lock (_sync)
                 return Task.FromResult(_rows.GetValueOrDefault(id));

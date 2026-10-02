@@ -48,7 +48,7 @@ dotnet test MiniPdm.sln
 
 Обычная сборка генерирует XML-файлы документации для проектов C# и проверяет комментарии публичного API компилятором.
 
-Последняя проверка документации подтвердила summary у всех 617 объявленных свойств и корректные XML-файлы. Для positional records сохранены первичные конструкторы, добавлены 378 документированных свойств в 87 записях; сборка не выдала предупреждений. Прошли 131 solution-тест и 11 PostgreSQL-интеграционных тестов на свежей PostgreSQL 17. Отдельный HTTP smoke в этой проверке не запускался; состояние работ — в [PROJECT_STATE.md](PROJECT_STATE.md).
+В `DtoModels` теперь 46 DTO-типов и 223 явно документированных `init`-свойства; все типы используют суффикс `Dto` и `sealed record` без positional-конструктора. Примеры внутренних DTO: [`CompositionOccurrenceDto`](src/Modules/MiniPdm.Modules.Composition/DtoModels/CompositionOccurrenceDto.cs), [`VersionWriteRequestDto`](src/Modules/MiniPdm.Modules.Versions/DtoModels/VersionWriteRequestDto.cs) и `CadDocumentDto`, `CadDocumentRefDto`, `CadComponentDto`, `CadSourceDescriptorDto`, `CadReadResultDto` в `src/Modules/MiniPdm.Modules.Import/DtoModels/Cad`. Roslyn XML-аудит подтвердил собственные summary у 617 из 617 свойств без malformed/duplicate блоков. Solution собрался с 0 предупреждений и 0 ошибок; прошли 131 solution-тест и 11 PostgreSQL-тестов на свежей PostgreSQL 17. Дополнительно проверены три миграции, отсутствие pending EF model changes, import 35/10/1 с повтором того же ID и равенством JSON-отчётов, версионные конфликты/циклы и API фоновых задач. Форматирование solution и отдельного PostgreSQL-проекта применено и проверено `--verify-no-changes` без изменений; все четыре команды завершились с кодом 0. Подробности и точные HTTP-сценарии — в [PROJECT_STATE.md](PROJECT_STATE.md).
 
 Форматирование C# по корневому `.editorconfig` поддерживается `dotnet format`:
 
@@ -121,7 +121,7 @@ PDM_API_BASE_URL=http://localhost:5000 dotnet run --project src/MiniPdm.Desktop
 
 `PDM_API_BASE_URL` по умолчанию равен `http://localhost:5000`. API при запуске создаёт запись задачи восстановления источников; интервал по умолчанию — 1440 минут. Расписание и последний результат хранятся в PostgreSQL, менять интервал и запускать задачу можно со страницы «Фоновые задачи». `GET /health` проверяет, что API отвечает.
 
-Объекты и версии представлены раздельно: имя и материал изменяемы на уровне версии, масса хранится в килограммах с точностью `numeric(18,6)`, обозначение и стандартное наименование задают идентичность объекта. HTTP DTO размещаются в Contracts. Нормативные правила — в [PDM_RULES.md](PDM_RULES.md).
+Объекты и версии представлены раздельно: имя и материал изменяемы на уровне версии, масса хранится в килограммах с точностью `numeric(18,6)`, обозначение и стандартное наименование задают идентичность объекта. HTTP DTO размещаются в Contracts/DtoModels, внутренние DTO — в соответствующих папках модулей; обе категории следуют соглашению `Dto` + `sealed record` без positional-конструктора, с документированными `init`-свойствами и object initializers. Нормативные правила — в [PDM_RULES.md](PDM_RULES.md).
 
 ## Поиск и карточка объекта
 

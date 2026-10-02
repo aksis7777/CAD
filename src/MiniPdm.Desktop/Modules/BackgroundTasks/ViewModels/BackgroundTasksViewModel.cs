@@ -197,7 +197,10 @@ public sealed class BackgroundTasksViewModel : INotifyPropertyChanged, IDisposab
         var id = SelectedTask.Id;
         await RunBusyAsync(async () =>
         {
-            var updated = await _client.UpdateBackgroundTaskScheduleAsync(id, new UpdateBackgroundTaskScheduleRequestDto(minutes), _lifetime.Token);
+            var updated = await _client.UpdateBackgroundTaskScheduleAsync(id, new UpdateBackgroundTaskScheduleRequestDto
+            {
+                IntervalMinutes = minutes
+            }, _lifetime.Token);
             Upsert(updated);
             SelectedTask = updated;
             StatusText = "Расписание сохранено.";

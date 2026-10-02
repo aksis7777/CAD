@@ -89,7 +89,18 @@ public sealed class BackgroundTasksViewModelTests
 
     private sealed class FakeClient : IPdmApiClient
     {
-        private BackgroundTaskDto _task = new("cleanup", "Cleanup", 1440, "Idle", null, null, null, null, null);
+        private BackgroundTaskDto _task = new()
+        {
+            Id = "cleanup",
+            Name = "Cleanup",
+            IntervalMinutes = 1440,
+            State = "Idle",
+            NextRunAt = null,
+            LastStartedAt = null,
+            LastCompletedAt = null,
+            LastResult = null,
+            LastError = null
+        };
         /// <summary>
         /// Последний сохранённый интервал запуска в минутах.
         /// </summary>
@@ -252,7 +263,10 @@ public sealed class BackgroundTasksViewModelTests
             RunEntered.TrySetResult();
             if (BlockRun)
                 await ReleaseRun.Task;
-            return new BackgroundTaskRunAcceptedDto(taskId);
+            return new BackgroundTaskRunAcceptedDto
+            {
+                TaskId = taskId
+            };
         }
     }
 }

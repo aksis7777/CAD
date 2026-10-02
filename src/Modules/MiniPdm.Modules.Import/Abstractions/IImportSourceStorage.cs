@@ -16,7 +16,7 @@ public interface IImportSourceStorage
     /// <param name="acceptedFiles">Имена файлов, принятых проверкой.</param>
     /// <param name="ct">Токен отмены.</param>
     /// <returns>Задача завершения переноса.</returns>
-    Task PromoteAsync(Guid importId, CadSourceDescriptor source, IReadOnlyCollection<string> acceptedFiles, CancellationToken ct);
+    Task PromoteAsync(Guid importId, CadSourceDescriptorDto source, IReadOnlyCollection<string> acceptedFiles, CancellationToken ct);
     /// <summary>
     /// Возвращает ссылку хранения файла принятого импорта.
     /// </summary>

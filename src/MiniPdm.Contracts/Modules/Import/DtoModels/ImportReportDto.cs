@@ -45,56 +45,61 @@ public enum ImportFileAction
 /// <summary>
 /// Результат обработки одного файла в пакете импорта.
 /// </summary>
-public sealed record ImportFileResultDto(
-    string FileName,
-    ImportFileStatus Status,
-    string? Reason,
-    ImportFileAction? Action,
-    IReadOnlyList<string> Warnings)
+public sealed record ImportFileResultDto
 {
     /// <summary>
     /// Имя обработанного файла.
     /// </summary>
-    public string FileName { get; init; } = FileName;
+    public string FileName { get; init; } = default!;
 
     /// <summary>
     /// Статус обработки файла.
     /// </summary>
-    public ImportFileStatus Status { get; init; } = Status;
+    public ImportFileStatus Status
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Причина отклонения либо <see langword="null"/>.
     /// </summary>
-    public string? Reason { get; init; } = Reason;
+    public string? Reason
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Выполненное действие либо <see langword="null"/>, если файл отклонён.
     /// </summary>
-    public ImportFileAction? Action { get; init; } = Action;
+    public ImportFileAction? Action
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Предупреждения, сформированные при обработке файла.
     /// </summary>
-    public IReadOnlyList<string> Warnings { get; init; } = Warnings;
+    public IReadOnlyList<string> Warnings { get; init; } = default!;
 
 }
 
 /// <summary>
 /// Сводный отчёт об обработке пакета импорта.
 /// </summary>
-public sealed record ImportReportDto(
-    Guid ImportId,
-    IReadOnlyList<ImportFileResultDto> Files)
+public sealed record ImportReportDto
 {
     /// <summary>
     /// Идентификатор операции импорта.
     /// </summary>
-    public Guid ImportId { get; init; } = ImportId;
+    public Guid ImportId
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Результаты обработки отдельных файлов.
     /// </summary>
-    public IReadOnlyList<ImportFileResultDto> Files { get; init; } = Files;
+    public IReadOnlyList<ImportFileResultDto> Files { get; init; } = default!;
 
 
     /// <summary>

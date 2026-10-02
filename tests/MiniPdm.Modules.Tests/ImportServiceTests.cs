@@ -27,7 +27,11 @@ public sealed class ImportServiceTests
         var part1 = Doc("one.m3d", PdmObjectType.Part, "АБВГ.301245.001", mass: 1m);
         var part2 = Doc("two.m3d", PdmObjectType.Part, "АБВГ.301245.001", mass: 1m);
         var assembly = Doc("top.a3d", PdmObjectType.Assembly, "АБВГ.301245.002",
-            material: null, components: [new CadComponent("one.m3d", 1)]);
+            material: null, components: [new CadComponentDto
+            {
+                                File = "one.m3d",
+                                Count = 1
+            }]);
         var (service, _) = Make([part1, part2, assembly], []);
 
         var report = await service.ExecuteAsync(Guid.NewGuid(), Source, default);
@@ -80,7 +84,11 @@ public sealed class ImportServiceTests
     public async Task Invalid_quantity_document_still_rejects_valid_duplicate_identity()
     {
         var invalidAssembly = Doc("invalid.a3d", PdmObjectType.Assembly, "АБВГ.301245.010", material: null,
-            components: [new CadComponent("child.m3d", 0)]);
+            components: [new CadComponentDto
+            {
+                                File = "child.m3d",
+                                Count = 0
+            }]);
         var validPart = Doc("valid.m3d", PdmObjectType.Part, "АБВГ.301245.010", "Same designation", "Steel", 1m);
         var (service, _) = Make([invalidAssembly, validPart], []);
 
@@ -122,7 +130,15 @@ public sealed class ImportServiceTests
     {
         var part = Doc("part.m3d", PdmObjectType.Part, "АБВГ.301245.001", mass: 1m);
         var assembly = Doc("assembly.a3d", PdmObjectType.Assembly, "АБВГ.301245.002", material: null,
-            components: [new CadComponent("part.m3d", 2), new CadComponent("part.m3d", 3)]);
+            components: [new CadComponentDto
+            {
+                                File = "part.m3d",
+                                Count = 2
+            }, new CadComponentDto
+{
+        File = "part.m3d",
+        Count = 3
+}]);
         var (service, persistence) = Make([part, assembly], []);
 
         var report = await service.ExecuteAsync(Guid.NewGuid(), Source, default);
@@ -143,7 +159,11 @@ public sealed class ImportServiceTests
     public async Task Single_invalid_quantity_does_not_claim_duplicate_rows_were_combined()
     {
         var assembly = Doc("assembly.a3d", PdmObjectType.Assembly, "АБВГ.301245.002", material: null,
-            components: [new CadComponent("part.m3d", 0)]);
+            components: [new CadComponentDto
+            {
+                                File = "part.m3d",
+                                Count = 0
+            }]);
         var (service, _) = Make([assembly], []);
 
         var report = await service.ExecuteAsync(Guid.NewGuid(), Source, default);
@@ -184,7 +204,15 @@ public sealed class ImportServiceTests
         var assembly = Existing("АБВГ.301245.003", PdmObjectType.Assembly, "Top", null,
             VersionState.InWork, (a, 2), (b, 3));
         var import = Doc("top.a3d", PdmObjectType.Assembly, "АБВГ.301245.003", "Top",
-            material: null, components: [new CadComponent("b.m3d", 3), new CadComponent("a.m3d", 2)]);
+            material: null, components: [new CadComponentDto
+            {
+                                File = "b.m3d",
+                                Count = 3
+            }, new CadComponentDto
+{
+        File = "a.m3d",
+        Count = 2
+}]);
         var (service, persistence) = Make([
             Doc("a.m3d", PdmObjectType.Part, "АБВГ.301245.001", "Part A", "Steel", 1m),
             Doc("b.m3d", PdmObjectType.Part, "АБВГ.301245.002", "Part B", "Steel", 2m), import
@@ -263,25 +291,65 @@ public sealed class ImportServiceTests
     {
         var leaf = Doc("leaf.m3d", PdmObjectType.Part, "АБВГ.301245.001", mass: 1m);
         var left = Doc("left.a3d", PdmObjectType.Assembly, "АБВГ.301245.002", material: null,
-            components: [new CadComponent("leaf.m3d", 1)]);
+            components: [new CadComponentDto
+            {
+                                File = "leaf.m3d",
+                                Count = 1
+            }]);
         var right = Doc("right.a3d", PdmObjectType.Assembly, "АБВГ.301245.003", material: null,
-            components: [new CadComponent("leaf.m3d", 2)]);
+            components: [new CadComponentDto
+            {
+                                File = "leaf.m3d",
+                                Count = 2
+            }]);
         var top = Doc("top.a3d", PdmObjectType.Assembly, "АБВГ.301245.004", material: null,
-            components: [new CadComponent("left.a3d", 1), new CadComponent("right.a3d", 1)]);
+            components: [new CadComponentDto
+            {
+                                File = "left.a3d",
+                                Count = 1
+            }, new CadComponentDto
+{
+        File = "right.a3d",
+        Count = 1
+}]);
         var (validService, _) = Make([leaf, left, right, top], []);
         var validReport = await validService.ExecuteAsync(Guid.NewGuid(), Source, default);
         Assert.Equal(4, validReport.AcceptedCount);
 
         var a = Doc("a.a3d", PdmObjectType.Assembly, "АБВГ.301245.010", material: null,
-            components: [new CadComponent("b.a3d", 1), new CadComponent("d.a3d", 1)]);
+            components: [new CadComponentDto
+            {
+                                File = "b.a3d",
+                                Count = 1
+            }, new CadComponentDto
+{
+        File = "d.a3d",
+        Count = 1
+}]);
         var b = Doc("b.a3d", PdmObjectType.Assembly, "АБВГ.301245.011", material: null,
-            components: [new CadComponent("a.a3d", 1)]);
+            components: [new CadComponentDto
+            {
+                                File = "a.a3d",
+                                Count = 1
+            }]);
         var parent = Doc("parent.a3d", PdmObjectType.Assembly, "АБВГ.301245.012", material: null,
-            components: [new CadComponent("a.a3d", 1)]);
+            components: [new CadComponentDto
+            {
+                                File = "a.a3d",
+                                Count = 1
+            }]);
         var d = Doc("d.a3d", PdmObjectType.Assembly, "АБВГ.301245.013", material: null,
-            components: [new CadComponent("c.a3d", 1)]);
+            components: [new CadComponentDto
+            {
+                                File = "c.a3d",
+                                Count = 1
+            }]);
         var c = Doc("c.a3d", PdmObjectType.Assembly, "АБВГ.301245.014", material: null,
-            components: [new CadComponent("a.a3d", 1)]);
+            components: [new CadComponentDto
+            {
+                                File = "a.a3d",
+                                Count = 1
+            }]);
         var (cycleService, _) = Make([a, b, c, d, parent], []);
         var cycleReport = await cycleService.ExecuteAsync(Guid.NewGuid(), Source, default);
         Assert.Equal(5, cycleReport.RejectedCount);
@@ -297,7 +365,15 @@ public sealed class ImportServiceTests
         var first = new PdmObject { Type = PdmObjectType.Assembly, Designation = "АБВГ.301245.010" };
         var second = new PdmObject { Type = PdmObjectType.Assembly, Designation = "АБВГ.301245.011" };
         var files = new FakeSourceStorage();
-        var persistence = new FakePersistence([first, second], [new(first.Id, second.Id), new(second.Id, first.Id)]);
+        var persistence = new FakePersistence([first, second], [new ActiveGraphEdgeDto
+        {
+                        ParentId = first.Id,
+                        ChildId = second.Id
+        }, new ActiveGraphEdgeDto
+{
+        ParentId = second.Id,
+        ChildId = first.Id
+}]);
         var service = new ImportService(new FakeCadFactory([Doc("part.m3d", PdmObjectType.Part,
             "АБВГ.301245.001", mass: 1m)]), persistence, files);
 
@@ -344,18 +420,31 @@ public sealed class ImportServiceTests
         Assert.Equal(0, cad.OpenCount);
     }
 
-    private static (ImportService Service, FakePersistence Persistence) Make(IReadOnlyList<CadDocument> docs, IReadOnlyList<PdmObject> existing)
+    private static (ImportService Service, FakePersistence Persistence) Make(IReadOnlyList<CadDocumentDto> docs, IReadOnlyList<PdmObject> existing)
     {
         var cad = new FakeCadFactory(docs);
         var persistence = new FakePersistence(existing);
         return (new ImportService(cad, persistence, new FakeSourceStorage()), persistence);
     }
 
-    private static readonly CadSourceDescriptor Source = new("fake", "memory");
+    private static readonly CadSourceDescriptorDto Source = new()
+    {
+        Kind = "fake",
+        Location = "memory"
+    };
 
-    private static CadDocument Doc(string file, PdmObjectType type, string? designation, string name = "Item",
-        string? material = "Steel", decimal? mass = null, IReadOnlyList<CadComponent>? components = null) =>
-        new(file, type, designation, name, material, mass, components ?? []);
+    private static CadDocumentDto Doc(string file, PdmObjectType type, string? designation, string name = "Item",
+        string? material = "Steel", decimal? mass = null, IReadOnlyList<CadComponentDto>? components = null) =>
+        new CadDocumentDto
+        {
+            FileName = file,
+            Type = type,
+            Designation = designation,
+            Name = name,
+            Material = material,
+            Mass = mass,
+            Components = components ?? []
+        };
 
     private static PdmObject Existing(string designation, PdmObjectType type, string name, decimal? mass,
         VersionState state = VersionState.InWork, params (PdmObject Child, int Count)[] components)
@@ -378,7 +467,7 @@ public sealed class ImportServiceTests
         return item;
     }
 
-    private sealed class FakeCadFactory(IReadOnlyList<CadDocument> docs, IReadOnlyDictionary<string, string?>? errors = null) : ICadSourceFactory
+    private sealed class FakeCadFactory(IReadOnlyList<CadDocumentDto> docs, IReadOnlyDictionary<string, string?>? errors = null) : ICadSourceFactory
     {
         /// <summary>
         /// Число открытий источника документов тестовым фабричным адаптером.
@@ -387,14 +476,14 @@ public sealed class ImportServiceTests
         {
             get; set;
         }
-        public Task<ICadSession> OpenAsync(CadSourceDescriptor descriptor, CancellationToken cancellationToken)
+        public Task<ICadSession> OpenAsync(CadSourceDescriptorDto descriptor, CancellationToken cancellationToken)
         {
             OpenCount++;
             return Task.FromResult<ICadSession>(new FakeSession(docs, errors ?? new Dictionary<string, string?>()));
         }
     }
 
-    private sealed class FakeSession(IReadOnlyList<CadDocument> docs, IReadOnlyDictionary<string, string?> errors) : ICadSession
+    private sealed class FakeSession(IReadOnlyList<CadDocumentDto> docs, IReadOnlyDictionary<string, string?> errors) : ICadSession
     {
         /// <summary>
         /// Источник документов, предоставляемый тестовой сессией.
@@ -408,24 +497,31 @@ public sealed class ImportServiceTests
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 
-    private sealed class FakeDocumentSource(IReadOnlyList<CadDocument> docs) : ICadDocumentSource
+    private sealed class FakeDocumentSource(IReadOnlyList<CadDocumentDto> docs) : ICadDocumentSource
     {
-        public async IAsyncEnumerable<CadDocumentRef> GetDocumentsAsync(
+        public async IAsyncEnumerable<CadDocumentRefDto> GetDocumentsAsync(
             [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
         {
             foreach (var doc in docs)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                yield return new CadDocumentRef(doc.FileName);
+                yield return new CadDocumentRefDto
+                {
+                    FileName = doc.FileName
+                };
                 await Task.Yield();
             }
         }
     }
 
-    private sealed class FakeReader(IReadOnlyList<CadDocument> docs, IReadOnlyDictionary<string, string?> errors) : ICadDocumentReader
+    private sealed class FakeReader(IReadOnlyList<CadDocumentDto> docs, IReadOnlyDictionary<string, string?> errors) : ICadDocumentReader
     {
-        public Task<CadReadResult> ReadAsync(CadDocumentRef document, CancellationToken cancellationToken) =>
-            Task.FromResult(new CadReadResult(docs.Single(x => x.FileName == document.FileName), errors.GetValueOrDefault(document.FileName)));
+        public Task<CadReadResultDto> ReadAsync(CadDocumentRefDto document, CancellationToken cancellationToken) =>
+            Task.FromResult(new CadReadResultDto
+            {
+                Document = docs.Single(x => x.FileName == document.FileName),
+                Error = errors.GetValueOrDefault(document.FileName)
+            });
     }
 
     private sealed class FakeSourceStorage : IImportSourceStorage
@@ -453,7 +549,7 @@ public sealed class ImportServiceTests
         /// <param name="acceptedFiles">Имена принятых файлов.</param>
         /// <param name="ct">Токен отмены операции.</param>
         /// <returns>Задача завершается после выполнения проверок теста.</returns>
-        public Task PromoteAsync(Guid importId, CadSourceDescriptor source, IReadOnlyCollection<string> acceptedFiles, CancellationToken ct)
+        public Task PromoteAsync(Guid importId, CadSourceDescriptorDto source, IReadOnlyCollection<string> acceptedFiles, CancellationToken ct)
         {
             PromoteCount++;
             return Task.CompletedTask;
@@ -473,34 +569,54 @@ public sealed class ImportServiceTests
         }
     }
 
-    private sealed class FakePersistence(IReadOnlyList<PdmObject> existing, IReadOnlyList<ActiveGraphEdge>? graph = null, bool rollback = false) : IImportDatabaseService
+    private sealed class FakePersistence(IReadOnlyList<PdmObject> existing, IReadOnlyList<ActiveGraphEdgeDto>? graph = null, bool rollback = false) : IImportDatabaseService
     {
-        private readonly Dictionary<Guid, ImportPersistenceResult> _completed = [];
+        private readonly Dictionary<Guid, ImportPersistenceResultDto> _completed = [];
         /// <summary>
         /// Последний план записи, переданный тестовой реализации хранилища.
         /// </summary>
-        public ImportWritePlan? LastPlan
+        public ImportWritePlanDto? LastPlan
         {
             get; private set;
         }
-        public async Task<ImportPersistenceResult> ExecuteAsync(Guid importId, ImportLookup lookup,
-            Func<ImportSnapshot, CancellationToken, Task<ImportWritePlan>> prepare, CancellationToken ct)
+        public async Task<ImportPersistenceResultDto> ExecuteAsync(Guid importId, ImportLookupDto lookup,
+            Func<ImportSnapshotDto, CancellationToken, Task<ImportWritePlanDto>> prepare, CancellationToken ct)
         {
             if (_completed.TryGetValue(importId, out var replay))
                 return replay with
                 {
                     Replayed = true
                 };
-            LastPlan = await prepare(new ImportSnapshot(existing, graph ?? []), ct);
+            LastPlan = await prepare(new ImportSnapshotDto
+            {
+                ExistingObjects = existing,
+                CurrentGraph = graph ?? []
+            }, ct);
             if (rollback)
-                return new ImportPersistenceResult(ImportCommitState.ConfirmedRollback, false, null, "test rollback");
-            var result = new ImportPersistenceResult(ImportCommitState.Completed, false, LastPlan.ReportJson);
+                return new ImportPersistenceResultDto
+                {
+                    State = ImportCommitState.ConfirmedRollback,
+                    Replayed = false,
+                    ReportJson = null,
+                    Error = "test rollback"
+                };
+            var result = new ImportPersistenceResultDto
+            {
+                State = ImportCommitState.Completed,
+                Replayed = false,
+                ReportJson = LastPlan.ReportJson
+            };
             _completed[importId] = result;
             return result;
         }
-        public Task<ImportPersistenceResult?> FindAsync(Guid id, CancellationToken ct) => Task.FromResult(_completed.GetValueOrDefault(id));
-        public Task<ImportPersistenceResult> ResolveAsync(Guid id, CancellationToken ct) =>
-            Task.FromResult(_completed.GetValueOrDefault(id) ?? new ImportPersistenceResult(ImportCommitState.ConfirmedRollback, false, null));
+        public Task<ImportPersistenceResultDto?> FindAsync(Guid id, CancellationToken ct) => Task.FromResult(_completed.GetValueOrDefault(id));
+        public Task<ImportPersistenceResultDto> ResolveAsync(Guid id, CancellationToken ct) =>
+            Task.FromResult(_completed.GetValueOrDefault(id) ?? new ImportPersistenceResultDto
+            {
+                State = ImportCommitState.ConfirmedRollback,
+                Replayed = false,
+                ReportJson = null
+            });
         public async Task<bool> CompensateIfRolledBackAsync(Guid id, Func<CancellationToken, Task> compensate, CancellationToken ct)
         {
             if (!rollback)

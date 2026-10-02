@@ -79,7 +79,10 @@ public sealed class BackgroundTasksController(ISender sender) : ControllerBase
             var result = await sender.Send(new RunBackgroundTaskCommand(taskId), cancellationToken);
             return result.Status switch
             {
-                BackgroundTaskRunRequestStatus.Accepted => Accepted(value: new BackgroundTaskRunAcceptedDto(taskId)),
+                BackgroundTaskRunRequestStatus.Accepted => Accepted(value: new BackgroundTaskRunAcceptedDto
+                {
+                    TaskId = taskId
+                }),
                 BackgroundTaskRunRequestStatus.Running => Conflict(new { error = "The background task is already running." }),
                 _ => NotFound()
             };

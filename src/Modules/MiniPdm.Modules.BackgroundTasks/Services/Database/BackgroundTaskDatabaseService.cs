@@ -13,7 +13,7 @@ namespace MiniPdm.Modules.BackgroundTasks.Services.Database;
 public sealed class BackgroundTaskDatabaseService(PdmDbContext context) : IBackgroundTaskDatabaseService
 {
     /// <inheritdoc />
-    public async Task EnsureDefinitionsAsync(IReadOnlyCollection<BackgroundTaskDefinitionRecord> definitions, DateTimeOffset now, CancellationToken ct)
+    public async Task EnsureDefinitionsAsync(IReadOnlyCollection<BackgroundTaskDefinitionRecordDto> definitions, DateTimeOffset now, CancellationToken ct)
     {
         var existing = await context.BackgroundTasks.ToListAsync(ct);
         var byId = existing.ToDictionary(x => x.Id, StringComparer.Ordinal);
@@ -44,14 +44,14 @@ public sealed class BackgroundTaskDatabaseService(PdmDbContext context) : IBackg
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<BackgroundTaskRow>> ListAsync(CancellationToken ct) =>
+    public async Task<IReadOnlyList<BackgroundTaskRowDto>> ListAsync(CancellationToken ct) =>
         await context.BackgroundTasks.AsNoTracking()
             .OrderBy(x => x.Id)
             .Select(ToRow())
             .ToListAsync(ct);
 
     /// <inheritdoc />
-    public async Task<BackgroundTaskRow?> GetAsync(string id, CancellationToken ct) =>
+    public async Task<BackgroundTaskRowDto?> GetAsync(string id, CancellationToken ct) =>
         await context.BackgroundTasks.AsNoTracking()
             .Where(x => x.Id == id)
             .Select(ToRow())
@@ -101,9 +101,19 @@ public sealed class BackgroundTaskDatabaseService(PdmDbContext context) : IBackg
         return true;
     }
 
-    private static System.Linq.Expressions.Expression<Func<BackgroundTask, BackgroundTaskRow>> ToRow() =>
-        x => new BackgroundTaskRow(x.Id, x.Name, x.IntervalMinutes, x.State, x.NextRunAt,
-            x.LastStartedAt, x.LastCompletedAt, x.LastResult, x.LastError);
+    private static System.Linq.Expressions.Expression<Func<BackgroundTask, BackgroundTaskRowDto>> ToRow() =>
+        x => new BackgroundTaskRowDto
+        {
+            Id = x.Id,
+            Name = x.Name,
+            IntervalMinutes = x.IntervalMinutes,
+            State = x.State,
+            NextRunAt = x.NextRunAt,
+            LastStartedAt = x.LastStartedAt,
+            LastCompletedAt = x.LastCompletedAt,
+            LastResult = x.LastResult,
+            LastError = x.LastError
+        };
 
     private static void ValidateInterval(int intervalMinutes)
     {

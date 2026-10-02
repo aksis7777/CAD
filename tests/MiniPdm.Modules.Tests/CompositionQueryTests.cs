@@ -21,7 +21,7 @@ public sealed class CompositionQueryTests
         var left = Guid.NewGuid();
         var right = Guid.NewGuid();
         var leaf = Guid.NewGuid();
-        var occurrences = new CompositionOccurrence[]
+        var occurrences = new CompositionOccurrenceDto[]
         {
             Occurrence(root, [root], null, PdmObjectType.Assembly, Guid.NewGuid()),
             Occurrence(left, [root, left], [root], PdmObjectType.Assembly, Guid.NewGuid()),
@@ -59,7 +59,7 @@ public sealed class CompositionQueryTests
     {
         var root = Guid.NewGuid();
         var child = Guid.NewGuid();
-        var query = new CompositionOccurrence[]
+        var query = new CompositionOccurrenceDto[]
         {
             Occurrence(root, [root], null, PdmObjectType.Assembly, Guid.NewGuid()),
             Occurrence(child, [root, child], [root], PdmObjectType.Part, null, name: "Missing version")
@@ -82,7 +82,7 @@ public sealed class CompositionQueryTests
         var root = Guid.NewGuid();
         var child = Guid.NewGuid();
         var cyclePath = new[] { root, child, root };
-        var query = new CompositionOccurrence[]
+        var query = new CompositionOccurrenceDto[]
         {
             Occurrence(root, [root], null, PdmObjectType.Assembly, Guid.NewGuid()),
             Occurrence(child, [root, child], [root], PdmObjectType.Assembly, Guid.NewGuid()),
@@ -95,26 +95,28 @@ public sealed class CompositionQueryTests
         Assert.Contains(string.Join(" → ", cyclePath), cycle.Error!);
     }
 
-    private static CompositionOccurrence Occurrence(
+    private static CompositionOccurrenceDto Occurrence(
         Guid id,
         Guid[] path,
         Guid[]? parentPath,
         PdmObjectType type,
         Guid? versionId,
         bool isCycle = false,
-        string? name = "Sample") => new(
-            id,
-            path,
-            parentPath,
-            1,
-            type,
-            type == PdmObjectType.StandardPart ? null : "АБВГ.301245.001",
-            name,
-            "Steel",
-            versionId,
-            versionId is null ? null : 1,
-            versionId is null ? null : VersionState.InWork,
-            type == PdmObjectType.Assembly ? null : 2.5m,
-            isCycle);
+        string? name = "Sample") => new CompositionOccurrenceDto
+        {
+            ObjectId = id,
+            ObjectPath = path,
+            ParentPath = parentPath,
+            LocalQuantity = 1,
+            Type = type,
+            Designation = type == PdmObjectType.StandardPart ? null : "АБВГ.301245.001",
+            Name = name,
+            Material = "Steel",
+            VersionId = versionId,
+            VersionNumber = versionId is null ? null : 1,
+            State = versionId is null ? null : VersionState.InWork,
+            UnitMassKg = type == PdmObjectType.Assembly ? null : 2.5m,
+            IsCycle = isCycle
+        };
 
 }

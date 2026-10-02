@@ -45,7 +45,7 @@ public sealed class ImportSourceRecovery(
             var name = Path.GetFileName(folder);
             if (Guid.TryParseExact(name, "D", out var importId))
             {
-                ImportPersistenceResult state;
+                ImportPersistenceResultDto state;
                 try
                 {
                     state = await persistence.ResolveAsync(importId, cancellationToken);
@@ -83,7 +83,7 @@ public sealed class ImportSourceRecovery(
 
             if (!TryParsePromotionName(name, out var promotionId))
                 continue;
-            ImportPersistenceResult promotionState;
+            ImportPersistenceResultDto promotionState;
             try
             {
                 promotionState = await persistence.ResolveAsync(promotionId, cancellationToken);

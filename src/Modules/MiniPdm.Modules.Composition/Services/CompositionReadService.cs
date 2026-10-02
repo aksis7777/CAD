@@ -88,21 +88,37 @@ public sealed class CompositionReadService(PdmDbContext context)
     /// <param name="rootObjectId">Идентификатор корневого объекта.</param>
     /// <param name="occurrences">Прочитанные вхождения в порядке обхода дерева.</param>
     /// <returns>Дерево состава с узлами и диагностиками.</returns>
-    public static CompositionTreeDto MapTreeDto(Guid rootObjectId, IReadOnlyList<CompositionOccurrence> occurrences)
+    public static CompositionTreeDto MapTreeDto(Guid rootObjectId, IReadOnlyList<CompositionOccurrenceDto> occurrences)
     {
         var nodes = occurrences.Select(occurrence =>
         {
             var (errorCode, error) = GetDiagnostic(occurrence);
-            return new CompositionNodeDto(occurrence.ObjectId, occurrence.ObjectPath, occurrence.ParentPath,
-                occurrence.LocalQuantity, ToTypeName(occurrence.Type), occurrence.Designation, occurrence.Name,
-                occurrence.Material, occurrence.VersionId, occurrence.VersionNumber,
-                occurrence.State is VersionState state ? ToStateName(state) : null,
-                occurrence.UnitMassKg, errorCode, error);
+            return new CompositionNodeDto
+            {
+                ObjectId = occurrence.ObjectId,
+                ObjectPath = occurrence.ObjectPath,
+                ParentPath = occurrence.ParentPath,
+                LocalQuantity = occurrence.LocalQuantity,
+                Type = ToTypeName(occurrence.Type),
+                Designation = occurrence.Designation,
+                Name = occurrence.Name,
+                Material = occurrence.Material,
+                VersionId = occurrence.VersionId,
+                VersionNumber = occurrence.VersionNumber,
+                State = occurrence.State is VersionState state ? ToStateName(state) : null,
+                UnitMassKg = occurrence.UnitMassKg,
+                ErrorCode = errorCode,
+                Error = error
+            };
         }).ToArray();
-        return new CompositionTreeDto(rootObjectId, nodes);
+        return new CompositionTreeDto
+        {
+            RootObjectId = rootObjectId,
+            Nodes = nodes
+        };
     }
 
-    private static (string? ErrorCode, string? Error) GetDiagnostic(CompositionOccurrence occurrence)
+    private static (string? ErrorCode, string? Error) GetDiagnostic(CompositionOccurrenceDto occurrence)
     {
         if (occurrence.IsCycle)
             return ("Cycle", $"Composition cycle detected along path {string.Join(" → ", occurrence.ObjectPath)}.");
@@ -134,25 +150,27 @@ public sealed class CompositionReadService(PdmDbContext context)
     /// <param name="rootObjectId">Идентификатор корневого объекта.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
     /// <returns>Упорядоченный список вхождений дерева, включая корневое.</returns>
-    public async Task<IReadOnlyList<CompositionOccurrence>> ReadAsync(Guid rootObjectId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<CompositionOccurrenceDto>> ReadAsync(Guid rootObjectId, CancellationToken cancellationToken)
     {
         var rows = await context.Database.SqlQueryRaw<CompositionRow>(Sql, new NpgsqlParameter("rootObjectId", rootObjectId))
             .ToListAsync(cancellationToken);
 
-        return rows.Select(row => new CompositionOccurrence(
-            row.ObjectId,
-            row.ObjectPath,
-            row.ParentPath,
-            row.LocalQuantity,
-            (PdmObjectType)row.TypeValue,
-            row.Designation,
-            row.Name,
-            row.Material,
-            row.VersionId,
-            row.VersionNumber,
-            row.StateValue is int state ? (VersionState)state : null,
-            row.UnitMassKg,
-            row.IsCycle)).ToArray();
+        return rows.Select(row => new CompositionOccurrenceDto
+        {
+            ObjectId = row.ObjectId,
+            ObjectPath = row.ObjectPath,
+            ParentPath = row.ParentPath,
+            LocalQuantity = row.LocalQuantity,
+            Type = (PdmObjectType)row.TypeValue,
+            Designation = row.Designation,
+            Name = row.Name,
+            Material = row.Material,
+            VersionId = row.VersionId,
+            VersionNumber = row.VersionNumber,
+            State = row.StateValue is int state ? (VersionState)state : null,
+            UnitMassKg = row.UnitMassKg,
+            IsCycle = row.IsCycle
+        }).ToArray();
     }
 
     /// <summary>

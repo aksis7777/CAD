@@ -18,7 +18,7 @@ public sealed class FileJsonCadSourceAdapter : ICadSourceAdapter
     public string Kind => SourceKind;
 
     /// <inheritdoc />
-    public Task<ICadSession> OpenAsync(CadSourceDescriptor descriptor, CancellationToken cancellationToken)
+    public Task<ICadSession> OpenAsync(CadSourceDescriptorDto descriptor, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(descriptor);
         cancellationToken.ThrowIfCancellationRequested();

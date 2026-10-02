@@ -41,7 +41,13 @@ public sealed class VersionMutationServicePostgresTests
             {
                 await using var context = new PdmDbContext(options);
                 return await new VersionMutationService(context).ExecuteAsync(
-                    new VersionWriteRequest(item.Id, 1, token, []), VersionMutationPlanner.Clone, CancellationToken.None);
+                    new VersionWriteRequestDto
+                    {
+                        ObjectId = item.Id,
+                        VersionNumber = 1,
+                        ExpectedConcurrencyToken = token,
+                        ReferencedChildIds = []
+                    }, VersionMutationPlanner.Clone, CancellationToken.None);
             }
 
             var results = await Task.WhenAll(Task.Run(CloneAsync), Task.Run(CloneAsync));
@@ -81,7 +87,13 @@ public sealed class VersionMutationServicePostgresTests
             {
                 await using var context = new PdmDbContext(options);
                 return await new VersionMutationService(context).ExecuteAsync(
-                    new VersionWriteRequest(parent.Id, version.Version, token, [childId]),
+                    new VersionWriteRequestDto
+                    {
+                        ObjectId = parent.Id,
+                        VersionNumber = version.Version,
+                        ExpectedConcurrencyToken = token,
+                        ReferencedChildIds = [childId]
+                    },
                     snapshot => VersionMutationPlanner.ReplaceComposition(snapshot, [new CompositionItem(childId, 1)]),
                     CancellationToken.None);
             }
@@ -115,7 +127,7 @@ public sealed class VersionMutationServicePostgresTests
         var importId = Guid.NewGuid();
         await using var locker = new PdmDbContext(options);
         await using var lockTransaction = await locker.Database.BeginTransactionAsync();
-        Task<ImportPersistenceResult>? importTask = null;
+        Task<ImportPersistenceResultDto>? importTask = null;
         Task<VersionMutationResult>? versionTask = null;
         try
         {
@@ -127,17 +139,27 @@ public sealed class VersionMutationServicePostgresTests
             var importWaitingPid = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
             var versionWaitingPid = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
 
-            async Task<ImportPersistenceResult> RunImportAsync()
+            async Task<ImportPersistenceResultDto> RunImportAsync()
             {
                 await using var context = new PdmDbContext(options);
                 await context.Database.OpenConnectionAsync();
                 importWaitingPid.TrySetResult(((NpgsqlConnection)context.Database.GetDbConnection()).ProcessID);
                 var factory = new TestContextFactory(options);
                 var persistence = new ImportDatabaseService(context, factory);
-                return await persistence.ExecuteAsync(importId, new ImportLookup([], []), (_, _) =>
+                return await persistence.ExecuteAsync(importId, new ImportLookupDto
+                {
+                    Designations = [],
+                    NormalizedStandardNames = []
+                }, (_, _) =>
                 {
                     importEntered.TrySetResult(true);
-                    return Task.FromResult(new ImportWritePlan([], [], [], "{}"));
+                    return Task.FromResult(new ImportWritePlanDto
+                    {
+                        NewObjects = [],
+                        NewVersions = [],
+                        CurrentVersions = [],
+                        ReportJson = "{}"
+                    });
                 }, CancellationToken.None);
             }
 
@@ -147,7 +169,13 @@ public sealed class VersionMutationServicePostgresTests
                 await context.Database.OpenConnectionAsync();
                 versionWaitingPid.TrySetResult(((NpgsqlConnection)context.Database.GetDbConnection()).ProcessID);
                 return await new VersionMutationService(context).ExecuteAsync(
-                    new VersionWriteRequest(item.Id, 1, token, []), snapshot =>
+                    new VersionWriteRequestDto
+                    {
+                        ObjectId = item.Id,
+                        VersionNumber = 1,
+                        ExpectedConcurrencyToken = token,
+                        ReferencedChildIds = []
+                    }, snapshot =>
                     {
                         versionEntered.TrySetResult(true);
                         return VersionMutationPlanner.Clone(snapshot);

@@ -12,5 +12,5 @@ public interface ICadDocumentSource
     /// </summary>
     /// <param name="cancellationToken">Токен отмены перечисления.</param>
     /// <returns>Асинхронная последовательность ссылок на CAD-документы.</returns>
-    IAsyncEnumerable<CadDocumentRef> GetDocumentsAsync(CancellationToken cancellationToken);
+    IAsyncEnumerable<CadDocumentRefDto> GetDocumentsAsync(CancellationToken cancellationToken);
 }

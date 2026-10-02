@@ -13,5 +13,5 @@ public interface ICadSourceFactory
     /// <param name="descriptor">Вид и расположение источника.</param>
     /// <param name="cancellationToken">Токен отмены открытия.</param>
     /// <returns>Асинхронная задача с открытой сессией.</returns>
-    Task<ICadSession> OpenAsync(CadSourceDescriptor descriptor, CancellationToken cancellationToken);
+    Task<ICadSession> OpenAsync(CadSourceDescriptorDto descriptor, CancellationToken cancellationToken);
 }

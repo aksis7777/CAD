@@ -51,7 +51,13 @@ public sealed class VersionMutationServiceTests
         var invoked = false;
 
         var result = await fixture.Persistence.ExecuteAsync(
-            new VersionWriteRequest(item.Id, first.Version, Guid.NewGuid(), []),
+            new VersionWriteRequestDto
+            {
+                ObjectId = item.Id,
+                VersionNumber = first.Version,
+                ExpectedConcurrencyToken = Guid.NewGuid(),
+                ReferencedChildIds = []
+            },
             _ => { invoked = true; return VersionMutationPlanner.Clone(null!); },
             CancellationToken.None);
 
@@ -115,7 +121,13 @@ public sealed class VersionMutationServiceTests
         var token = await fixture.Context.Objects.Where(x => x.Id == parent.Id).Select(x => x.ConcurrencyToken).SingleAsync();
 
         var result = await fixture.Persistence.ExecuteAsync(
-            new VersionWriteRequest(parent.Id, 1, token, [newChild.Id]),
+            new VersionWriteRequestDto
+            {
+                ObjectId = parent.Id,
+                VersionNumber = 1,
+                ExpectedConcurrencyToken = token,
+                ReferencedChildIds = [newChild.Id]
+            },
             snapshot =>
             {
                 Assert.Equal(new HashSet<Guid> { newChild.Id }, snapshot.ExistingChildIds);
@@ -149,8 +161,14 @@ public sealed class VersionMutationServiceTests
         Assert.Equal(result.VersionId, await verify.Objects.Where(x => x.Id == item.Id).Select(x => x.CurrentVersionId).SingleAsync());
     }
 
-    private static VersionWriteRequest Request(PdmObject item, ObjectVersion version) =>
-        new(item.Id, version.Version, item.ConcurrencyToken, []);
+    private static VersionWriteRequestDto Request(PdmObject item, ObjectVersion version) =>
+        new VersionWriteRequestDto
+        {
+            ObjectId = item.Id,
+            VersionNumber = version.Version,
+            ExpectedConcurrencyToken = item.ConcurrencyToken,
+            ReferencedChildIds = []
+        };
 
     private sealed class Fixture : IAsyncDisposable
     {

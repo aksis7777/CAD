@@ -9,10 +9,14 @@ namespace MiniPdm.Modules.Import.Infrastructure.Cad;
 /// <param name="directory">Каталог с документами.</param>
 public sealed class FileJsonCadDocumentSource(string directory) : ICadDocumentSource
 {
-    private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase) { ".a3d", ".m3d" };
+    private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+                ".a3d",
+                ".m3d"
+    };
 
     /// <inheritdoc />
-    public async IAsyncEnumerable<CadDocumentRef> GetDocumentsAsync(
+    public async IAsyncEnumerable<CadDocumentRefDto> GetDocumentsAsync(
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
         foreach (var path in Directory.EnumerateFiles(directory)
@@ -20,7 +24,10 @@ public sealed class FileJsonCadDocumentSource(string directory) : ICadDocumentSo
                      .OrderBy(path => Path.GetFileName(path), StringComparer.Ordinal))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            yield return new CadDocumentRef(Path.GetFileName(path));
+            yield return new CadDocumentRefDto
+            {
+                FileName = Path.GetFileName(path)
+            };
             await Task.Yield();
         }
     }

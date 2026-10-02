@@ -21,7 +21,7 @@ internal sealed class ImportPackageValidator(IReadOnlyList<ImportPackageValidato
     /// <param name="fileName">Имя файла из источника.</param>
     /// <param name="document">Прочитанный документ или <see langword="null"/>.</param>
     /// <param name="readError">Ошибка чтения, если она возникла.</param>
-    internal sealed class FileEntry(string fileName, CadDocument? document, string? readError)
+    internal sealed class FileEntry(string fileName, CadDocumentDto? document, string? readError)
     {
         /// <summary>
         /// Имя файла в пакете.
@@ -30,7 +30,7 @@ internal sealed class ImportPackageValidator(IReadOnlyList<ImportPackageValidato
         /// <summary>
         /// Прочитанные данные файла, если чтение удалось.
         /// </summary>
-        public CadDocument? Document { get; } = document;
+        public CadDocumentDto? Document { get; } = document;
         /// <summary>
         /// Причина отклонения файла; значение можно установить при проверке пакета.
         /// </summary>
@@ -62,9 +62,14 @@ internal sealed class ImportPackageValidator(IReadOnlyList<ImportPackageValidato
         /// Создаёт строку отчёта по текущему состоянию проверки файла.
         /// </summary>
         /// <returns>DTO-строка со статусом, причиной, действием и предупреждениями.</returns>
-        public ImportFileResultDto ToDto() => new(FileName,
-            Accepted ? ImportFileStatus.Accepted : ImportFileStatus.Rejected,
-            Reason, Action, Warnings.ToArray());
+        public ImportFileResultDto ToDto() => new()
+        {
+            FileName = FileName,
+            Status = Accepted ? ImportFileStatus.Accepted : ImportFileStatus.Rejected,
+            Reason = Reason,
+            Action = Action,
+            Warnings = Warnings.ToArray()
+        };
     }
 
     private readonly List<FileEntry> _files = input.ToList();
@@ -117,13 +122,14 @@ internal sealed class ImportPackageValidator(IReadOnlyList<ImportPackageValidato
     /// Формирует ключи для поиска существующих объектов в базе данных.
     /// </summary>
     /// <returns>Обозначения и нормализованные имена стандартных деталей.</returns>
-    public ImportLookup CreateLookup()
+    public ImportLookupDto CreateLookup()
     {
         var docs = _files.Where(x => x.Document is not null).Select(x => x.Document!).ToArray();
-        return new ImportLookup(
-            docs.Where(x => x.Designation is not null).Select(x => x.Designation!).Distinct(StringComparer.Ordinal).ToArray(),
-            docs.Where(x => x.Type == PdmObjectType.StandardPart && !string.IsNullOrWhiteSpace(x.Name))
-                .Select(x => ObjectIdentity.NormalizeStandardName(x.Name)).Distinct(StringComparer.Ordinal).ToArray());
+        return new ImportLookupDto
+        {
+            Designations = docs.Where(x => x.Designation is not null).Select(x => x.Designation!).Distinct(StringComparer.Ordinal).ToArray(),
+            NormalizedStandardNames = docs.Where(x => x.Type == PdmObjectType.StandardPart && !string.IsNullOrWhiteSpace(x.Name)).Select(x => ObjectIdentity.NormalizeStandardName(x.Name)).Distinct(StringComparer.Ordinal).ToArray()
+        };
     }
 
     /// <summary>
@@ -131,7 +137,11 @@ internal sealed class ImportPackageValidator(IReadOnlyList<ImportPackageValidato
     /// </summary>
     /// <param name="importId">Идентификатор операции импорта.</param>
     /// <returns>Отчёт со строкой результата для каждого файла.</returns>
-    public ImportReportDto ToReport(Guid importId) => new(importId, _files.Select(x => x.ToDto()).ToArray());
+    public ImportReportDto ToReport(Guid importId) => new()
+    {
+        ImportId = importId,
+        Files = _files.Select(x => x.ToDto()).ToArray()
+    };
 
     private void ValidateAttributes(FileEntry file)
     {
@@ -240,10 +250,10 @@ internal sealed class ImportPackageValidator(IReadOnlyList<ImportPackageValidato
         RejectBadReferences();
     }
 
-    internal static string GetIdentityKey(CadDocument d) => d.Type == PdmObjectType.StandardPart
+    internal static string GetIdentityKey(CadDocumentDto d) => d.Type == PdmObjectType.StandardPart
         ? "N:" + ObjectIdentity.NormalizeStandardName(d.Name)
         : "D:" + (d.Designation ?? "");
-    private static bool HasIdentity(CadDocument d) => d.Type == PdmObjectType.StandardPart
+    private static bool HasIdentity(CadDocumentDto d) => d.Type == PdmObjectType.StandardPart
         ? !string.IsNullOrWhiteSpace(d.Name)
         : !string.IsNullOrWhiteSpace(d.Designation);
     private static void Reject(FileEntry file, string reason)

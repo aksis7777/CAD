@@ -20,7 +20,7 @@ namespace MiniPdm.Modules.Import.Services.Database;
 public sealed class ImportDatabaseService(PdmDbContext context, IDbContextFactory<PdmDbContext> contextFactory) : IImportDatabaseService
 {
     /// <inheritdoc />
-    public async Task<ImportPersistenceResult> ExecuteAsync(Guid importId, ImportLookup lookup, Func<ImportSnapshot, CancellationToken, Task<ImportWritePlan>> prepare, CancellationToken ct)
+    public async Task<ImportPersistenceResultDto> ExecuteAsync(Guid importId, ImportLookupDto lookup, Func<ImportSnapshotDto, CancellationToken, Task<ImportWritePlanDto>> prepare, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
         await using var transaction = await context.Database.BeginTransactionAsync(TransactionIsolation(context), ct);
@@ -35,7 +35,12 @@ public sealed class ImportDatabaseService(PdmDbContext context, IDbContextFactor
                 commitAttempted = true;
                 await transaction.CommitAsync(CancellationToken.None);
                 committed = true;
-                return new(ImportCommitState.Completed, true, prior.ReportJson);
+                return new ImportPersistenceResultDto
+                {
+                    State = ImportCommitState.Completed,
+                    Replayed = true,
+                    ReportJson = prior.ReportJson
+                };
             }
 
             var designations = lookup.Designations.Distinct().ToArray();
@@ -48,8 +53,16 @@ public sealed class ImportDatabaseService(PdmDbContext context, IDbContextFactor
                 .ToListAsync(ct);
             // Flat active-edge projection for cycle checks; tree retrieval remains a separate recursive CTE query.
             var graph = (await ActiveCompositionGraphQuery.LoadAsync(context, ct))
-                .Select(edge => new ActiveGraphEdge(edge.ParentId, edge.ChildId)).ToArray();
-            var plan = await prepare(new ImportSnapshot(objects, graph), ct);
+                .Select(edge => new ActiveGraphEdgeDto
+                {
+                    ParentId = edge.ParentId,
+                    ChildId = edge.ChildId
+                }).ToArray();
+            var plan = await prepare(new ImportSnapshotDto
+            {
+                ExistingObjects = objects,
+                CurrentGraph = graph
+            }, ct);
 
             context.Objects.AddRange(plan.NewObjects);
             if (plan.RemovedLinks is { Count: > 0 })
@@ -64,7 +77,12 @@ public sealed class ImportDatabaseService(PdmDbContext context, IDbContextFactor
             commitAttempted = true;
             await transaction.CommitAsync(CancellationToken.None);
             committed = true;
-            return new(ImportCommitState.Completed, false, plan.ReportJson);
+            return new ImportPersistenceResultDto
+            {
+                State = ImportCommitState.Completed,
+                Replayed = false,
+                ReportJson = plan.ReportJson
+            };
         }
         catch (OperationCanceledException)
         {
@@ -99,21 +117,38 @@ public sealed class ImportDatabaseService(PdmDbContext context, IDbContextFactor
                 };
             }
             if (rollbackSucceeded)
-                return new(ImportCommitState.ConfirmedRollback, false, null, ex.Message);
-            return new(ImportCommitState.Unknown, false, null, ex.Message);
+                return new ImportPersistenceResultDto
+                {
+                    State = ImportCommitState.ConfirmedRollback,
+                    Replayed = false,
+                    ReportJson = null,
+                    Error = ex.Message
+                };
+            return new ImportPersistenceResultDto
+            {
+                State = ImportCommitState.Unknown,
+                Replayed = false,
+                ReportJson = null,
+                Error = ex.Message
+            };
         }
     }
 
     /// <inheritdoc />
-    public async Task<ImportPersistenceResult?> FindAsync(Guid id, CancellationToken ct)
+    public async Task<ImportPersistenceResultDto?> FindAsync(Guid id, CancellationToken ct)
     {
         await using var fresh = await contextFactory.CreateDbContextAsync(ct);
         var row = await fresh.ImportJournals.AsNoTracking().SingleOrDefaultAsync(x => x.ImportId == id, ct);
-        return row is null ? null : new(ImportCommitState.Completed, true, row.ReportJson);
+        return row is null ? null : new ImportPersistenceResultDto
+        {
+            State = ImportCommitState.Completed,
+            Replayed = true,
+            ReportJson = row.ReportJson
+        };
     }
 
     /// <inheritdoc />
-    public async Task<ImportPersistenceResult> ResolveAsync(Guid id, CancellationToken ct)
+    public async Task<ImportPersistenceResultDto> ResolveAsync(Guid id, CancellationToken ct)
     {
         try
         {
@@ -123,12 +158,28 @@ public sealed class ImportDatabaseService(PdmDbContext context, IDbContextFactor
             var row = await fresh.ImportJournals.AsNoTracking().SingleOrDefaultAsync(x => x.ImportId == id, ct);
             await transaction.CommitAsync(CancellationToken.None);
             return row is null
-                ? new(ImportCommitState.ConfirmedRollback, false, null)
-                : new(ImportCommitState.Completed, true, row.ReportJson);
+                ? new ImportPersistenceResultDto
+                {
+                    State = ImportCommitState.ConfirmedRollback,
+                    Replayed = false,
+                    ReportJson = null
+                }
+                : new ImportPersistenceResultDto
+                {
+                    State = ImportCommitState.Completed,
+                    Replayed = true,
+                    ReportJson = row.ReportJson
+                };
         }
         catch (Exception ex)
         {
-            return new(ImportCommitState.Unknown, false, null, ex.Message);
+            return new ImportPersistenceResultDto
+            {
+                State = ImportCommitState.Unknown,
+                Replayed = false,
+                ReportJson = null,
+                Error = ex.Message
+            };
         }
     }
 

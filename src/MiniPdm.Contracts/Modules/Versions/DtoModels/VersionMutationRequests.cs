@@ -4,37 +4,40 @@ namespace MiniPdm.Contracts.Modules.Versions.DtoModels;
 /// Запрашивает создание рабочей версии на основе выбранной версии объекта.
 /// Существующая история версий при этом сохраняется.
 /// </summary>
-public sealed record CloneVersionRequestDto(
-    int SourceVersion,
-    Guid ExpectedConcurrencyToken)
+public sealed record CloneVersionRequestDto
 {
     /// <summary>
     /// Номер версии, используемой как источник копирования.
     /// </summary>
-    public int SourceVersion { get; init; } = SourceVersion;
+    public int SourceVersion
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Токен конкурентного доступа объекта, полученный при чтении.
     /// </summary>
-    public Guid ExpectedConcurrencyToken { get; init; } = ExpectedConcurrencyToken;
-
+    public Guid ExpectedConcurrencyToken
+    {
+        get; init;
+    }
 }
 
 /// <summary>
 /// Запрашивает изменение состояния версии.
 /// </summary>
-public sealed record ChangeVersionStateRequestDto(
-    string State,
-    Guid ExpectedConcurrencyToken)
+public sealed record ChangeVersionStateRequestDto
 {
     /// <summary>
     /// Новое состояние версии.
     /// </summary>
-    public string State { get; init; } = State;
+    public string State { get; init; } = default!;
 
     /// <summary>
     /// Токен конкурентного доступа объекта, полученный при чтении.
     /// </summary>
-    public Guid ExpectedConcurrencyToken { get; init; } = ExpectedConcurrencyToken;
-
+    public Guid ExpectedConcurrencyToken
+    {
+        get; init;
+    }
 }

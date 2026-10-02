@@ -7,217 +7,282 @@ namespace MiniPdm.Modules.Objects.DtoModels;
 /// Строка внутренней проекции поиска объектов.
 /// Содержит поля карточки, необходимые для выдачи страницы результатов.
 /// </summary>
-public sealed record ObjectSearchRow(
-    Guid Id,
-    PdmObjectType Type,
-    string? Designation,
-    string? Name,
-    Guid? CurrentVersionId,
-    int? VersionNumber,
-    VersionState? State,
-    decimal? UnitMassKg,
-    Guid ConcurrencyToken,
-    bool NoCurrentVersion)
+public sealed record ObjectSearchRowDto
 {
     /// <summary>
     /// Идентификатор объекта.
     /// </summary>
-    public Guid Id { get; init; } = Id;
+    public Guid Id
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Тип объекта PDM.
     /// </summary>
-    public PdmObjectType Type { get; init; } = Type;
+    public PdmObjectType Type
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Обозначение сборки или детали.
     /// </summary>
-    public string? Designation { get; init; } = Designation;
+    public string? Designation
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Отображаемое наименование объекта.
     /// </summary>
-    public string? Name { get; init; } = Name;
+    public string? Name
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Идентификатор текущей версии, если она есть.
     /// </summary>
-    public Guid? CurrentVersionId { get; init; } = CurrentVersionId;
+    public Guid? CurrentVersionId
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Номер текущей версии, если она есть.
     /// </summary>
-    public int? VersionNumber { get; init; } = VersionNumber;
+    public int? VersionNumber
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Состояние текущей версии, если она есть.
     /// </summary>
-    public VersionState? State { get; init; } = State;
+    public VersionState? State
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Масса единицы объекта в килограммах, если известна.
     /// </summary>
-    public decimal? UnitMassKg { get; init; } = UnitMassKg;
+    public decimal? UnitMassKg
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Токен для обнаружения устаревших изменений.
     /// </summary>
-    public Guid ConcurrencyToken { get; init; } = ConcurrencyToken;
+    public Guid ConcurrencyToken
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Показывает, что у объекта нет текущей версии.
     /// </summary>
-    public bool NoCurrentVersion { get; init; } = NoCurrentVersion;
+    public bool NoCurrentVersion
+    {
+        get; init;
+    }
 }
 
 /// <summary>
 /// Страница внутренней проекции поиска объектов.
 /// Метаданные позволяют продолжить постраничную загрузку результатов.
 /// </summary>
-public sealed record ObjectSearchPage(IReadOnlyList<ObjectSearchRow> Items, int Offset, int Limit, bool HasMore)
+public sealed record ObjectSearchPageDto
 {
     /// <summary>
     /// Строки объектов на текущей странице.
     /// </summary>
-    public IReadOnlyList<ObjectSearchRow> Items { get; init; } = Items;
+    public IReadOnlyList<ObjectSearchRowDto> Items { get; init; } = default!;
 
     /// <summary>
     /// Смещение первой строки в полном результате.
     /// </summary>
-    public int Offset { get; init; } = Offset;
+    public int Offset
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Максимальное число строк страницы.
     /// </summary>
-    public int Limit { get; init; } = Limit;
+    public int Limit
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Указывает, что после страницы есть дополнительные строки.
     /// </summary>
-    public bool HasMore { get; init; } = HasMore;
+    public bool HasMore
+    {
+        get; init;
+    }
 }
 
 /// <summary>
 /// Внутренняя проекция одной версии для карточки объекта.
 /// Включает атрибуты версии и ссылку на исходный файл.
 /// </summary>
-public sealed record ObjectVersionReadRow(
-    Guid Id,
-    int Version,
-    VersionState State,
-    string? Name,
-    string? Material,
-    decimal? Mass,
-    string? SourceReference)
+public sealed record ObjectVersionReadRowDto
 {
     /// <summary>
     /// Идентификатор записи версии.
     /// </summary>
-    public Guid Id { get; init; } = Id;
+    public Guid Id
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Порядковый номер версии внутри объекта.
     /// </summary>
-    public int Version { get; init; } = Version;
+    public int Version
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Состояние версии.
     /// </summary>
-    public VersionState State { get; init; } = State;
+    public VersionState State
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Наименование, сохранённое в версии.
     /// </summary>
-    public string? Name { get; init; } = Name;
+    public string? Name
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Материал версии, если задан.
     /// </summary>
-    public string? Material { get; init; } = Material;
+    public string? Material
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Масса версии, если задана.
     /// </summary>
-    public decimal? Mass { get; init; } = Mass;
+    public decimal? Mass
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Ссылка на импортированный исходный файл.
     /// </summary>
-    public string? SourceReference { get; init; } = SourceReference;
+    public string? SourceReference
+    {
+        get; init;
+    }
 }
 
 /// <summary>
 /// Внутренняя проекция карточки объекта и списка его версий.
 /// Выбранная версия отсутствует, если её нет или она не была запрошена.
 /// </summary>
-public sealed record ObjectCardReadRow(
-    Guid Id,
-    PdmObjectType Type,
-    string? Designation,
-    string? StandardName,
-    Guid? CurrentVersionId,
-    Guid ConcurrencyToken,
-    IReadOnlyList<ObjectVersionSummaryReadRow> Versions,
-    ObjectVersionReadRow? SelectedVersion)
+public sealed record ObjectCardReadRowDto
 {
     /// <summary>
     /// Идентификатор объекта.
     /// </summary>
-    public Guid Id { get; init; } = Id;
+    public Guid Id
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Тип объекта PDM.
     /// </summary>
-    public PdmObjectType Type { get; init; } = Type;
+    public PdmObjectType Type
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Обозначение сборки или детали.
     /// </summary>
-    public string? Designation { get; init; } = Designation;
+    public string? Designation
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Исходное имя стандартного изделия.
     /// </summary>
-    public string? StandardName { get; init; } = StandardName;
+    public string? StandardName
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Идентификатор текущей версии, если она есть.
     /// </summary>
-    public Guid? CurrentVersionId { get; init; } = CurrentVersionId;
+    public Guid? CurrentVersionId
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Токен конкурентности объекта.
     /// </summary>
-    public Guid ConcurrencyToken { get; init; } = ConcurrencyToken;
+    public Guid ConcurrencyToken
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Краткие сведения обо всех версиях объекта.
     /// </summary>
-    public IReadOnlyList<ObjectVersionSummaryReadRow> Versions { get; init; } = Versions;
+    public IReadOnlyList<ObjectVersionSummaryReadRowDto> Versions { get; init; } = default!;
 
     /// <summary>
     /// Полные данные запрошенной или текущей версии.
     /// </summary>
-    public ObjectVersionReadRow? SelectedVersion { get; init; } = SelectedVersion;
+    public ObjectVersionReadRowDto? SelectedVersion
+    {
+        get; init;
+    }
 }
 
 /// <summary>
 /// Краткая внутренняя проекция версии для списка в карточке объекта.
 /// </summary>
-public sealed record ObjectVersionSummaryReadRow(Guid Id, int Version, VersionState State)
+public sealed record ObjectVersionSummaryReadRowDto
 {
     /// <summary>
     /// Идентификатор записи версии.
     /// </summary>
-    public Guid Id { get; init; } = Id;
+    public Guid Id
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Порядковый номер версии.
     /// </summary>
-    public int Version { get; init; } = Version;
+    public int Version
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Состояние версии.
     /// </summary>
-    public VersionState State { get; init; } = State;
+    public VersionState State
+    {
+        get; init;
+    }
 }

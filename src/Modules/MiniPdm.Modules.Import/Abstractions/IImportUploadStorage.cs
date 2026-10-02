@@ -27,7 +27,7 @@ public interface IImportUploadAttempt : IAsyncDisposable
     /// <summary>
     /// Описатель источника, по которому сервис читает загруженные файлы.
     /// </summary>
-    CadSourceDescriptor SourceDescriptor
+    CadSourceDescriptorDto SourceDescriptor
     {
         get;
     }

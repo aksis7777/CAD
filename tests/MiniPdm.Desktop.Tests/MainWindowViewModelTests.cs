@@ -63,10 +63,31 @@ public sealed class MainWindowViewModelTests
         var objectId = Guid.NewGuid();
         var childId = Guid.NewGuid();
         var token = Guid.NewGuid();
-        var historical = new ObjectVersionSummaryDto(Guid.NewGuid(), 3, "Cancelled", false);
+        var historical = new ObjectVersionSummaryDto
+        {
+            Id = Guid.NewGuid(),
+            Version = 3,
+            State = "Cancelled",
+            IsCurrent = false
+        };
         client.Cards[objectId] = Card(objectId, null, token, historical, "Assembly");
-        client.VersionCompositions[(objectId, 3)] = new VersionCompositionDto(objectId, 3, token,
-            [new VersionCompositionItemDto(childId, 4, "Part", "АБВГ.301245.001", "Стойка", true)]);
+        client.VersionCompositions[(objectId, 3)] = new VersionCompositionDto
+        {
+            ObjectId = objectId,
+            Version = 3,
+            ConcurrencyToken = token,
+            Items = [new VersionCompositionItemDto
+            {
+                                ChildObjectId = childId,
+                                Quantity = 4,
+                                Type = "Part",
+                                Designation = "АБВГ.301245.001",
+                                Name = "Стойка",
+                                NoCurrentVersion = true
+            }
+
+    ]
+        };
         using var viewModel = new MainWindowViewModel(client);
 
         viewModel.SelectedObject = Item(objectId, "АБВГ.301245.002", "Assembly");
@@ -184,7 +205,19 @@ public sealed class MainWindowViewModelTests
     /// <param name="type">Тип создаваемого объекта.</param>
     /// <returns>Элемент поиска с указанными идентификатором, обозначением и типом объекта.</returns>
     private static ObjectSearchItemDto Item(Guid id, string designation, string type = "Part") =>
-        new(id, type, designation, "Part", null, null, null, null, Guid.NewGuid(), true);
+        new()
+        {
+            Id = id,
+            Type = type,
+            Designation = designation,
+            Name = "Part",
+            CurrentVersionId = null,
+            VersionNumber = null,
+            State = null,
+            UnitMassKg = null,
+            ConcurrencyToken = Guid.NewGuid(),
+            NoCurrentVersion = true
+        };
 
     /// <summary>
     /// Создаёт карточку объекта с текущей либо указанной исторической версией.
@@ -199,9 +232,26 @@ public sealed class MainWindowViewModelTests
     {
         var selected = history is null ? Version(1, "InWork", name ?? "Part") : null;
         IReadOnlyList<ObjectVersionSummaryDto> summaries = history is null
-            ? [new ObjectVersionSummaryDto(selected!.Id, 1, "InWork", true)] : [history];
-        return new ObjectCardDto(id, type, "АБВГ.301245.001", name, null, token, selected,
-            summaries, null, null);
+            ? [new ObjectVersionSummaryDto
+            {
+                                Id = selected!.Id,
+                                Version = 1,
+                                State = "InWork",
+                                IsCurrent = true
+            }] : [history];
+        return new ObjectCardDto
+        {
+            Id = id,
+            Type = type,
+            Designation = "АБВГ.301245.001",
+            Name = name,
+            CurrentVersionId = null,
+            ConcurrencyToken = token,
+            SelectedVersion = selected,
+            Versions = summaries,
+            ErrorCode = null,
+            Error = null
+        };
     }
 
     /// <summary>
@@ -215,7 +265,19 @@ public sealed class MainWindowViewModelTests
     /// <returns>Карточку объекта с указанными сведениями и версиями.</returns>
     private static ObjectCardDto Card(Guid id, string? name, Guid token, ObjectVersionDto? selected,
         IReadOnlyList<ObjectVersionSummaryDto> summaries) =>
-        new(id, "Part", "АБВГ.301245.001", name, null, token, selected, summaries, null, null);
+        new()
+        {
+            Id = id,
+            Type = "Part",
+            Designation = "АБВГ.301245.001",
+            Name = name,
+            CurrentVersionId = null,
+            ConcurrencyToken = token,
+            SelectedVersion = selected,
+            Versions = summaries,
+            ErrorCode = null,
+            Error = null
+        };
 
     /// <summary>
     /// Создаёт версию с указанным номером, состоянием и наименованием.
@@ -227,7 +289,17 @@ public sealed class MainWindowViewModelTests
     private static ObjectVersionDto Version(int number, string state, string? name)
     {
         var id = Guid.NewGuid();
-        return new ObjectVersionDto(id, number, state, name, "Steel", 1m, null, false);
+        return new ObjectVersionDto
+        {
+            Id = id,
+            Version = number,
+            State = state,
+            Name = name,
+            Material = "Steel",
+            UnitMassKg = 1m,
+            SourceReference = null,
+            IsCurrent = false
+        };
     }
 
     private sealed class DeleteFileLease(string path) : IDisposable
@@ -321,7 +393,13 @@ public sealed class MainWindowViewModelTests
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
         /// <returns>Пустую страницу результатов с сохранёнными значениями offset и limit.</returns>
         public Task<ObjectSearchPageDto> SearchObjectsAsync(string? search = null, int offset = 0, int limit = 50, CancellationToken cancellationToken = default) =>
-            Task.FromResult(new ObjectSearchPageDto([], offset, limit, false));
+            Task.FromResult(new ObjectSearchPageDto
+            {
+                Items = [],
+                Offset = offset,
+                Limit = limit,
+                HasMore = false
+            });
         /// <summary>
         /// Возвращает карточку из переопределения, фабрики или набора тестовых карточек; при отсутствии данных создаёт карточку по умолчанию.
         /// </summary>
@@ -347,12 +425,30 @@ public sealed class MainWindowViewModelTests
             var selectedSummary = card.Versions.Single(x => x.Version == version);
             var selected = selectedSummary.Version == card.SelectedVersion?.Version
                 ? card.SelectedVersion
-                : new ObjectVersionDto(selectedSummary.Id, selectedSummary.Version, selectedSummary.State,
-                    card.Type == "Assembly" ? null : "Restorable version",
-                    card.Type == "Assembly" ? null : "Steel",
-                    card.Type == "Assembly" ? null : 1m, null, selectedSummary.IsCurrent);
-            return Task.FromResult(new ObjectCardDto(card.Id, card.Type, card.Designation, card.Name, card.CurrentVersionId,
-                card.ConcurrencyToken, selected, card.Versions, card.ErrorCode, card.Error));
+                : new ObjectVersionDto
+                {
+                    Id = selectedSummary.Id,
+                    Version = selectedSummary.Version,
+                    State = selectedSummary.State,
+                    Name = card.Type == "Assembly" ? null : "Restorable version",
+                    Material = card.Type == "Assembly" ? null : "Steel",
+                    UnitMassKg = card.Type == "Assembly" ? null : 1m,
+                    SourceReference = null,
+                    IsCurrent = selectedSummary.IsCurrent
+                };
+            return Task.FromResult(new ObjectCardDto
+            {
+                Id = card.Id,
+                Type = card.Type,
+                Designation = card.Designation,
+                Name = card.Name,
+                CurrentVersionId = card.CurrentVersionId,
+                ConcurrencyToken = card.ConcurrencyToken,
+                SelectedVersion = selected,
+                Versions = card.Versions,
+                ErrorCode = card.ErrorCode,
+                Error = card.Error
+            });
         }
         /// <summary>
         /// Возвращает пустое дерево состава для указанного корневого объекта.
@@ -361,7 +457,11 @@ public sealed class MainWindowViewModelTests
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
         /// <returns>Пустое дерево состава с указанным корневым объектом.</returns>
         public Task<CompositionTreeDto> GetCompositionAsync(Guid objectId, CancellationToken cancellationToken = default) =>
-            Task.FromResult(new CompositionTreeDto(objectId, []));
+            Task.FromResult(new CompositionTreeDto
+            {
+                RootObjectId = objectId,
+                Nodes = []
+            });
         /// <summary>
         /// Возвращает заданный для объекта и версии состав либо пустой состав с токеном известной карточки.
         /// </summary>
@@ -370,8 +470,13 @@ public sealed class MainWindowViewModelTests
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
         /// <returns>Тестовый состав либо пустой состав с токеном известной карточки.</returns>
         public Task<VersionCompositionDto> GetVersionCompositionAsync(Guid objectId, int version, CancellationToken cancellationToken = default) =>
-            Task.FromResult(VersionCompositions.GetValueOrDefault((objectId, version)) ?? new VersionCompositionDto(objectId, version,
-                Cards.GetValueOrDefault(objectId)?.ConcurrencyToken ?? Guid.Empty, []));
+            Task.FromResult(VersionCompositions.GetValueOrDefault((objectId, version)) ?? new VersionCompositionDto
+            {
+                ObjectId = objectId,
+                Version = version,
+                ConcurrencyToken = Cards.GetValueOrDefault(objectId)?.ConcurrencyToken ?? Guid.Empty,
+                Items = []
+            });
         /// <summary>
         /// Возвращает неполный расчёт без строк спецификации и диагностик для указанного объекта.
         /// </summary>
@@ -379,7 +484,14 @@ public sealed class MainWindowViewModelTests
         /// <param name="cancellationToken">Токен отмены асинхронной операции.</param>
         /// <returns>Расчёт без известной массы, строк спецификации и диагностик.</returns>
         public Task<CompositionCalculationDto> GetCalculationAsync(Guid objectId, CancellationToken cancellationToken = default) =>
-            Task.FromResult(new CompositionCalculationDto(objectId, null, false, [], []));
+            Task.FromResult(new CompositionCalculationDto
+            {
+                RootObjectId = objectId,
+                TotalMassKg = null,
+                IsComplete = false,
+                Items = [],
+                Diagnostics = []
+            });
         /// <summary>
         /// Записывает идентификатор импорта и пути файлов; при неизвестном исходе выбрасывает ошибку 503, иначе возвращает пустой отчёт.
         /// </summary>
@@ -393,7 +505,11 @@ public sealed class MainWindowViewModelTests
             UploadedFiles.Add(filePaths.ToArray());
             if (ImportOutcomeUnknown)
                 throw new PdmApiException(503, "Unknown upload outcome.");
-            return Task.FromResult(new ImportReportDto(importId, []));
+            return Task.FromResult(new ImportReportDto
+            {
+                ImportId = importId,
+                Files = []
+            });
         }
         /// <summary>
         /// Увеличивает счётчик запросов отчёта; если отчёт недоступен, выбрасывает ошибку 404, иначе возвращает пустой отчёт.
@@ -406,7 +522,11 @@ public sealed class MainWindowViewModelTests
             ReportCount++;
             if (!ReportAvailable)
                 throw new PdmApiException(404, "Report not found.");
-            return Task.FromResult(new ImportReportDto(importId, []));
+            return Task.FromResult(new ImportReportDto
+            {
+                ImportId = importId,
+                Files = []
+            });
         }
         /// <summary>
         /// Не поддерживает клонирование версии в этом тестовом клиенте и выбрасывает NotSupportedException.
@@ -438,7 +558,16 @@ public sealed class MainWindowViewModelTests
             UpdateCount++;
             if (ConflictOnUpdate)
                 throw new PdmApiException(409, "The object was changed concurrently.");
-            return Task.FromResult(new VersionMutationDto(objectId, Guid.NewGuid(), version, "InWork", null, Guid.NewGuid(), []));
+            return Task.FromResult(new VersionMutationDto
+            {
+                ObjectId = objectId,
+                VersionId = Guid.NewGuid(),
+                VersionNumber = version,
+                State = "InWork",
+                CurrentVersionId = null,
+                ConcurrencyToken = Guid.NewGuid(),
+                Warnings = []
+            });
         }
         /// <summary>
         /// Не поддерживает замену состава в этом тестовом клиенте и выбрасывает NotSupportedException.

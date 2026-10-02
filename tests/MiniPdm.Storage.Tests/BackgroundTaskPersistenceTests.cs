@@ -21,7 +21,12 @@ public sealed class BackgroundTaskPersistenceTests
     public async Task Schedule_and_run_status_persist_and_scheduled_time_uses_updated_interval()
     {
         await using var fixture = await Fixture.CreateAsync();
-        var definition = new BackgroundTaskDefinitionRecord("test-job", "Test job", 1440);
+        var definition = new BackgroundTaskDefinitionRecordDto
+        {
+            Id = "test-job",
+            Name = "Test job",
+            DefaultIntervalMinutes = 1440
+        };
         var createdAt = DateTimeOffset.Parse("2026-10-01T10:00:00Z");
         await new BackgroundTaskDatabaseService(fixture.Context).EnsureDefinitionsAsync([definition], createdAt, CancellationToken.None);
 
@@ -68,7 +73,12 @@ public sealed class BackgroundTaskPersistenceTests
     public async Task Existing_running_job_is_marked_interrupted_when_definitions_are_ensured_after_restart()
     {
         await using var fixture = await Fixture.CreateAsync();
-        var definition = new BackgroundTaskDefinitionRecord("test-job", "Test job", 1440);
+        var definition = new BackgroundTaskDefinitionRecordDto
+        {
+            Id = "test-job",
+            Name = "Test job",
+            DefaultIntervalMinutes = 1440
+        };
         var now = DateTimeOffset.Parse("2026-10-01T10:00:00Z");
         var repository = new BackgroundTaskDatabaseService(fixture.Context);
         await repository.EnsureDefinitionsAsync([definition], now, CancellationToken.None);

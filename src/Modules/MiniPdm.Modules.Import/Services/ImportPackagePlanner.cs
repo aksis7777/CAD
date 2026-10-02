@@ -21,7 +21,7 @@ namespace MiniPdm.Modules.Import.Services;
 /// <param name="targets">Связь файлов с целевыми объектами.</param>
 /// <param name="removedLinks">Удаляемые связи состава.</param>
 internal sealed class ImportPackagePlan(ImportPackageValidator validator, IReadOnlyList<PdmObject> newObjects,
-    IReadOnlyList<ObjectVersion> newVersions, IReadOnlyList<CurrentVersionAssignment> currentVersions,
+    IReadOnlyList<ObjectVersion> newVersions, IReadOnlyList<CurrentVersionAssignmentDto> currentVersions,
     IReadOnlyDictionary<ImportPackageValidator.FileEntry, PdmObject> targets, IReadOnlyList<BomLink> removedLinks)
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -36,7 +36,7 @@ internal sealed class ImportPackagePlan(ImportPackageValidator validator, IReadO
     /// <param name="importId">Идентификатор операции импорта.</param>
     /// <param name="sourceStorage">Хранилище для построения ссылок принятых файлов.</param>
     /// <returns>Полный план изменений для транзакции базы данных.</returns>
-    public ImportWritePlan ToWritePlan(Guid importId, IImportSourceStorage sourceStorage)
+    public ImportWritePlanDto ToWritePlan(Guid importId, IImportSourceStorage sourceStorage)
     {
         foreach (var entry in validator.Files.Where(x => x.Accepted && x.Action is not ImportFileAction.Unchanged))
         {
@@ -47,9 +47,19 @@ internal sealed class ImportPackagePlan(ImportPackageValidator validator, IReadO
             if (version is not null)
                 version.SourceReference = sourceStorage.GetSourceReference(importId, entry.FileName);
         }
-        var report = new ImportReportDto(importId, Files);
-        return new ImportWritePlan(newObjects, newVersions, currentVersions,
-            JsonSerializer.Serialize(report, JsonOptions), removedLinks);
+        var report = new ImportReportDto
+        {
+            ImportId = importId,
+            Files = Files
+        };
+        return new ImportWritePlanDto
+        {
+            NewObjects = newObjects,
+            NewVersions = newVersions,
+            CurrentVersions = currentVersions,
+            ReportJson = JsonSerializer.Serialize(report, JsonOptions),
+            RemovedLinks = removedLinks
+        };
     }
 }
 
@@ -61,7 +71,7 @@ internal static class ImportPackagePlanner
     /// <param name="validator">Проверенные файлы и их связи.</param>
     /// <param name="snapshot">Найденные объекты и текущий граф состава.</param>
     /// <returns>План создания, обновления и назначения версий.</returns>
-    public static ImportPackagePlan Prepare(ImportPackageValidator validator, ImportSnapshot snapshot)
+    public static ImportPackagePlan Prepare(ImportPackageValidator validator, ImportSnapshotDto snapshot)
     {
         var files = validator.Files;
         var byFile = validator.ByFile;
@@ -134,7 +144,7 @@ internal static class ImportPackagePlanner
         var finalCompositions = ResolveCompositions(files, byFile, targetObjects);
         var newObjects = new List<PdmObject>();
         var newVersions = new List<ObjectVersion>();
-        var currentAssignments = new List<CurrentVersionAssignment>();
+        var currentAssignments = new List<CurrentVersionAssignmentDto> { };
         var removedLinks = new List<BomLink>();
         foreach (var file in files.Where(x => x.Accepted))
         {
@@ -149,7 +159,11 @@ internal static class ImportPackagePlanner
                 var version = NewVersion(target, doc, desiredComposition, 1);
                 newObjects.Add(target);
                 newVersions.Add(version);
-                currentAssignments.Add(new CurrentVersionAssignment(target, version));
+                currentAssignments.Add(new CurrentVersionAssignmentDto
+                {
+                    Object = target,
+                    Version = version
+                });
                 file.Action = ImportFileAction.Created;
                 continue;
             }
@@ -177,7 +191,11 @@ internal static class ImportPackagePlanner
                 var nextNumber = versions.Length == 0 ? 1 : checked(versions.Max(x => x.Version) + 1);
                 var version = NewVersion(target, doc, desiredComposition, nextNumber);
                 newVersions.Add(version);
-                currentAssignments.Add(new CurrentVersionAssignment(target, version));
+                currentAssignments.Add(new CurrentVersionAssignmentDto
+                {
+                    Object = target,
+                    Version = version
+                });
                 file.Action = ImportFileAction.NewVersion;
             }
         }
@@ -227,7 +245,7 @@ internal static class ImportPackagePlanner
         } while (changed);
     }
 
-    private static bool AttributesChanged(PdmObject obj, ObjectVersion version, CadDocument doc) =>
+    private static bool AttributesChanged(PdmObject obj, ObjectVersion version, CadDocumentDto doc) =>
         (obj.Type == PdmObjectType.StandardPart ? false : version.Name != doc.Name) ||
         version.Material != doc.Material || version.Mass != doc.Mass;
 
@@ -251,7 +269,7 @@ internal static class ImportPackagePlanner
         }
     }
 
-    private static ObjectVersion NewVersion(PdmObject obj, CadDocument doc, Dictionary<Guid, int> composition, int number)
+    private static ObjectVersion NewVersion(PdmObject obj, CadDocumentDto doc, Dictionary<Guid, int> composition, int number)
     {
         var version = new ObjectVersion
         {

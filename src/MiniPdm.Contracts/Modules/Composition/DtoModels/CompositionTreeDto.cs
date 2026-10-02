@@ -4,109 +4,131 @@ namespace MiniPdm.Contracts.Modules.Composition.DtoModels;
 /// Представляет плоский список вхождений состава объекта.
 /// Пути сохраняют структуру дерева без рекурсивного JSON-вложенного представления.
 /// </summary>
-public sealed record CompositionTreeDto(
-    Guid RootObjectId,
-    IReadOnlyList<CompositionNodeDto> Nodes)
+public sealed record CompositionTreeDto
 {
     /// <summary>
     /// Идентификатор корневого объекта состава.
     /// </summary>
-    public Guid RootObjectId { get; init; } = RootObjectId;
+    public Guid RootObjectId
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Узлы состава в порядке обхода дерева.
     /// </summary>
-    public IReadOnlyList<CompositionNodeDto> Nodes { get; init; } = Nodes;
+    public IReadOnlyList<CompositionNodeDto> Nodes { get; init; } = default!;
 
 }
 
 /// <summary>
 /// Описывает одно вхождение объекта в дереве состава и его путь от корня.
 /// </summary>
-public sealed record CompositionNodeDto(
-    Guid ObjectId,
-    IReadOnlyList<Guid> ObjectPath,
-    IReadOnlyList<Guid>? ParentPath,
-    int LocalQuantity,
-    string Type,
-    string? Designation,
-    string? Name,
-    string? Material,
-    Guid? VersionId,
-    int? VersionNumber,
-    string? State,
-    decimal? UnitMassKg,
-    string? ErrorCode,
-    string? Error)
+public sealed record CompositionNodeDto
 {
     /// <summary>
     /// Идентификатор объекта в этом вхождении.
     /// </summary>
-    public Guid ObjectId { get; init; } = ObjectId;
+    public Guid ObjectId
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Путь идентификаторов от корневого объекта до данного вхождения.
     /// </summary>
-    public IReadOnlyList<Guid> ObjectPath { get; init; } = ObjectPath;
+    public IReadOnlyList<Guid> ObjectPath { get; init; } = default!;
 
     /// <summary>
     /// Путь родителя либо <see langword="null"/> для корневого узла.
     /// </summary>
-    public IReadOnlyList<Guid>? ParentPath { get; init; } = ParentPath;
+    public IReadOnlyList<Guid>? ParentPath
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Количество объекта в непосредственном родительском узле.
     /// </summary>
-    public int LocalQuantity { get; init; } = LocalQuantity;
+    public int LocalQuantity
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Тип объекта.
     /// </summary>
-    public string Type { get; init; } = Type;
+    public string Type { get; init; } = default!;
 
     /// <summary>
     /// Обозначение объекта либо <see langword="null"/>.
     /// </summary>
-    public string? Designation { get; init; } = Designation;
+    public string? Designation
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Наименование объекта либо <see langword="null"/>.
     /// </summary>
-    public string? Name { get; init; } = Name;
+    public string? Name
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Материал выбранной версии либо <see langword="null"/>.
     /// </summary>
-    public string? Material { get; init; } = Material;
+    public string? Material
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Идентификатор использованной версии либо <see langword="null"/>.
     /// </summary>
-    public Guid? VersionId { get; init; } = VersionId;
+    public Guid? VersionId
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Номер использованной версии либо <see langword="null"/>.
     /// </summary>
-    public int? VersionNumber { get; init; } = VersionNumber;
+    public int? VersionNumber
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Состояние использованной версии либо <see langword="null"/>.
     /// </summary>
-    public string? State { get; init; } = State;
+    public string? State
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Масса единицы в килограммах либо <see langword="null"/>.
     /// </summary>
-    public decimal? UnitMassKg { get; init; } = UnitMassKg;
+    public decimal? UnitMassKg
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Код ошибки получения сведений об узле либо <see langword="null"/>.
     /// </summary>
-    public string? ErrorCode { get; init; } = ErrorCode;
+    public string? ErrorCode
+    {
+        get; init;
+    }
 
     /// <summary>
     /// Описание ошибки получения сведений об узле либо <see langword="null"/>.
     /// </summary>
-    public string? Error { get; init; } = Error;
-
+    public string? Error
+    {
+        get; init;
+    }
 }

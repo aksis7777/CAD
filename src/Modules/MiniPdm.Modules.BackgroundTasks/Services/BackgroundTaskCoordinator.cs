@@ -200,7 +200,7 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            IReadOnlyList<BackgroundTaskRow> rows;
+            IReadOnlyList<BackgroundTaskRowDto> rows;
             try
             {
                 using var scope = _scopeFactory.CreateScope();
@@ -357,7 +357,12 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
                 return;
             using var scope = _scopeFactory.CreateScope();
             await scope.ServiceProvider.GetRequiredService<IBackgroundTaskDatabaseService>()
-                .EnsureDefinitionsAsync(_definitions.Values.Select(x => new BackgroundTaskDefinitionRecord(x.Id, x.Name, x.DefaultIntervalMinutes)).ToArray(), _clock.GetUtcNow(), ct);
+                .EnsureDefinitionsAsync(_definitions.Values.Select(x => new BackgroundTaskDefinitionRecordDto
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    DefaultIntervalMinutes = x.DefaultIntervalMinutes
+                }).ToArray(), _clock.GetUtcNow(), ct);
             _initialized = true;
         }
         catch (OperationCanceledException) { throw; }
@@ -369,9 +374,19 @@ public sealed class BackgroundTaskCoordinator : IHostedService, IBackgroundTaskC
         finally { _initializationLock.Release(); }
     }
 
-    private static BackgroundTaskDto ToDto(BackgroundTaskRow row) =>
-        new(row.Id, row.Name, row.IntervalMinutes, row.State, row.NextRunAt,
-            row.LastStartedAt, row.LastCompletedAt, row.LastResult, row.LastError);
+    private static BackgroundTaskDto ToDto(BackgroundTaskRowDto row) =>
+        new()
+        {
+            Id = row.Id,
+            Name = row.Name,
+            IntervalMinutes = row.IntervalMinutes,
+            State = row.State,
+            NextRunAt = row.NextRunAt,
+            LastStartedAt = row.LastStartedAt,
+            LastCompletedAt = row.LastCompletedAt,
+            LastResult = row.LastResult,
+            LastError = row.LastError
+        };
 
     private static BackgroundTaskPersistenceUnavailableException Unavailable(Exception exception) =>
         new("Background task persistence is temporarily unavailable.", exception);

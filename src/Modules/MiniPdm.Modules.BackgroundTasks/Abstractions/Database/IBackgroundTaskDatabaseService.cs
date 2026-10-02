@@ -13,14 +13,14 @@ public interface IBackgroundTaskDatabaseService
     /// <param name="definitions">Набор зарегистрированных определений.</param>
     /// <param name="now">Текущее время для первоначального расписания.</param>
     /// <param name="ct">Токен отмены.</param>
-    Task EnsureDefinitionsAsync(IReadOnlyCollection<BackgroundTaskDefinitionRecord> definitions, DateTimeOffset now, CancellationToken ct);
+    Task EnsureDefinitionsAsync(IReadOnlyCollection<BackgroundTaskDefinitionRecordDto> definitions, DateTimeOffset now, CancellationToken ct);
 
     /// <summary>
     /// Возвращает сохранённые состояния всех задач в порядке идентификатора.
     /// </summary>
     /// <param name="ct">Токен отмены.</param>
     /// <returns>Состояния задач.</returns>
-    Task<IReadOnlyList<BackgroundTaskRow>> ListAsync(CancellationToken ct);
+    Task<IReadOnlyList<BackgroundTaskRowDto>> ListAsync(CancellationToken ct);
 
     /// <summary>
     /// Находит сохранённое состояние задачи.
@@ -28,7 +28,7 @@ public interface IBackgroundTaskDatabaseService
     /// <param name="id">Идентификатор задачи.</param>
     /// <param name="ct">Токен отмены.</param>
     /// <returns>Состояние задачи или <see langword="null"/>, если запись отсутствует.</returns>
-    Task<BackgroundTaskRow?> GetAsync(string id, CancellationToken ct);
+    Task<BackgroundTaskRowDto?> GetAsync(string id, CancellationToken ct);
 
     /// <summary>
     /// Сохраняет новый интервал запуска и пересчитывает следующий запуск, если задача не выполняется.

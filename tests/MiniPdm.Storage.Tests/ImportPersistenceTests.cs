@@ -32,7 +32,17 @@ public sealed class ImportPersistenceTests
         var result = await fixture.Persistence.ExecuteAsync(importId, Lookup(), (snapshot, _) =>
         {
             Assert.Empty(snapshot.ExistingObjects);
-            return Task.FromResult(new ImportWritePlan([newObject], [newVersion], [new CurrentVersionAssignment(newObject, newVersion)], "{\"ok\":true}"));
+            return Task.FromResult(new ImportWritePlanDto
+            {
+                NewObjects = [newObject],
+                NewVersions = [newVersion],
+                CurrentVersions = [new CurrentVersionAssignmentDto
+                {
+                                        Object = newObject,
+                                        Version = newVersion
+                }],
+                ReportJson = "{\"ok\":true}"
+            });
         }, CancellationToken.None);
 
         Assert.Equal(ImportCommitState.Completed, result.State);
@@ -137,7 +147,13 @@ public sealed class ImportPersistenceTests
             var existing = Assert.Single(snapshot.ExistingObjects);
             existing.CurrentVersion!.Name = "Changed by callback";
             var invalid = new ObjectVersion { ObjectId = objectId, Version = 2, Mass = -1m };
-            return Task.FromResult(new ImportWritePlan([], [invalid], [], "{}"));
+            return Task.FromResult(new ImportWritePlanDto
+            {
+                NewObjects = [],
+                NewVersions = [invalid],
+                CurrentVersions = [],
+                ReportJson = "{}"
+            });
         }, CancellationToken.None);
 
         Assert.Equal(ImportCommitState.ConfirmedRollback, result.State);
@@ -183,7 +199,18 @@ public sealed class ImportPersistenceTests
             var parent = Assert.Single(snapshot.ExistingObjects);
             var oldLink = Assert.Single(parent.CurrentVersion!.Components);
             var replacement = new ObjectVersion { ObjectId = parentId, Version = 2 };
-            return Task.FromResult(new ImportWritePlan([], [replacement], [new CurrentVersionAssignment(parent, replacement)], "{}", [oldLink]));
+            return Task.FromResult(new ImportWritePlanDto
+            {
+                NewObjects = [],
+                NewVersions = [replacement],
+                CurrentVersions = [new CurrentVersionAssignmentDto
+                {
+                                        Object = parent,
+                                        Version = replacement
+                }],
+                ReportJson = "{}",
+                RemovedLinks = [oldLink]
+            });
         }, CancellationToken.None);
 
         Assert.Equal(ImportCommitState.Completed, result.State);
@@ -195,10 +222,20 @@ public sealed class ImportPersistenceTests
         Assert.True(await verify.Versions.AnyAsync(x => x.Id == oldVersionId));
     }
 
-    private static ImportLookup Lookup(string designation = "АБВГ.301245.001") => new([designation], []);
+    private static ImportLookupDto Lookup(string designation = "АБВГ.301245.001") => new ImportLookupDto
+    {
+        Designations = [designation],
+        NormalizedStandardNames = []
+    };
 
-    private static Task<ImportPersistenceResult> CompleteEmptyImport(IImportDatabaseService persistence, Guid id) =>
-        persistence.ExecuteAsync(id, Lookup(), (_, _) => Task.FromResult(new ImportWritePlan([], [], [], "{}")), CancellationToken.None);
+    private static Task<ImportPersistenceResultDto> CompleteEmptyImport(IImportDatabaseService persistence, Guid id) =>
+        persistence.ExecuteAsync(id, Lookup(), (_, _) => Task.FromResult(new ImportWritePlanDto
+        {
+            NewObjects = [],
+            NewVersions = [],
+            CurrentVersions = [],
+            ReportJson = "{}"
+        }), CancellationToken.None);
 
     private sealed class Fixture : IAsyncDisposable
     {

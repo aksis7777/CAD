@@ -13,7 +13,7 @@ public sealed class CadSourceFactory(IEnumerable<ICadSourceAdapter> adapters) : 
         .ToDictionary(adapter => adapter.Kind, StringComparer.OrdinalIgnoreCase);
 
     /// <inheritdoc />
-    public Task<ICadSession> OpenAsync(CadSourceDescriptor descriptor, CancellationToken cancellationToken)
+    public Task<ICadSession> OpenAsync(CadSourceDescriptorDto descriptor, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(descriptor);
         cancellationToken.ThrowIfCancellationRequested();

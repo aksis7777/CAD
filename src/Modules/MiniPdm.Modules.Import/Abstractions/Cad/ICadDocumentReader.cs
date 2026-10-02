@@ -13,5 +13,5 @@ public interface ICadDocumentReader
     /// <param name="document">Ссылка с именем файла для чтения.</param>
     /// <param name="cancellationToken">Токен отмены чтения.</param>
     /// <returns>Результат с документом либо сведениями об ошибке чтения.</returns>
-    Task<CadReadResult> ReadAsync(CadDocumentRef document, CancellationToken cancellationToken);
+    Task<CadReadResultDto> ReadAsync(CadDocumentRefDto document, CancellationToken cancellationToken);
 }

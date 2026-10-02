@@ -69,7 +69,7 @@ public sealed class FileImportStorage(IOptions<ImportStorageOptions> options) : 
     }
 
     /// <inheritdoc />
-    public async Task PromoteAsync(Guid importId, CadSourceDescriptor source, IReadOnlyCollection<string> acceptedFiles, CancellationToken ct)
+    public async Task PromoteAsync(Guid importId, CadSourceDescriptorDto source, IReadOnlyCollection<string> acceptedFiles, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(acceptedFiles);
@@ -253,7 +253,14 @@ public sealed class FileImportStorage(IOptions<ImportStorageOptions> options) : 
         /// <summary>
         /// Описатель временного источника с загруженными файлами.
         /// </summary>
-        public CadSourceDescriptor SourceDescriptor { get; } = new("file-json", path);
+        public CadSourceDescriptorDto SourceDescriptor
+        {
+            get;
+        } = new()
+        {
+            Kind = "file-json",
+            Location = path
+        };
         /// <summary>
         /// Освобождает блокировку и удаляет временный каталог попытки.
         /// </summary>

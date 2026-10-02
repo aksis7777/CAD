@@ -458,26 +458,80 @@ public sealed class DesktopWindowTests
                             Content = new StringContent("{\"code\":\"OutcomeUnknown\",\"message\":\"Temporary response failure.\"}", Encoding.UTF8, "application/json")
                         });
                     }
-                    return Ok(new ImportReportDto(importId,
-                    [new ImportFileResultDto("test.a3d", ImportFileStatus.Accepted, null,
-                        ImportFileAction.Created, [])]));
+                    return Ok(new ImportReportDto
+                    {
+                        ImportId = importId,
+                        Files = [new ImportFileResultDto
+                        {
+                                                        FileName = "test.a3d",
+                                                        Status = ImportFileStatus.Accepted,
+                                                        Reason = null,
+                                                        Action = ImportFileAction.Created,
+                                                        Warnings = []
+                        }]
+                    });
                 }
             }
 
             if (request.Method == HttpMethod.Put && path == $"/api/objects/{AssemblyId:D}/versions/2/state")
             {
                 CurrentAssemblyState = "Approved";
-                return Ok(new VersionMutationDto(AssemblyId, CurrentVersionId, 2, CurrentAssemblyState,
-                    CurrentVersionId, ConcurrencyToken, []));
+                return Ok(new VersionMutationDto
+                {
+                    ObjectId = AssemblyId,
+                    VersionId = CurrentVersionId,
+                    VersionNumber = 2,
+                    State = CurrentAssemblyState,
+                    CurrentVersionId = CurrentVersionId,
+                    ConcurrencyToken = ConcurrencyToken,
+                    Warnings = []
+                });
             }
 
             if (request.Method == HttpMethod.Get && path == "/api/objects")
-                return Ok(new ObjectSearchPageDto(
-                [
-                    new(AssemblyId, "Assembly", "АБВГ.123456.001", "Main assembly", CurrentVersionId, 2, CurrentAssemblyState, null, ConcurrencyToken, false),
-                    new(HistoricalChildId, "Part", "АБВГ.123456.002", "Historical part", null, null, null, null, Guid.NewGuid(), true),
-                    new(CurrentChildId, "StandardPart", null, "Current fastener", null, null, null, null, Guid.NewGuid(), true)
-                ], 0, 50, false));
+                return Ok(new ObjectSearchPageDto
+                {
+                    Items = [new ObjectSearchItemDto
+                    {
+                                                Id = AssemblyId,
+                                                Type = "Assembly",
+                                                Designation = "АБВГ.123456.001",
+                                                Name = "Main assembly",
+                                                CurrentVersionId = CurrentVersionId,
+                                                VersionNumber = 2,
+                                                State = CurrentAssemblyState,
+                                                UnitMassKg = null,
+                                                ConcurrencyToken = ConcurrencyToken,
+                                                NoCurrentVersion = false
+                    }, new ObjectSearchItemDto
+{
+        Id = HistoricalChildId,
+        Type = "Part",
+        Designation = "АБВГ.123456.002",
+        Name = "Historical part",
+        CurrentVersionId = null,
+        VersionNumber = null,
+        State = null,
+        UnitMassKg = null,
+        ConcurrencyToken = Guid.NewGuid(),
+        NoCurrentVersion = true
+}, new ObjectSearchItemDto
+{
+        Id = CurrentChildId,
+        Type = "StandardPart",
+        Designation = null,
+        Name = "Current fastener",
+        CurrentVersionId = null,
+        VersionNumber = null,
+        State = null,
+        UnitMassKg = null,
+        ConcurrencyToken = Guid.NewGuid(),
+        NoCurrentVersion = true
+}],
+                    Offset = 0,
+                    Limit = 50,
+                    HasMore = false
+                });
 
             if (request.Method == HttpMethod.Get && path == "/api/background-tasks")
                 return Ok(Array.Empty<BackgroundTaskDto>());
@@ -489,24 +543,91 @@ public sealed class DesktopWindowTests
             }
 
             if (request.Method == HttpMethod.Get && path == $"/api/objects/{AssemblyId:D}/versions/1/composition")
-                return Ok(new VersionCompositionDto(AssemblyId, 1, ConcurrencyToken,
-                    [new(HistoricalChildId, 4, "Part", "АБВГ.123456.002", "Historical part", false)]));
+                return Ok(new VersionCompositionDto
+                {
+                    ObjectId = AssemblyId,
+                    Version = 1,
+                    ConcurrencyToken = ConcurrencyToken,
+                    Items = [new VersionCompositionItemDto
+                    {
+                                                ChildObjectId = HistoricalChildId,
+                                                Quantity = 4,
+                                                Type = "Part",
+                                                Designation = "АБВГ.123456.002",
+                                                Name = "Historical part",
+                                                NoCurrentVersion = false
+                    }]
+                });
 
             if (request.Method == HttpMethod.Get && path == $"/api/objects/{AssemblyId:D}/versions/2/composition")
-                return Ok(new VersionCompositionDto(AssemblyId, 2, ConcurrencyToken, []));
+                return Ok(new VersionCompositionDto
+                {
+                    ObjectId = AssemblyId,
+                    Version = 2,
+                    ConcurrencyToken = ConcurrencyToken,
+                    Items = []
+                });
 
             if (request.Method == HttpMethod.Get && path == $"/api/objects/{AssemblyId:D}/composition")
-                return Ok(new CompositionTreeDto(AssemblyId,
-                [
-                    new(AssemblyId, [AssemblyId], null, 1, "Assembly", "АБВГ.123456.001", "Main assembly", null,
-                        CurrentVersionId, 2, "Approved", null, null, null),
-                    new(CurrentChildId, [AssemblyId, CurrentChildId], [AssemblyId], 2, "StandardPart", null,
-                        "Current fastener", null, Guid.NewGuid(), 1, "Approved", 0.25m, null, null)
-                ]));
+                return Ok(new CompositionTreeDto
+                {
+                    RootObjectId = AssemblyId,
+                    Nodes = [new CompositionNodeDto
+                    {
+                                                ObjectId = AssemblyId,
+                                                ObjectPath = [AssemblyId],
+                                                ParentPath = null,
+                                                LocalQuantity = 1,
+                                                Type = "Assembly",
+                                                Designation = "АБВГ.123456.001",
+                                                Name = "Main assembly",
+                                                Material = null,
+                                                VersionId = CurrentVersionId,
+                                                VersionNumber = 2,
+                                                State = "Approved",
+                                                UnitMassKg = null,
+                                                ErrorCode = null,
+                                                Error = null
+                    }, new CompositionNodeDto
+{
+        ObjectId = CurrentChildId,
+        ObjectPath = [AssemblyId, CurrentChildId],
+        ParentPath = [AssemblyId],
+        LocalQuantity = 2,
+        Type = "StandardPart",
+        Designation = null,
+        Name = "Current fastener",
+        Material = null,
+        VersionId = Guid.NewGuid(),
+        VersionNumber = 1,
+        State = "Approved",
+        UnitMassKg = 0.25m,
+        ErrorCode = null,
+        Error = null
+}]
+                });
 
             if (request.Method == HttpMethod.Get && path == $"/api/objects/{AssemblyId:D}/calculations")
-                return Ok(new CompositionCalculationDto(AssemblyId, 12.5m, true,
-                    [new(CurrentChildId, "StandardPart", null, "Current fastener", null, Guid.NewGuid(), 1, 2m, 0.25m, 0.5m)], []));
+                return Ok(new CompositionCalculationDto
+                {
+                    RootObjectId = AssemblyId,
+                    TotalMassKg = 12.5m,
+                    IsComplete = true,
+                    Items = [new SpecificationItemDto
+                    {
+                                                ObjectId = CurrentChildId,
+                                                Type = "StandardPart",
+                                                Designation = null,
+                                                Name = "Current fastener",
+                                                Material = null,
+                                                VersionId = Guid.NewGuid(),
+                                                VersionNumber = 1,
+                                                Quantity = 2m,
+                                                UnitMassKg = 0.25m,
+                                                TotalMassKg = 0.5m
+                    }],
+                    Diagnostics = []
+                });
 
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound)
             {
@@ -524,14 +645,43 @@ public sealed class DesktopWindowTests
             var selectedId = historical ? HistoricalVersionId : CurrentVersionId;
             var versionNumber = historical ? 1 : 2;
             var selectedState = historical ? "InWork" : CurrentAssemblyState;
-            return new ObjectCardDto(AssemblyId, "Assembly", "АБВГ.123456.001", "Main assembly", CurrentVersionId,
-                ConcurrencyToken,
-                new ObjectVersionDto(selectedId, versionNumber, selectedState,
-                    historical ? "Historical name" : "Current name", null, null, null, !historical),
-                [
-                    new ObjectVersionSummaryDto(CurrentVersionId, 2, CurrentAssemblyState, true),
-                    new ObjectVersionSummaryDto(HistoricalVersionId, 1, "InWork", false)
-                ], null, null);
+            return new ObjectCardDto
+            {
+                Id = AssemblyId,
+                Type = "Assembly",
+                Designation = "АБВГ.123456.001",
+                Name = "Main assembly",
+                CurrentVersionId = CurrentVersionId,
+                ConcurrencyToken = ConcurrencyToken,
+                SelectedVersion = new ObjectVersionDto
+                {
+                    Id = selectedId,
+                    Version = versionNumber,
+                    State = selectedState,
+                    Name = historical ? "Historical name" : "Current name",
+                    Material = null,
+                    UnitMassKg = null,
+                    SourceReference = null,
+                    IsCurrent = !historical
+                },
+                Versions = [new ObjectVersionSummaryDto
+                {
+                                        Id = CurrentVersionId,
+                                        Version = 2,
+                                        State = CurrentAssemblyState,
+                                        IsCurrent = true
+                }, new ObjectVersionSummaryDto
+{
+        Id = HistoricalVersionId,
+        Version = 1,
+        State = "InWork",
+        IsCurrent = false
+}
+
+    ],
+                ErrorCode = null,
+                Error = null
+            };
         }
 
         /// <summary>

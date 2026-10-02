@@ -139,8 +139,17 @@ public sealed class ImportSourceFilesTests
         Directory.CreateDirectory(promoting);
 
         var db = new FakeImportPersistence(id => id == completedId
-            ? new ImportPersistenceResult(ImportCommitState.Completed, true, "{}")
-            : new ImportPersistenceResult(ImportCommitState.ConfirmedRollback, false, null));
+            ? new ImportPersistenceResultDto
+            {
+                State = ImportCommitState.Completed,
+                Replayed = true,
+                ReportJson = "{}"
+            } : new ImportPersistenceResultDto
+            {
+                State = ImportCommitState.ConfirmedRollback,
+                Replayed = false,
+                ReportJson = null
+            });
         var recovery = CreateRecovery(fixture, storage, db);
 
         var deleted = await recovery.RecoverAsync();
@@ -187,7 +196,13 @@ public sealed class ImportSourceFilesTests
         var folder = Path.Combine(fixture.Root, "imports", $".{id:D}.{Guid.NewGuid():N}.promoting");
         Directory.CreateDirectory(folder);
         var recovery = CreateRecovery(fixture, storage, new FakeImportPersistence(_ =>
-            new ImportPersistenceResult(ImportCommitState.Unknown, false, null, "connection unavailable")));
+            new ImportPersistenceResultDto
+            {
+                State = ImportCommitState.Unknown,
+                Replayed = false,
+                ReportJson = null,
+                Error = "connection unavailable"
+            }));
 
         var result = await recovery.RecoverDetailedAsync();
 
@@ -210,7 +225,12 @@ public sealed class ImportSourceFilesTests
         var stale = Path.Combine(fixture.Root, "uploads", id.ToString("D"), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(stale);
         await File.WriteAllTextAsync(Path.Combine(stale, ".active"), string.Empty);
-        var recovery = CreateRecovery(fixture, storage, new FakeImportPersistence(_ => new ImportPersistenceResult(ImportCommitState.Completed, true, "{}")));
+        var recovery = CreateRecovery(fixture, storage, new FakeImportPersistence(_ => new ImportPersistenceResultDto
+        {
+            State = ImportCommitState.Completed,
+            Replayed = true,
+            ReportJson = "{}"
+        }));
 
         Assert.Equal(1, await recovery.RecoverAsync());
         Assert.True(Directory.Exists(active.SourceDescriptor.Location));
@@ -240,11 +260,11 @@ public sealed class ImportSourceFilesTests
     private static ImportSourceRecovery CreateRecovery(Fixture fixture, FileImportStorage storage, IImportDatabaseService persistence) =>
         new(Options.Create(new ImportStorageOptions { DataRoot = fixture.Root }), storage, storage, persistence);
 
-    private sealed class FakeImportPersistence(Func<Guid, ImportPersistenceResult> resolve) : IImportDatabaseService
+    private sealed class FakeImportPersistence(Func<Guid, ImportPersistenceResultDto> resolve) : IImportDatabaseService
     {
-        public Task<ImportPersistenceResult> ExecuteAsync(Guid importId, ImportLookup lookup, Func<ImportSnapshot, CancellationToken, Task<ImportWritePlan>> prepare, CancellationToken ct) => throw new NotSupportedException();
-        public Task<ImportPersistenceResult?> FindAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
-        public Task<ImportPersistenceResult> ResolveAsync(Guid id, CancellationToken ct) => Task.FromResult(resolve(id));
+        public Task<ImportPersistenceResultDto> ExecuteAsync(Guid importId, ImportLookupDto lookup, Func<ImportSnapshotDto, CancellationToken, Task<ImportWritePlanDto>> prepare, CancellationToken ct) => throw new NotSupportedException();
+        public Task<ImportPersistenceResultDto?> FindAsync(Guid id, CancellationToken ct) => throw new NotSupportedException();
+        public Task<ImportPersistenceResultDto> ResolveAsync(Guid id, CancellationToken ct) => Task.FromResult(resolve(id));
         public async Task<bool> CompensateIfRolledBackAsync(Guid id, Func<CancellationToken, Task> compensate, CancellationToken ct)
         {
             ct.ThrowIfCancellationRequested();

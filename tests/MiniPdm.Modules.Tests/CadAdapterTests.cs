@@ -43,7 +43,10 @@ public sealed class CadAdapterTests
             """);
         await using var session = await fixture.OpenAsync();
 
-        var result = await session.Reader.ReadAsync(new CadDocumentRef("disk-name.m3d"), CancellationToken.None);
+        var result = await session.Reader.ReadAsync(new CadDocumentRefDto
+        {
+            FileName = "disk-name.m3d"
+        }, CancellationToken.None);
 
         Assert.Null(result.Error);
         Assert.NotNull(result.Document);
@@ -70,7 +73,10 @@ public sealed class CadAdapterTests
         await fixture.WriteAsync("invalid.m3d", contents);
         await using var session = await fixture.OpenAsync();
 
-        var result = await session.Reader.ReadAsync(new CadDocumentRef("invalid.m3d"), CancellationToken.None);
+        var result = await session.Reader.ReadAsync(new CadDocumentRefDto
+        {
+            FileName = "invalid.m3d"
+        }, CancellationToken.None);
 
         Assert.Contains(expectedError, result.Error, StringComparison.OrdinalIgnoreCase);
     }
@@ -88,8 +94,14 @@ public sealed class CadAdapterTests
             """);
         await using var session = await fixture.OpenAsync();
 
-        var mismatch = await session.Reader.ReadAsync(new CadDocumentRef("assembly.m3d"), CancellationToken.None);
-        var missing = await session.Reader.ReadAsync(new CadDocumentRef("missing.m3d"), CancellationToken.None);
+        var mismatch = await session.Reader.ReadAsync(new CadDocumentRefDto
+        {
+            FileName = "assembly.m3d"
+        }, CancellationToken.None);
+        var missing = await session.Reader.ReadAsync(new CadDocumentRefDto
+        {
+            FileName = "missing.m3d"
+        }, CancellationToken.None);
 
         Assert.Contains("does not match", mismatch.Error);
         Assert.Contains("not found", missing.Error);
@@ -105,7 +117,10 @@ public sealed class CadAdapterTests
         await using var fixture = await Fixture.CreateAsync();
         await using var session = await fixture.OpenAsync();
 
-        var result = await session.Reader.ReadAsync(new CadDocumentRef("../outside.m3d"), CancellationToken.None);
+        var result = await session.Reader.ReadAsync(new CadDocumentRefDto
+        {
+            FileName = "../outside.m3d"
+        }, CancellationToken.None);
 
         Assert.Contains("file name only", result.Error);
     }
@@ -123,7 +138,10 @@ public sealed class CadAdapterTests
             """);
         await using var session = await fixture.OpenAsync();
 
-        var result = await session.Reader.ReadAsync(new CadDocumentRef("invalid-values.m3d"), CancellationToken.None);
+        var result = await session.Reader.ReadAsync(new CadDocumentRefDto
+        {
+            FileName = "invalid-values.m3d"
+        }, CancellationToken.None);
 
         Assert.Null(result.Error);
         Assert.NotNull(result.Document);
@@ -144,7 +162,10 @@ public sealed class CadAdapterTests
             """);
         await using var session = await fixture.OpenAsync();
 
-        var result = await session.Reader.ReadAsync(new CadDocumentRef("invalid-count.m3d"), CancellationToken.None);
+        var result = await session.Reader.ReadAsync(new CadDocumentRefDto
+        {
+            FileName = "invalid-count.m3d"
+        }, CancellationToken.None);
 
         Assert.NotNull(result.Error);
         Assert.NotNull(result.Document);
@@ -166,7 +187,10 @@ public sealed class CadAdapterTests
             """);
         await using var session = await fixture.OpenAsync();
 
-        var result = await session.Reader.ReadAsync(new CadDocumentRef("bom.m3d"), CancellationToken.None);
+        var result = await session.Reader.ReadAsync(new CadDocumentRefDto
+        {
+            FileName = "bom.m3d"
+        }, CancellationToken.None);
 
         Assert.Null(result.Error);
         Assert.Equal("Item", result.Document?.Name);
@@ -203,7 +227,11 @@ public sealed class CadAdapterTests
         }
 
         public Task<ICadSession> OpenAsync() => new FileJsonCadSourceAdapter().OpenAsync(
-            new CadSourceDescriptor(FileJsonCadSourceAdapter.SourceKind, directory), CancellationToken.None);
+            new CadSourceDescriptorDto
+            {
+                Kind = FileJsonCadSourceAdapter.SourceKind,
+                Location = directory
+            }, CancellationToken.None);
 
         public ValueTask DisposeAsync()
         {

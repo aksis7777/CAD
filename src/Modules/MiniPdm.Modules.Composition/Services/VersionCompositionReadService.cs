@@ -25,9 +25,21 @@ public sealed class VersionCompositionReadService(PdmDbContext context)
         CancellationToken cancellationToken)
     {
         var row = await ReadAsync(objectId, version, cancellationToken);
-        return row is null ? null : new VersionCompositionDto(row.ObjectId, row.Version, row.ConcurrencyToken,
-            row.Items.Select(item => new VersionCompositionItemDto(item.ChildObjectId, item.Quantity,
-                TypeName(item.Type), item.Designation, item.Name, item.NoCurrentVersion)).ToArray());
+        return row is null ? null : new VersionCompositionDto
+        {
+            ObjectId = row.ObjectId,
+            Version = row.Version,
+            ConcurrencyToken = row.ConcurrencyToken,
+            Items = row.Items.Select(item => new VersionCompositionItemDto
+            {
+                ChildObjectId = item.ChildObjectId,
+                Quantity = item.Quantity,
+                Type = TypeName(item.Type),
+                Designation = item.Designation,
+                Name = item.Name,
+                NoCurrentVersion = item.NoCurrentVersion
+            }).ToArray()
+        };
     }
 
     /// <summary>
@@ -37,7 +49,7 @@ public sealed class VersionCompositionReadService(PdmDbContext context)
     /// <param name="version">Номер версии.</param>
     /// <param name="cancellationToken">Токен отмены запроса.</param>
     /// <returns>Строка состава версии либо <see langword="null"/>, если версия не найдена.</returns>
-    public async Task<VersionCompositionReadRow?> ReadAsync(Guid objectId, int version,
+    public async Task<VersionCompositionReadRowDto?> ReadAsync(Guid objectId, int version,
         CancellationToken cancellationToken)
     {
         var row = await context.Versions
@@ -69,9 +81,21 @@ public sealed class VersionCompositionReadService(PdmDbContext context)
 
         return row is null
             ? null
-            : new VersionCompositionReadRow(row.ObjectId, row.Version, row.ConcurrencyToken,
-                row.Items.Select(item => new VersionCompositionItemReadRow(item.ChildObjectId, item.Quantity,
-                    item.Type, item.Designation, item.Name, item.NoCurrentVersion)).ToArray());
+            : new VersionCompositionReadRowDto
+            {
+                ObjectId = row.ObjectId,
+                Version = row.Version,
+                ConcurrencyToken = row.ConcurrencyToken,
+                Items = row.Items.Select(item => new VersionCompositionItemReadRowDto
+                {
+                    ChildObjectId = item.ChildObjectId,
+                    Quantity = item.Quantity,
+                    Type = item.Type,
+                    Designation = item.Designation,
+                    Name = item.Name,
+                    NoCurrentVersion = item.NoCurrentVersion
+                }).ToArray()
+            };
     }
 
     private static string TypeName(PdmObjectType type) => type switch

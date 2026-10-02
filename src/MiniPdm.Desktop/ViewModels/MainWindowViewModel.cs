@@ -677,14 +677,20 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IDisposable
         var name = IsStandardPart ? SelectedObject.Name : NameText;
         var material = IsAssembly || IsStandardPart ? null : MaterialText;
         await ExecuteMutationAsync(token => _client.UpdateVersionAttributesAsync(objectId,
-            version, new UpdateVersionAttributesRequestDto(name, material, mass, token)));
+            version, new UpdateVersionAttributesRequestDto
+            {
+                Name = name,
+                Material = material,
+                Mass = mass,
+                ExpectedConcurrencyToken = token
+            }));
     }
 
     private async Task SaveCompositionAsync()
     {
         if (SelectedObject is null || SelectedVersion is null || SelectedCard is null || _compositionConcurrencyToken != SelectedCard.ConcurrencyToken)
             return;
-        var components = new List<CompositionItemDto>();
+        var components = new List<CompositionItemDto> { };
         foreach (var item in Composition.Components)
         {
             if (!item.TryGetPositiveQuantity(out var quantity))
@@ -692,13 +698,21 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IDisposable
                 MessageText = $"Укажите для компонента «{item.Label}» положительное целое количество в диапазоне Int32.";
                 return;
             }
-            components.Add(new CompositionItemDto(item.ChildObjectId, quantity));
+            components.Add(new CompositionItemDto
+            {
+                ChildObjectId = item.ChildObjectId,
+                Quantity = quantity
+            });
         }
         var objectId = SelectedObject.Id;
         var version = SelectedVersion.Version;
         var concurrencyToken = _compositionConcurrencyToken.Value;
         await ExecuteMutationAsync(_ => _client.ReplaceCompositionAsync(objectId,
-            version, new ReplaceCompositionRequestDto(components, concurrencyToken)));
+            version, new ReplaceCompositionRequestDto
+            {
+                Components = components,
+                ExpectedConcurrencyToken = concurrencyToken
+            }));
     }
 
     private async Task CloneAsync()
@@ -708,7 +722,11 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IDisposable
         var objectId = SelectedObject.Id;
         var version = SelectedVersion.Version;
         await ExecuteMutationAsync(token => _client.CloneVersionAsync(objectId,
-            new CloneVersionRequestDto(version, token)));
+            new CloneVersionRequestDto
+            {
+                SourceVersion = version,
+                ExpectedConcurrencyToken = token
+            }));
     }
 
     private async Task ChangeStateAsync(string state)
@@ -718,7 +736,11 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IDisposable
         var objectId = SelectedObject.Id;
         var version = SelectedVersion.Version;
         await ExecuteMutationAsync(token => _client.ChangeVersionStateAsync(objectId,
-            version, new ChangeVersionStateRequestDto(state, token)));
+            version, new ChangeVersionStateRequestDto
+            {
+                State = state,
+                ExpectedConcurrencyToken = token
+            }));
     }
 
     private async Task ExecuteMutationAsync(Func<Guid, Task<VersionMutationDto>> operation)
@@ -868,9 +890,19 @@ public sealed class MainWindowViewModel : INotifyPropertyChanged, IDisposable
         var item = Objects.FirstOrDefault(x => x.Id == objectId);
         if (item is null)
         {
-            item = new ObjectSearchItemDto(node.Node.ObjectId, node.Node.Type, node.Node.Designation, node.Node.Name,
-                node.Node.VersionId, node.Node.VersionNumber, node.Node.State, node.Node.UnitMassKg, Guid.Empty,
-                node.Node.VersionId is null);
+            item = new ObjectSearchItemDto
+            {
+                Id = node.Node.ObjectId,
+                Type = node.Node.Type,
+                Designation = node.Node.Designation,
+                Name = node.Node.Name,
+                CurrentVersionId = node.Node.VersionId,
+                VersionNumber = node.Node.VersionNumber,
+                State = node.Node.State,
+                UnitMassKg = node.Node.UnitMassKg,
+                ConcurrencyToken = Guid.Empty,
+                NoCurrentVersion = node.Node.VersionId is null
+            };
             Objects.Insert(0, item);
         }
         SelectedObject = item;

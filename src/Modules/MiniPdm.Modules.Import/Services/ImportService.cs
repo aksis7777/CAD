@@ -37,7 +37,7 @@ public sealed class ImportService(
     /// <param name="source">Описатель CAD-источника.</param>
     /// <param name="cancellationToken">Токен отмены до начала внешних побочных эффектов.</param>
     /// <returns>Задача с отчётом по принятым и отклонённым файлам.</returns>
-    public async Task<ImportReportDto> ExecuteAsync(Guid importId, CadSourceDescriptor source, CancellationToken cancellationToken)
+    public async Task<ImportReportDto> ExecuteAsync(Guid importId, CadSourceDescriptorDto source, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var replay = await persistence.FindAsync(importId, cancellationToken);
@@ -56,7 +56,7 @@ public sealed class ImportService(
         var lookup = validator.CreateLookup();
         var promoted = false;
         ImportPackagePlan? finalPlan = null;
-        ImportPersistenceResult result;
+        ImportPersistenceResultDto result;
         try
         {
             // Cancellation is observed after the transaction lock is acquired and before file promotion.
@@ -119,7 +119,7 @@ public sealed class ImportService(
         throw new ImportSaveException("Import persistence outcome is unknown; source files were retained for recovery.");
     }
 
-    private async Task<ImportPersistenceResult?> ResolveAfterFailureAsync(Guid id)
+    private async Task<ImportPersistenceResultDto?> ResolveAfterFailureAsync(Guid id)
     {
         try
         {
@@ -149,7 +149,7 @@ public sealed class ImportService(
         JsonSerializer.Deserialize<ImportReportDto>(json, ReportJsonOptions)
         ?? throw new ImportSaveException("The stored import report is invalid.");
 
-    private async Task<IReadOnlyList<ImportPackageValidator.FileEntry>> ReadPackageAsync(CadSourceDescriptor descriptor, CancellationToken ct)
+    private async Task<IReadOnlyList<ImportPackageValidator.FileEntry>> ReadPackageAsync(CadSourceDescriptorDto descriptor, CancellationToken ct)
     {
         await using var session = await cadSourceFactory.OpenAsync(descriptor, ct);
         var files = new List<ImportPackageValidator.FileEntry>();

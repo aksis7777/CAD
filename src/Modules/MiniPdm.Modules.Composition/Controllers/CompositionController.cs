@@ -106,18 +106,29 @@ public sealed class CompositionController(ISender sender) : ControllerBase
         _ => StatusCode(StatusCodes.Status500InternalServerError)
     };
 
-    private static VersionMutationDto ToDto(VersionMutationResult result) => new(
-        result.ObjectId,
-        result.VersionId!.Value,
-        result.VersionNumber!.Value,
-        result.State!.Value.ToString(),
-        result.CurrentVersionId,
-        result.ConcurrencyToken!.Value,
-        result.Warnings);
+    private static VersionMutationDto ToDto(VersionMutationResult result) => new()
+    {
+        ObjectId = result.ObjectId,
+        VersionId = result.VersionId!.Value,
+        VersionNumber = result.VersionNumber!.Value,
+        State = result.State!.Value.ToString(),
+        CurrentVersionId = result.CurrentVersionId,
+        ConcurrencyToken = result.ConcurrencyToken!.Value,
+        Warnings = result.Warnings
+    };
 
     private static VersionMutationErrorDto ToErrorDto(VersionMutationError? error) => error is null
-        ? new("VersionMutationFailed", "The version mutation could not be completed.", null)
-        : new(error.Code, error.Message, error.CyclePath);
+        ? new()
+        {
+            Code = "VersionMutationFailed",
+            Message = "The version mutation could not be completed.",
+            CyclePath = null
+        } : new()
+        {
+            Code = error.Code,
+            Message = error.Message,
+            CyclePath = error.CyclePath
+        };
 
     private ObjectResult UncertainWrite() => Problem(
         statusCode: StatusCodes.Status503ServiceUnavailable,
