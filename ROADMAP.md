@@ -33,7 +33,7 @@
 
 ## Этап 4 — API и Desktop UI
 
-1. Реализовать Controllers/Contracts и MediatR handlers модулей. **Endpoints и handlers находятся в функциональных модулях; Commands и Queries разделены. Handlers вызывают module services, которые используют scoped `PdmDbContext` для EF операций. Build и 141 тестов прошли после этого рефакторинга; HTTP smoke подтвердил import/version и background-task сценарии.**
+1. Реализовать Controllers/Contracts и MediatR handlers модулей. **Endpoints и handlers находятся в функциональных модулях; Commands и Queries разделены, сообщение и handler каждого сценария размещены вместе в `Command.cs`/`Query.cs`. Handlers вызывают module services, которые используют scoped `PdmDbContext` для EF операций. Build и 141 тестов прошли после этого рефакторинга; HTTP smoke подтвердил import/version и background-task сценарии.**
 2. Реализовать Avalonia MVVM: поиск, карточка, дерево, импорт/отчёт, расчёт и спецификация. **Shell и модульные UI реализованы; headless проверки прошли. Регрессия отчёта исправлена: контекст задан на содержимом вкладки; UI-тесты покрывают два импорта подряд, отмену picker и восстановление после неопределённого ответа.**
 3. Проверить пользовательские сценарии через HTTP. **Проверены поиск/карточка, CAD import, расчёты, version clone/state/attributes/composition, графовые конфликты и concurrency; фоновые HTTP сценарии приведены на этапе 5.**
 
