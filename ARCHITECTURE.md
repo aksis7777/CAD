@@ -1,5 +1,7 @@
 # Архитектура Мини-PDM
 
+Native запуск Avalonia использует тот же Docker backend, PostgreSQL и named volumes, что и noVNC режим; `compose.native.yml` публикует API только на localhost, а launcher ждёт `/health` перед открытием self-contained Desktop.
+
 Нормативные решения и статусы требований — в [PDM_RULES.md](PDM_RULES.md). Здесь приведена согласованная структура и назначение компонентов; новые правила здесь не вводятся.
 
 ## Контекст
@@ -123,7 +125,7 @@ Import module service проверяет входные документы и с
 
 ## Локальный запуск контейнеров
 
-Корневой `Dockerfile` имеет отдельные цели API, EF Core migration bundle и Avalonia Desktop. Образы строятся под архитектуру текущего Docker Engine; migration bundle использует установленную в runtime .NET 10 без фиксированного RID. `docker-compose.yml` задаёт последовательность: PostgreSQL проходит health check, одноразовый migration service применяет все ожидающие миграции, API становится healthy, после чего запускается Desktop.
+Корневой `Dockerfile` имеет отдельные цели API, EF Core migration bundle и Avalonia Desktop. Образы строятся под архитектуру текущего Docker Engine; migration bundle использует установленную в runtime .NET 10 без фиксированного RID. `docker-compose.yml` задаёт последовательность: PostgreSQL проходит health check, одноразовый migration service применяет все ожидающие миграции, API становится healthy, после чего запускается Desktop. Дополнительный native launcher объединяет основной compose с `compose.native.yml`, запускает только API и его зависимости под project `cad`, ждёт API health и передаёт localhost API URL в self-contained Avalonia executable. Закрытие desktop процесса не останавливает Compose services; исходная noVNC схема остаётся доступной отдельно.
 
 Desktop сохраняет Avalonia-приложение, а в Docker headless display формируется Xvfb и отображается через noVNC. Открытие корневого URL сразу показывает единственное окно Avalonia. Nginx в Desktop-контейнере обслуживает noVNC, проксирует WebSocket к websockify и перенаправляет только `/pdm-picker/*` на loopback bridge Avalonia; ASP.NET Core API доступен Desktop по Compose network, но не публикует отдельный host port. PostgreSQL и файлы исходников сохраняются в named volumes. API не раздаёт статические страницы.
 

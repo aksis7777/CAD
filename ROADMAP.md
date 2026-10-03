@@ -39,6 +39,8 @@
 
 ## Этап 5 — фоновые задачи и завершение
 
+Дополнение: реализованы optional native launcher и self-contained bundles для Windows, Linux и macOS поверх существующего Docker backend; GitHub Actions workflow публикует артефакт на каждый RID. Скриптовая проверка выполнена, реальный native GUI запуск на целевых ОС пока не проверялся.
+
 1. Подключить `ImportSourceRecovery` к запуску и периодическому выполнению API. **HTTP smoke на временной PostgreSQL подтвердил три миграции, startup cleanup, manual 202/Succeeded, 1 accepted + 11 conflicts под graph lock, persistent interval через API restart, повтор с интервалом в одну минуту и сохранность успешных исходников.**
 2. Реализовать страницу задач с расписанием, состоянием, последним результатом, ошибкой и ручным запуском. **Страница и команды реализованы и входят в headless preview/VM verification.**
 3. Прогнать оба приложенных набора CAD, проверить версии между `cad-export` и `cad-export-v2`. **Оба полных набора по 45 файлов проверены через API; импорт `cad-export-v2` после утверждения текущих версий создал две новые версии, 33 принятых документа не изменились. Import retry учтён в Desktop VM тестах.**
