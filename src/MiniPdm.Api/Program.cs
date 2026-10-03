@@ -1,10 +1,13 @@
 using MediatR;
 using MiniPdm.Api.Extensions;
+using MiniPdm.Api.Errors;
 using MiniPdm.Storage.Extensions;
 using MiniPdm.Modules.BackgroundTasks.Abstractions;
 using MiniPdm.Modules.Import.Infrastructure.SourceFiles;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<LogicExceptionHandler>();
 var handlerAssemblies = new[]
 {
     typeof(Program).Assembly,
@@ -30,6 +33,7 @@ builder.Services.AddSingleton(new BackgroundTaskDefinition(
 builder.Services.AddControllers().AddPdmModules();
 
 var app = builder.Build();
+app.UseExceptionHandler();
 app.MapControllers();
 app.Run();
 

@@ -1,3 +1,5 @@
+using MiniPdm.Common.Exceptions;
+using Resources = MiniPdm.Common.Resources;
 using System.Text.Json;
 using MiniPdm.Contracts.Modules.Import.DtoModels;
 using MiniPdm.Domain.Composition;
@@ -91,7 +93,7 @@ internal static class ImportPackagePlanner
                     && x.Type != doc.Type);
             if (otherType)
             {
-                Reject(file, "This PDM identity is already used by a different object type.");
+                Reject(file, Resources.BusinessLogicException.IdentityTypeConflict);
                 continue;
             }
             var existing = sameIdentity.SingleOrDefault();
@@ -135,9 +137,9 @@ internal static class ImportPackagePlanner
             var candidates = files.Where(x => x.Accepted && x.Document?.Type == PdmObjectType.Assembly
                     && targetObjects.TryGetValue(x, out var obj) && cycleNodes.Contains(obj.Id)).ToArray();
             if (candidates.Length == 0)
-                throw new InvalidOperationException("The current database composition graph already contains a cycle; import is blocked.");
+                throw new BusinessLogicException(Resources.BusinessLogicException.CompositionCycleInDatabase);
             foreach (var file in candidates)
-                Reject(file, "The proposed active composition would create a cycle.");
+                Reject(file, Resources.BusinessLogicException.CompositionCycle);
             CascadePackageRejections(files, byFile);
         }
 
@@ -216,7 +218,7 @@ internal static class ImportPackagePlanner
             {
                 if (!byFile.TryGetValue(fileName, out var child) || !child.Accepted || !targetObjects.TryGetValue(child, out var childObject))
                 {
-                    Reject(file, $"Component file '{fileName}' is unavailable for import.");
+                    Reject(file, string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.BusinessLogicException.ImportComponentUnavailable, fileName));
                     break;
                 }
                 composition[childObject.Id] = count;
@@ -238,7 +240,7 @@ internal static class ImportPackagePlanner
                 foreach (var component in file.ComponentCounts.Keys)
                     if (!byFile.TryGetValue(component, out var child) || !child.Accepted)
                     {
-                        Reject(file, $"Component file '{component}' was rejected or could not be resolved.");
+                        Reject(file, string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.BusinessLogicException.ImportComponentRejected, component));
                         changed = true;
                         break;
                     }

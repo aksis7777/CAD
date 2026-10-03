@@ -1,3 +1,4 @@
+using Resources = MiniPdm.Common.Resources;
 using MiniPdm.Domain.Objects;
 
 namespace MiniPdm.Domain.Versions;
@@ -51,42 +52,42 @@ public static class VersionAttributeRules
         var errors = new List<string>();
         var warnings = new List<string>();
         if (string.IsNullOrWhiteSpace(name))
-            errors.Add("Name is required.");
+            errors.Add(Resources.InputLogicException.PayloadNameRequired);
         if (name?.Length > 512)
-            errors.Add("Name exceeds 512 characters.");
+            errors.Add(Resources.InputLogicException.PayloadNameTooLong);
         if (material?.Length > 256)
-            errors.Add("Material exceeds 256 characters.");
+            errors.Add(Resources.InputLogicException.MaterialTooLong);
         if (type == PdmObjectType.StandardPart && name is not null && ObjectIdentity.NormalizeStandardName(name).Length > 512)
-            errors.Add("Normalized standard part name exceeds 512 characters.");
+            errors.Add(Resources.InputLogicException.StandardNameTooLong);
         if (mass is < 0)
-            errors.Add("Mass cannot be negative.");
+            errors.Add(Resources.InputLogicException.MassNegative);
         if (mass is { } value && (value > 999999999999.999999m || decimal.Round(value, 6) != value))
-            errors.Add("Mass must fit decimal(18,6).");
+            errors.Add(Resources.InputLogicException.MassOutOfRange);
 
         switch (type)
         {
             case PdmObjectType.Assembly:
                 if (material is not null || mass is not null)
-                    errors.Add("Assembly material and mass must be absent.");
+                    errors.Add(Resources.InputLogicException.AssemblyAttributesInvalid);
                 break;
             case PdmObjectType.Part:
                 if (string.IsNullOrWhiteSpace(material))
-                    errors.Add("Part material is required.");
+                    errors.Add(Resources.InputLogicException.PartMaterialRequired);
                 if (mass is null)
-                    warnings.Add("Part mass is missing.");
+                    warnings.Add(Resources.BusinessLogicException.PartMassMissing);
                 else if (mass == 0)
-                    warnings.Add("Part mass is zero.");
+                    warnings.Add(Resources.BusinessLogicException.PartMassZero);
                 break;
             case PdmObjectType.StandardPart:
                 if (material is not null)
-                    errors.Add("Standard parts must not have material.");
+                    errors.Add(Resources.InputLogicException.StandardMaterialInvalid);
                 if (mass is null)
-                    errors.Add("Standard part mass is required.");
+                    errors.Add(Resources.InputLogicException.StandardMassRequired);
                 else if (mass == 0)
-                    warnings.Add("Standard part mass is zero.");
+                    warnings.Add(Resources.BusinessLogicException.StandardPartMassZero);
                 break;
             default:
-                errors.Add("Unknown PDM object type.");
+                errors.Add(Resources.BusinessLogicException.ModelObjectInvalid);
                 break;
         }
         return new VersionAttributeValidation(errors, warnings);

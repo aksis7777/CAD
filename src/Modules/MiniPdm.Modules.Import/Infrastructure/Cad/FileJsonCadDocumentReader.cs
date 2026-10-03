@@ -1,3 +1,4 @@
+using Resources = MiniPdm.Common.Resources;
 using System.Text.Json;
 using MiniPdm.Domain.Objects;
 using MiniPdm.Modules.Import.Abstractions.Cad;
@@ -19,7 +20,7 @@ public sealed class FileJsonCadDocumentReader(string directory) : ICadDocumentRe
         ArgumentNullException.ThrowIfNull(document);
         cancellationToken.ThrowIfCancellationRequested();
         if (!IsFileName(document.FileName))
-            return Failure("Document reference must contain a file name only.");
+            return Failure(Resources.InputLogicException.CadReferenceFilename);
 
         var path = Path.Combine(directory, document.FileName);
         byte[] bytes;
@@ -33,19 +34,19 @@ public sealed class FileJsonCadDocumentReader(string directory) : ICadDocumentRe
         }
         catch (FileNotFoundException)
         {
-            return Failure($"CAD file '{document.FileName}' was not found.");
+            return Failure(string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.InputLogicException.CadNotFound, document.FileName));
         }
         catch (DirectoryNotFoundException)
         {
-            return Failure($"CAD file '{document.FileName}' was not found.");
+            return Failure(string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.InputLogicException.CadNotFound, document.FileName));
         }
         catch (IOException ex)
         {
-            return Failure($"Could not read CAD file '{document.FileName}': {ex.Message}");
+            return Failure(string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.InputLogicException.CadReadError, document.FileName, ex.Message));
         }
         catch (UnauthorizedAccessException ex)
         {
-            return Failure($"Could not read CAD file '{document.FileName}': {ex.Message}");
+            return Failure(string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.InputLogicException.CadReadError, document.FileName, ex.Message));
         }
 
         try
@@ -54,14 +55,14 @@ public sealed class FileJsonCadDocumentReader(string directory) : ICadDocumentRe
             using var json = JsonDocument.Parse(jsonBytes, JsonOptions);
             var root = json.RootElement;
             if (root.ValueKind != JsonValueKind.Object)
-                return Failure("CAD document must be a JSON object.");
+                return Failure(Resources.InputLogicException.CadJsonObject);
 
             if (!root.TryGetProperty("formatVersion", out var formatVersion) ||
                 formatVersion.ValueKind != JsonValueKind.Number || !formatVersion.TryGetInt32(out var version) || version != 1)
-                return Failure("Unsupported or missing formatVersion; expected 1.");
+                return Failure(Resources.InputLogicException.CadFormatVersion);
 
             if (!root.TryGetProperty("type", out var typeElement) || typeElement.ValueKind != JsonValueKind.String)
-                return Failure("Missing or invalid type; expected Assembly, Part, or StandardPart.");
+                return Failure(Resources.InputLogicException.CadTypeMissing);
             var typeText = typeElement.GetString();
             var type = typeText switch
             {
@@ -71,10 +72,10 @@ public sealed class FileJsonCadDocumentReader(string directory) : ICadDocumentRe
                 _ => (PdmObjectType?)null
             };
             if (type is null)
-                return Failure("Invalid type; expected Assembly, Part, or StandardPart.");
+                return Failure(Resources.InputLogicException.CadTypeInvalid);
 
             if (!root.TryGetProperty("name", out var nameElement) || nameElement.ValueKind != JsonValueKind.String)
-                return Failure("Missing or invalid name.");
+                return Failure(Resources.InputLogicException.CadNameMissing);
 
             string? designation = ReadOptionalString(root, "designation", out var designationError);
             if (designationError is not null)
@@ -97,27 +98,27 @@ public sealed class FileJsonCadDocumentReader(string directory) : ICadDocumentRe
             var extension = Path.GetExtension(document.FileName);
             if ((type == PdmObjectType.Assembly && !extension.Equals(".a3d", StringComparison.OrdinalIgnoreCase)) ||
                 (type != PdmObjectType.Assembly && !extension.Equals(".m3d", StringComparison.OrdinalIgnoreCase)))
-                return Failure($"CAD file extension '{extension}' does not match type '{typeText}'.", Partial());
+                return Failure(string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.InputLogicException.CadExtensionMismatch, extension, typeText), Partial());
 
             string? material = null;
             decimal? mass = null;
             if (root.TryGetProperty("properties", out var properties) && properties.ValueKind != JsonValueKind.Null)
             {
                 if (properties.ValueKind != JsonValueKind.Object)
-                    return Failure("properties must be an object or null.", Partial());
+                    return Failure(Resources.InputLogicException.CadPropertiesObject, Partial());
                 material = ReadOptionalString(properties, "material", out var materialError);
                 if (materialError is not null)
                     return Failure(materialError, Partial());
                 if (properties.TryGetProperty("mass", out var massElement) && massElement.ValueKind != JsonValueKind.Null)
                 {
                     if (massElement.ValueKind != JsonValueKind.Number || !massElement.TryGetDecimal(out var parsedMass))
-                        return Failure("properties.mass must be a decimal number or null.", Partial(material));
+                        return Failure(Resources.InputLogicException.CadMassInvalid, Partial(material));
                     mass = parsedMass;
                 }
             }
 
             if (!root.TryGetProperty("components", out var componentsElement) || componentsElement.ValueKind != JsonValueKind.Array)
-                return Failure("components must be an array.", Partial(material, mass));
+                return Failure(Resources.InputLogicException.CadComponentsArray, Partial(material, mass));
 
             var components = new List<CadComponentDto> { };
             foreach (var component in componentsElement.EnumerateArray())
@@ -127,7 +128,7 @@ public sealed class FileJsonCadDocumentReader(string directory) : ICadDocumentRe
                     !IsFileName(fileElement.GetString()) ||
                     !component.TryGetProperty("count", out var countElement) || countElement.ValueKind != JsonValueKind.Number ||
                     !countElement.TryGetInt32(out var count))
-                    return Failure("Each component must have a file name and an integer count.", Partial(material, mass, components));
+                    return Failure(Resources.InputLogicException.CadComponentInvalid, Partial(material, mass, components));
                 components.Add(new CadComponentDto
                 {
                     File = fileElement.GetString()!,
@@ -143,7 +144,7 @@ public sealed class FileJsonCadDocumentReader(string directory) : ICadDocumentRe
         }
         catch (JsonException ex)
         {
-            return Failure($"Invalid JSON in CAD file '{document.FileName}': {ex.Message}");
+            return Failure(string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.InputLogicException.CadJsonInvalid, document.FileName, ex.Message));
         }
     }
 
@@ -154,7 +155,7 @@ public sealed class FileJsonCadDocumentReader(string directory) : ICadDocumentRe
             return null;
         if (element.ValueKind != JsonValueKind.String)
         {
-            error = $"{property} must be a string or null.";
+            error = string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.InputLogicException.CadPropertyInvalid, property);
             return null;
         }
         return element.GetString();

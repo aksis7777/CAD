@@ -1,3 +1,4 @@
+using MiniPdm.Common.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using MiniPdm.Modules.Import.Abstractions.Database;
@@ -116,6 +117,8 @@ public sealed class ImportDatabaseService(PdmDbContext context, IDbContextFactor
                     Error = resolution.Error is null ? ex.Message : $"{ex.Message}; resolution failed: {resolution.Error}"
                 };
             }
+            if (rollbackSucceeded && ex is (BusinessLogicException or InputLogicException))
+                throw;
             if (rollbackSucceeded)
                 return new ImportPersistenceResultDto
                 {

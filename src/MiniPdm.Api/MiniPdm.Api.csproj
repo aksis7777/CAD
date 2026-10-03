@@ -9,6 +9,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../MiniPdm.Contracts/MiniPdm.Contracts.csproj" />
+    <ProjectReference Include="../MiniPdm.Common/MiniPdm.Common.csproj" />
     <ProjectReference Include="../MiniPdm.Domain/MiniPdm.Domain.csproj" />
     <ProjectReference Include="../MiniPdm.Storage/MiniPdm.Storage.csproj" />
     <ProjectReference Include="../Modules/MiniPdm.Modules.Import/MiniPdm.Modules.Import.csproj" />

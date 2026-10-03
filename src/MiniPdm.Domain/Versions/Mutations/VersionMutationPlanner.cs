@@ -1,3 +1,4 @@
+using Resources = MiniPdm.Common.Resources;
 using MiniPdm.Domain.Composition;
 using MiniPdm.Domain.Objects;
 using MiniPdm.Domain.Versions;
@@ -21,12 +22,12 @@ public static class VersionMutationPlanner
     public static VersionMutationPlan Clone(VersionMutationSnapshot snapshot)
     {
         if (!IsConsistent(snapshot))
-            return NotFound("VersionNotFound", "The selected version was not found for this object.");
+            return NotFound("VersionNotFound", Resources.BusinessLogicException.VersionNotFound);
         var source = snapshot.SelectedVersion;
         var max = snapshot.Object.Versions.Append(snapshot.Object.CurrentVersion).Where(x => x is not null)
             .Select(x => x!.Version).Append(source.Version).DefaultIfEmpty(0).Max();
         if (max == int.MaxValue)
-            return Invalid("VersionNumberOverflow", "The next version number exceeds Int32.");
+            return Invalid("VersionNumberOverflow", Resources.BusinessLogicException.VersionOverflow);
 
         var clone = CopyVersion(snapshot.Object, source, max + 1, VersionState.InWork);
         var currentId = clone.Id;
@@ -65,7 +66,7 @@ public static class VersionMutationPlanner
         if (obj.Type == PdmObjectType.StandardPart)
         {
             if (name is not null && !string.Equals(name, obj.StandardName, StringComparison.Ordinal))
-                return Invalid("IdentityChange", "Changing a standard part name requires creating a new object.");
+                return Invalid("IdentityChange", Resources.BusinessLogicException.StandardPartNameImmutable);
         }
 
         var validation = VersionAttributeRules.Validate(obj.Type,
@@ -105,14 +106,14 @@ public static class VersionMutationPlanner
         if (precondition is not null)
             return precondition;
         if (snapshot.Object.Type != PdmObjectType.Assembly)
-            return Invalid("CompositionRequiresAssembly", "Only assemblies may contain components.");
+            return Invalid("CompositionRequiresAssembly", Resources.InputLogicException.CompositionMustBeAssembly);
 
         var normalized = CompositionRules.Normalize(composition.Select(x => (x.ChildObjectId, x.Quantity)));
         if (normalized.Errors.Count != 0)
             return Invalid("InvalidComposition", normalized.Errors[0]);
         foreach (var childId in normalized.Items.Keys)
             if (!snapshot.ExistingChildIds.Contains(childId))
-                return Invalid("UnknownChild", $"Component object '{childId}' does not exist.");
+                return Invalid("UnknownChild", string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.BusinessLogicException.UnknownChildObject, childId));
 
         var changed = CopyVersion(snapshot.Object, snapshot.SelectedVersion, snapshot.SelectedVersion.Version,
             snapshot.SelectedVersion.State, preserveId: true);
@@ -154,12 +155,12 @@ public static class VersionMutationPlanner
     public static VersionMutationPlan ChangeState(VersionMutationSnapshot snapshot, VersionState newState)
     {
         if (!IsConsistent(snapshot))
-            return NotFound("VersionNotFound", "The selected version was not found for this object.");
+            return NotFound("VersionNotFound", Resources.BusinessLogicException.VersionNotFound);
         var version = snapshot.SelectedVersion;
         if (version.State == newState)
-            return Conflict("StateUnchanged", "The version is already in the requested state.");
+            return Conflict("StateUnchanged", Resources.BusinessLogicException.VersionStateUnchanged);
         if (!Enum.IsDefined(newState) || !ObjectVersion.CanTransition(version.State, newState))
-            return Conflict("InvalidStateTransition", "The requested version state transition is not allowed.");
+            return Conflict("InvalidStateTransition", Resources.BusinessLogicException.InvalidVersionStateTransition);
 
         var changed = CopyVersion(snapshot.Object, version, version.Version, newState, preserveId: true);
         var currentId = snapshot.Object.CurrentVersionId;
@@ -178,9 +179,9 @@ public static class VersionMutationPlanner
     private static VersionMutationPlan? Editable(VersionMutationSnapshot snapshot)
     {
         if (!IsConsistent(snapshot))
-            return NotFound("VersionNotFound", "The selected version was not found for this object.");
+            return NotFound("VersionNotFound", Resources.BusinessLogicException.VersionNotFound);
         if (snapshot.SelectedVersion.State != VersionState.InWork)
-            return Conflict("VersionImmutable", "Approved and cancelled versions cannot be edited.");
+            return Conflict("VersionImmutable", Resources.BusinessLogicException.VersionImmutable);
         return null;
     }
 
@@ -203,7 +204,7 @@ public static class VersionMutationPlanner
         }
         var cycle = CompositionGraph.FindCyclePath(edges);
         return cycle is null ? null : new VersionMutationPlan(VersionMutationStatus.Conflict, null, null, null, [],
-            new VersionMutationError("Cycle", "The proposed active composition would create a cycle.", cycle), []);
+            new VersionMutationError("Cycle", Resources.BusinessLogicException.CompositionCycle, cycle), []);
     }
 
     private static ObjectVersion CopyVersion(PdmObject obj, ObjectVersion source, int number, VersionState state, bool preserveId = false)

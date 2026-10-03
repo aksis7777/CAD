@@ -1,3 +1,4 @@
+using Resources = MiniPdm.Common.Resources;
 using Microsoft.Extensions.Options;
 using MiniPdm.Modules.Import.Abstractions;
 using MiniPdm.Modules.Import.Abstractions.Cad;
@@ -22,14 +23,14 @@ public sealed class FileImportStorage(IOptions<ImportStorageOptions> options) : 
         var limits = options.Value;
         ValidateLimits(limits);
         if (files.Count == 0 || files.Count > limits.MaxFiles)
-            throw new ImportUploadValidationException($"Upload must contain between 1 and {limits.MaxFiles} files.");
+            throw new ImportUploadValidationException(string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.InputLogicException.CadUploadFileCount, limits.MaxFiles));
         var names = new HashSet<string>(StringComparer.Ordinal);
         foreach (var file in files)
         {
             if (file is null || !IsSafeCadName(file.FileName))
-                throw new ImportUploadValidationException("Each uploaded file must have a safe .a3d or .m3d file name.");
+                throw new ImportUploadValidationException(Resources.InputLogicException.CadUploadSafeFile);
             if (!names.Add(file.FileName))
-                throw new ImportUploadValidationException($"Duplicate file name: {file.FileName}");
+                throw new ImportUploadValidationException(string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.InputLogicException.CadUploadDuplicate, file.FileName));
         }
 
         var attemptPath = Path.Combine(_root, "uploads", importId.ToString("D"), Guid.NewGuid().ToString("N"));
@@ -54,7 +55,7 @@ public sealed class FileImportStorage(IOptions<ImportStorageOptions> options) : 
                     fileBytes += read;
                     total += read;
                     if (fileBytes > limits.MaxFileBytes || total > limits.MaxTotalBytes)
-                        throw new ImportUploadValidationException("Upload exceeds the configured size limit.");
+                        throw new ImportUploadValidationException(Resources.InputLogicException.CadUploadExceeded);
                     await output.WriteAsync(buffer.AsMemory(0, read), ct);
                 }
             }

@@ -377,7 +377,7 @@ public sealed class ImportServiceTests
         var service = new ImportService(new FakeCadFactory([Doc("part.m3d", PdmObjectType.Part,
             "АБВГ.301245.001", mass: 1m)]), persistence, files);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ExecuteAsync(Guid.NewGuid(), Source, default));
+        await Assert.ThrowsAsync<MiniPdm.Common.Exceptions.BusinessLogicException>(() => service.ExecuteAsync(Guid.NewGuid(), Source, default));
         Assert.Equal(0, files.PromoteCount);
     }
 

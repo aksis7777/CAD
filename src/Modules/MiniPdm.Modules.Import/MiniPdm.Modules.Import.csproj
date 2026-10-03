@@ -11,4 +11,7 @@
     <ProjectReference Include="../../MiniPdm.Domain/MiniPdm.Domain.csproj" />
     <ProjectReference Include="../../MiniPdm.Storage/MiniPdm.Storage.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../MiniPdm.Common/MiniPdm.Common.csproj" />
+  </ItemGroup>
 </Project>

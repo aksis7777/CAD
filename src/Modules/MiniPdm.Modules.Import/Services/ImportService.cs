@@ -1,3 +1,4 @@
+using MiniPdm.Common.Exceptions;
 using System.Text.Json;
 using MiniPdm.Contracts.Modules.Import.DtoModels;
 using MiniPdm.Domain.Objects;
@@ -84,6 +85,8 @@ public sealed class ImportService(
                 var recovery = await CompensateOrReplayAsync(importId);
                 if (recovery.Report is not null)
                     return recovery.Report;
+                if (recovery.Compensated && ex is (BusinessLogicException or InputLogicException))
+                    throw;
                 if (recovery.Compensated)
                     throw new ImportSaveException("Import persistence failed and the database confirmed rollback; promoted files were compensated.", ex);
                 throw new ImportSaveException("Import outcome could not be resolved; promoted files were retained for recovery.", ex);

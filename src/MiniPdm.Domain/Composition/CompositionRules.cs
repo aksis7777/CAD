@@ -1,3 +1,4 @@
+using Resources = MiniPdm.Common.Resources;
 namespace MiniPdm.Domain.Composition;
 
 /// <summary>
@@ -52,7 +53,7 @@ public static class CompositionRules
         {
             if (quantity <= 0)
             {
-                errors.Add($"Component '{child}' must have a positive count.");
+                errors.Add(string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.InputLogicException.ComponentCountPositive, child));
                 continue;
             }
 
@@ -65,7 +66,7 @@ public static class CompositionRules
                 }
                 catch (OverflowException)
                 {
-                    errors.Add($"The combined count for component '{child}' exceeds Int32.");
+                    errors.Add(string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.BusinessLogicException.ComponentCountOverflow, child));
                     items.Remove(child);
                 }
             }
@@ -74,6 +75,6 @@ public static class CompositionRules
         }
 
         return new CompositionNormalization<TKey>(items, errors,
-            repeatedValidRows && errors.Count == 0 ? ["Repeated component rows were combined."] : []);
+            repeatedValidRows && errors.Count == 0 ? [Resources.BusinessLogicException.RepeatedComponentRowsCombined] : []);
     }
 }

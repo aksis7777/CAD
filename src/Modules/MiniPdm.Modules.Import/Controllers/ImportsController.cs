@@ -1,3 +1,5 @@
+using MiniPdm.Common.Exceptions;
+using Resources = MiniPdm.Common.Resources;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -34,12 +36,12 @@ public sealed class ImportsController(ISender sender, IImportUploadStorage uploa
     public async Task<IActionResult> Upload(Guid importId, CancellationToken cancellationToken)
     {
         if (importId == Guid.Empty)
-            return BadRequest("Import ID must not be empty.");
+            throw new InputLogicException(Resources.InputLogicException.ImportIdRequired);
         var existingReport = await sender.Send(new GetImportReportQuery(importId), cancellationToken);
         if (existingReport is not null)
             return Ok(existingReport);
         if (!Request.HasFormContentType)
-            return BadRequest("Expected multipart/form-data.");
+            throw new InputLogicException(Resources.InputLogicException.MultipartRequired);
         try
         {
             var form = await Request.ReadFormAsync(cancellationToken);
@@ -56,11 +58,13 @@ public sealed class ImportsController(ISender sender, IImportUploadStorage uploa
                     await file.Content.DisposeAsync();
             }
         }
-        catch (ImportUploadValidationException ex) { return BadRequest(new { error = ex.Message }); }
+        catch (ImportUploadValidationException ex) { throw new InputLogicException(ex.Message); }
         catch (ImportSaveException ex) { logger.LogWarning(ex, "Import saga outcome could not be confirmed for {ImportId}", importId); return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = "Import outcome could not be confirmed. Retry with the same import ID." }); }
+        catch (InputLogicException) { throw; }
+        catch (BusinessLogicException) { throw; }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
-        catch (InvalidDataException ex) { logger.LogInformation(ex, "Rejected malformed import upload {ImportId}", importId); return BadRequest(new { error = "Malformed multipart upload." }); }
-        catch (BadHttpRequestException ex) { logger.LogInformation(ex, "Rejected malformed import request {ImportId}", importId); return BadRequest(new { error = "Malformed multipart upload." }); }
+        catch (InvalidDataException ex) { logger.LogInformation(ex, "Rejected malformed import upload {ImportId}", importId); return BadRequest(new { error = Resources.InputLogicException.MalformedMultipart }); }
+        catch (BadHttpRequestException ex) { logger.LogInformation(ex, "Rejected malformed import request {ImportId}", importId); return BadRequest(new { error = Resources.InputLogicException.MalformedMultipart }); }
         catch (Exception ex) { logger.LogError(ex, "Import {ImportId} failed", importId); return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Import could not be completed." }); }
     }
 
@@ -74,7 +78,7 @@ public sealed class ImportsController(ISender sender, IImportUploadStorage uploa
     public async Task<IActionResult> GetReport(Guid importId, CancellationToken cancellationToken)
     {
         if (importId == Guid.Empty)
-            return BadRequest("Import ID must not be empty.");
+            throw new InputLogicException(Resources.InputLogicException.ImportIdRequired);
         var report = await sender.Send(new GetImportReportQuery(importId), cancellationToken);
         return report is null ? NotFound() : Ok(report);
     }

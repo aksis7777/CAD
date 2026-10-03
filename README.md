@@ -30,9 +30,11 @@ docker compose up -d --build --no-deps desktop
 
 ## Как устроен код
 
-`MiniPdm.Api` — запускаемый ASP.NET Core API, `MiniPdm.Desktop` — приложение Avalonia, `MiniPdm.Contracts` — общие HTTP DTO, `MiniPdm.Domain` — бизнес-правила, `MiniPdm.Storage` — `PdmDbContext`, EF Core mapping/миграции, DI-регистрация и общий graph lock. Функциональность находится в `src/Modules/MiniPdm.Modules.*`.
+`MiniPdm.Api` — запускаемый ASP.NET Core API, `MiniPdm.Desktop` — приложение Avalonia, `MiniPdm.Contracts` — общие HTTP DTO, `MiniPdm.Common` — типизированные прикладные исключения и `.resx` тексты сообщений, `MiniPdm.Domain` — бизнес-правила, `MiniPdm.Storage` — `PdmDbContext`, EF Core mapping/миграции, DI-регистрация и общий graph lock. Функциональность находится в `src/Modules/MiniPdm.Modules.*`.
 
 В каждом backend-модуле HTTP endpoints собраны в `Controllers`, а CQRS сообщения и их handlers разнесены по `Features/Commands` и `Features/Queries`. Контроллер отправляет сообщение через MediatR, handler вызывает service своего модуля, service работает со scoped `PdmDbContext` через EF Core. Например, поиск объектов находится в `Modules/MiniPdm.Modules.Objects/Services/ObjectReadService.cs`, а редактирование версий — в `Modules/MiniPdm.Modules.Versions/Services/VersionMutationService.cs`. Компоненты saga импорта и singleton фонового координатора используют отдельные scoped database services, чтобы сохранять свежие границы DbContext.
+
+Общие входные и бизнес-ошибки используют готовый текст из `MiniPdm.Common` ресурсов. API централизованно превращает соответствующие типизированные исключения в `ProblemDetails`; структурированные ответы доменных команд сохраняют свои коды и поля. Формат сообщений и границы обработки описаны в [PDM_RULES.md](PDM_RULES.md).
 
 Это обзор основных частей и связей проекта, а не утверждение, что в README задокументирован каждый файл или класс. Требования к XML-документации публичных типов, членов и параметров, включая отдельное описание каждого объявленного свойства, приведены в `PDM_RULES.md`. Для positional record описание параметра конструктора не заменяет summary свойства: конструктор сохраняет исходную сигнатуру, а свойство явно объявляется с `init`.
 

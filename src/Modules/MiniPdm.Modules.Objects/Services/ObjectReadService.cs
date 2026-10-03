@@ -1,3 +1,4 @@
+using Resources = MiniPdm.Common.Resources;
 using Microsoft.EntityFrameworkCore;
 using MiniPdm.Contracts.Modules.Objects.DtoModels;
 using MiniPdm.Domain.Objects;
@@ -91,7 +92,7 @@ public sealed class ObjectReadService(PdmDbContext context)
             SelectedVersion = selectedDto,
             Versions = versions,
             ErrorCode = noCurrent && versionNumber is null ? "NoCurrentVersion" : null,
-            Error = noCurrent && versionNumber is null ? "The object has no current non-cancelled version." : null
+            Error = noCurrent && versionNumber is null ? Resources.BusinessLogicException.CurrentVersionMissing : null
         };
     }
 

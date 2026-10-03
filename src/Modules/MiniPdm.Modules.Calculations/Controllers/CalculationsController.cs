@@ -1,3 +1,5 @@
+using MiniPdm.Common.Exceptions;
+using Resources = MiniPdm.Common.Resources;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -28,7 +30,7 @@ public sealed class CalculationsController(ISender sender) : ControllerBase
     public async Task<ActionResult<CompositionCalculationDto>> Get(Guid objectId, CancellationToken cancellationToken)
     {
         if (objectId == Guid.Empty)
-            return BadRequest();
+            throw new InputLogicException(Resources.InputLogicException.ObjectIdRequired);
 
         var result = await sender.Send(new GetCompositionCalculationQuery(objectId), cancellationToken);
         return result is null ? NotFound() : Ok(result);

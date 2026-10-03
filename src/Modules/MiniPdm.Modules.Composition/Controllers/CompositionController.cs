@@ -1,3 +1,5 @@
+using MiniPdm.Common.Exceptions;
+using Resources = MiniPdm.Common.Resources;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -30,7 +32,7 @@ public sealed class CompositionController(ISender sender) : ControllerBase
     public async Task<IActionResult> Get(Guid objectId, CancellationToken cancellationToken)
     {
         if (objectId == Guid.Empty)
-            return BadRequest("Object ID must not be empty.");
+            throw new InputLogicException(Resources.InputLogicException.ObjectIdRequired);
 
         var composition = await sender.Send(new GetCompositionQuery(objectId), cancellationToken);
         return composition is null ? NotFound() : Ok(composition);
@@ -47,9 +49,9 @@ public sealed class CompositionController(ISender sender) : ControllerBase
     public async Task<IActionResult> GetVersion(Guid objectId, int version, CancellationToken cancellationToken)
     {
         if (objectId == Guid.Empty)
-            return BadRequest("Object ID must not be empty.");
+            throw new InputLogicException(Resources.InputLogicException.ObjectIdRequired);
         if (version <= 0)
-            return BadRequest("Version must be positive.");
+            throw new InputLogicException(Resources.InputLogicException.VersionMustBePositive);
 
         var composition = await sender.Send(new GetVersionCompositionQuery(objectId, version), cancellationToken);
         return composition is null ? NotFound() : Ok(composition);
@@ -69,17 +71,17 @@ public sealed class CompositionController(ISender sender) : ControllerBase
         [FromBody] ReplaceCompositionRequestDto? request, CancellationToken cancellationToken = default)
     {
         if (objectId == Guid.Empty)
-            return BadRequest("Object ID must not be empty.");
+            throw new InputLogicException(Resources.InputLogicException.ObjectIdRequired);
         if (version <= 0)
-            return BadRequest("Version must be positive.");
+            throw new InputLogicException(Resources.InputLogicException.VersionMustBePositive);
         if (request is null)
-            return BadRequest("A request body is required.");
+            throw new InputLogicException(Resources.InputLogicException.RequestBodyRequired);
         if (request.Components is null)
-            return BadRequest("Components must be provided.");
+            throw new InputLogicException(Resources.InputLogicException.ComponentsRequired);
         if (request.ExpectedConcurrencyToken == Guid.Empty)
-            return BadRequest("Expected concurrency token must not be empty.");
+            throw new InputLogicException(Resources.InputLogicException.ConcurrencyTokenRequired);
         if (request.Components.Any(x => x is null || x.ChildObjectId == Guid.Empty))
-            return BadRequest("Each component must have a non-empty child object ID.");
+            throw new InputLogicException(Resources.InputLogicException.ChildObjectIdRequired);
 
         var components = request.Components.Select(x => new MiniPdm.Domain.Versions.Mutations.CompositionItem(x.ChildObjectId, x.Quantity)).ToArray();
         VersionMutationResult result;
@@ -121,7 +123,7 @@ public sealed class CompositionController(ISender sender) : ControllerBase
         ? new()
         {
             Code = "VersionMutationFailed",
-            Message = "The version mutation could not be completed.",
+            Message = Resources.BusinessLogicException.VersionMutationFailed,
             CyclePath = null
         } : new()
         {

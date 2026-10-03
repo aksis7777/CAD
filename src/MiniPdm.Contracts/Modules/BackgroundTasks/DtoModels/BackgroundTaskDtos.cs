@@ -79,7 +79,8 @@ public sealed record UpdateBackgroundTaskScheduleRequestDto
     /// <summary>
     /// Новый интервал запуска в минутах; допустимый диапазон — от 1 до 525600.
     /// </summary>
-    [Range(1, 525600)]
+    [Range(1, 525600, ErrorMessageResourceType = typeof(MiniPdm.Common.Resources.InputLogicException),
+        ErrorMessageResourceName = nameof(MiniPdm.Common.Resources.InputLogicException.RangeOneTo525600))]
     public int IntervalMinutes
     {
         get; init;

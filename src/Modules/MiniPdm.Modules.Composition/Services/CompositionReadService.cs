@@ -1,3 +1,4 @@
+using Resources = MiniPdm.Common.Resources;
 using Microsoft.EntityFrameworkCore;
 using MiniPdm.Domain.Objects;
 using MiniPdm.Domain.Versions;
@@ -123,7 +124,7 @@ public sealed class CompositionReadService(PdmDbContext context)
         if (occurrence.IsCycle)
             return ("Cycle", $"Composition cycle detected along path {string.Join(" → ", occurrence.ObjectPath)}.");
         return occurrence.VersionId is null
-            ? ("NoCurrentVersion", "The object has no current non-cancelled version.")
+            ? ("NoCurrentVersion", Resources.BusinessLogicException.NoCurrentVersion)
             : (null, null);
     }
 

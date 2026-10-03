@@ -1,3 +1,5 @@
+using MiniPdm.Common.Exceptions;
+using Resources = MiniPdm.Common.Resources;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -34,11 +36,11 @@ public sealed class ObjectsController(ISender sender) : ControllerBase
     {
         search ??= string.Empty;
         if (search.Length > 512)
-            return BadRequest("Search must be at most 512 characters.");
+            throw new InputLogicException(Resources.InputLogicException.SearchTooLong);
         if (offset < 0)
-            return BadRequest("Offset must be nonnegative.");
+            throw new InputLogicException(Resources.InputLogicException.OffsetNonnegative);
         if (limit is < 1 or > 100)
-            return BadRequest("Limit must be between 1 and 100.");
+            throw new InputLogicException(Resources.InputLogicException.LimitRange);
 
         return Ok(await sender.Send(new SearchObjectsQuery(search, offset, limit), cancellationToken));
     }
@@ -54,9 +56,9 @@ public sealed class ObjectsController(ISender sender) : ControllerBase
     public async Task<IActionResult> Get(Guid objectId, [FromQuery] int? version = null, CancellationToken cancellationToken = default)
     {
         if (objectId == Guid.Empty)
-            return BadRequest("Object ID must not be empty.");
+            throw new InputLogicException(Resources.InputLogicException.ObjectIdRequired);
         if (version is <= 0)
-            return BadRequest("Version must be positive.");
+            throw new InputLogicException(Resources.InputLogicException.VersionMustBePositive);
 
         var result = await sender.Send(new GetObjectQuery(objectId, version), cancellationToken);
         return result is null ? NotFound() : Ok(result);
@@ -75,13 +77,13 @@ public sealed class ObjectsController(ISender sender) : ControllerBase
         [FromBody] UpdateVersionAttributesRequestDto? request, CancellationToken cancellationToken = default)
     {
         if (objectId == Guid.Empty)
-            return BadRequest("Object ID must not be empty.");
+            throw new InputLogicException(Resources.InputLogicException.ObjectIdRequired);
         if (version <= 0)
-            return BadRequest("Version must be positive.");
+            throw new InputLogicException(Resources.InputLogicException.VersionMustBePositive);
         if (request is null)
-            return BadRequest("A request body is required.");
+            throw new InputLogicException(Resources.InputLogicException.RequestBodyRequired);
         if (request.ExpectedConcurrencyToken == Guid.Empty)
-            return BadRequest("Expected concurrency token must not be empty.");
+            throw new InputLogicException(Resources.InputLogicException.ConcurrencyTokenRequired);
 
         VersionMutationResult result;
         try
@@ -122,7 +124,7 @@ public sealed class ObjectsController(ISender sender) : ControllerBase
         ? new()
         {
             Code = "VersionMutationFailed",
-            Message = "The version mutation could not be completed.",
+            Message = Resources.BusinessLogicException.VersionMutationFailed,
             CyclePath = null
         } : new()
         {

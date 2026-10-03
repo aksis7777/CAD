@@ -1,3 +1,4 @@
+using Resources = MiniPdm.Common.Resources;
 using MiniPdm.Domain.Objects;
 using MiniPdm.Domain.Versions;
 
@@ -249,7 +250,7 @@ public static class CompositionCalculator
             if (occurrence.IsCycle)
             {
                 diagnostics.Add(Diagnostic("Cycle", occurrence,
-                    "The composition path repeats an object and cannot be included in the calculation."));
+                    Resources.BusinessLogicException.CompositionPathRepeated));
                 continue;
             }
 
@@ -277,7 +278,7 @@ public static class CompositionCalculator
                 {
                     quantity = null;
                     diagnostics.Add(Diagnostic("QuantityOverflow", occurrence,
-                        "The quantity along this composition path exceeds the supported decimal range."));
+                        Resources.BusinessLogicException.QuantityOverflow));
                 }
             }
             quantityByPath[pathKey] = quantity;
@@ -285,7 +286,7 @@ public static class CompositionCalculator
             if (occurrence.VersionId is null)
             {
                 diagnostics.Add(Diagnostic("NoCurrentVersion", occurrence,
-                    "The object has no current non-cancelled version."));
+                    Resources.BusinessLogicException.NoCurrentVersion));
                 if (occurrence.Type != PdmObjectType.Assembly)
                     AddOccurrence(groups, occurrence, quantity, diagnostics);
                 continue;
@@ -297,7 +298,7 @@ public static class CompositionCalculator
             if (occurrence.UnitMassKg is null)
             {
                 diagnostics.Add(Diagnostic("MissingMass", occurrence,
-                    "The current version does not have a unit mass."));
+                    Resources.BusinessLogicException.MissingMass));
             }
 
             AddOccurrence(groups, occurrence, quantity, diagnostics);
@@ -318,7 +319,7 @@ public static class CompositionCalculator
                 catch (OverflowException)
                 {
                     diagnostics.Add(Diagnostic("MassOverflow", group.First,
-                        "The total mass for this specification item exceeds the supported decimal range."));
+                        Resources.BusinessLogicException.SpecificationMassOverflow));
                 }
             }
 
@@ -336,7 +337,7 @@ public static class CompositionCalculator
                 catch (OverflowException)
                 {
                     diagnostics.Add(Diagnostic("MassOverflow", group.First,
-                        "The calculated assembly mass exceeds the supported decimal range."));
+                        Resources.BusinessLogicException.AssemblyMassOverflow));
                     totalOverflow = true;
                 }
             }
@@ -370,7 +371,7 @@ public static class CompositionCalculator
         {
             group.Quantity = null;
             diagnostics.Add(Diagnostic("QuantityOverflow", occurrence,
-                "The combined specification quantity exceeds the supported decimal range."));
+                Resources.BusinessLogicException.SpecificationQuantityOverflow));
         }
     }
 

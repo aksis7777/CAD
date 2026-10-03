@@ -1,3 +1,4 @@
+using MiniPdm.Common.Exceptions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -115,6 +116,25 @@ public sealed class ImportPersistenceTests
 
         Assert.False(result);
         Assert.False(called);
+    }
+
+    /// <summary>
+    /// Проверяет сохранение известной ошибки бизнес-правила после подтверждённого отката.
+    /// </summary>
+    /// <returns>Задача завершается после выполнения проверок теста.</returns>
+    [Fact]
+    public async Task Confirmed_rollback_rethrows_known_business_logic_error()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var id = Guid.NewGuid();
+
+        var exception = await Assert.ThrowsAsync<BusinessLogicException>(() => fixture.Persistence.ExecuteAsync(
+            id, Lookup(), (_, _) => throw new BusinessLogicException("A cycle would be created."), CancellationToken.None));
+
+        Assert.Equal("A cycle would be created.", exception.Message);
+        await using var verify = new PdmDbContext(fixture.Options);
+        Assert.Empty(await verify.Objects.ToListAsync());
+        Assert.Empty(await verify.ImportJournals.ToListAsync());
     }
 
     /// <summary>

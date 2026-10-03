@@ -1,3 +1,5 @@
+using MiniPdm.Common.Exceptions;
+using Resources = MiniPdm.Common.Resources;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -30,13 +32,13 @@ public sealed class VersionsController(ISender sender) : ControllerBase
         CancellationToken cancellationToken = default)
     {
         if (objectId == Guid.Empty)
-            return BadRequest("Object ID must not be empty.");
+            throw new InputLogicException(Resources.InputLogicException.ObjectIdRequired);
         if (request is null)
-            return BadRequest("A request body is required.");
+            throw new InputLogicException(Resources.InputLogicException.RequestBodyRequired);
         if (request.SourceVersion <= 0)
-            return BadRequest("Source version must be positive.");
+            throw new InputLogicException(Resources.InputLogicException.SourceVersionPositive);
         if (request.ExpectedConcurrencyToken == Guid.Empty)
-            return BadRequest("Expected concurrency token must not be empty.");
+            throw new InputLogicException(Resources.InputLogicException.ConcurrencyTokenRequired);
 
         VersionMutationResult result;
         try
@@ -69,15 +71,15 @@ public sealed class VersionsController(ISender sender) : ControllerBase
         [FromBody] ChangeVersionStateRequestDto? request, CancellationToken cancellationToken = default)
     {
         if (objectId == Guid.Empty)
-            return BadRequest("Object ID must not be empty.");
+            throw new InputLogicException(Resources.InputLogicException.ObjectIdRequired);
         if (version <= 0)
-            return BadRequest("Version must be positive.");
+            throw new InputLogicException(Resources.InputLogicException.VersionMustBePositive);
         if (request is null)
-            return BadRequest("A request body is required.");
+            throw new InputLogicException(Resources.InputLogicException.RequestBodyRequired);
         if (request.ExpectedConcurrencyToken == Guid.Empty)
-            return BadRequest("Expected concurrency token must not be empty.");
+            throw new InputLogicException(Resources.InputLogicException.ConcurrencyTokenRequired);
         if (!TryParseState(request.State, out var state))
-            return BadRequest("State must be InWork, Approved, or Cancelled.");
+            throw new InputLogicException(Resources.InputLogicException.StateInvalid);
 
         VersionMutationResult result;
         try
@@ -118,7 +120,7 @@ public sealed class VersionsController(ISender sender) : ControllerBase
         ? new()
         {
             Code = "VersionMutationFailed",
-            Message = "The version mutation could not be completed.",
+            Message = Resources.BusinessLogicException.VersionMutationFailed,
             CyclePath = null
         } : new()
         {

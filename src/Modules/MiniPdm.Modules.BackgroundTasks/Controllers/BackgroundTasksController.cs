@@ -1,3 +1,5 @@
+using MiniPdm.Common.Exceptions;
+using Resources = MiniPdm.Common.Resources;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -49,10 +51,7 @@ public sealed class BackgroundTasksController(ISender sender) : ControllerBase
     public async Task<IActionResult> UpdateSchedule(string taskId, UpdateBackgroundTaskScheduleRequestDto request, CancellationToken cancellationToken)
     {
         if (request.IntervalMinutes is < 1 or > 525600)
-            return BadRequest(new
-            {
-                error = "IntervalMinutes must be between 1 and 525600."
-            });
+            throw new InputLogicException(Resources.InputLogicException.IntervalRange);
         try
         {
             var result = await sender.Send(new UpdateBackgroundTaskScheduleCommand(taskId, request.IntervalMinutes), cancellationToken);
@@ -83,7 +82,7 @@ public sealed class BackgroundTasksController(ISender sender) : ControllerBase
                 {
                     TaskId = taskId
                 }),
-                BackgroundTaskRunRequestStatus.Running => Conflict(new { error = "The background task is already running." }),
+                BackgroundTaskRunRequestStatus.Running => throw new BusinessLogicException(Resources.BusinessLogicException.TaskAlreadyRunning),
                 _ => NotFound()
             };
         }

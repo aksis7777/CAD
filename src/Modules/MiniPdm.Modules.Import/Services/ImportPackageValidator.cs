@@ -1,3 +1,4 @@
+using Resources = MiniPdm.Common.Resources;
 using MiniPdm.Contracts.Modules.Import.DtoModels;
 using MiniPdm.Domain.Objects;
 using MiniPdm.Domain.Composition;
@@ -91,13 +92,13 @@ internal sealed class ImportPackageValidator(IReadOnlyList<ImportPackageValidato
     {
         foreach (var grouping in _files.GroupBy(x => x.FileName, StringComparer.Ordinal).Where(x => x.Count() > 1))
             foreach (var file in grouping)
-                Reject(file, "The package contains duplicate file names.");
+                Reject(file, Resources.BusinessLogicException.ImportDuplicateNames);
         foreach (var file in _files)
         {
             if (file.Document is null)
             {
                 if (file.Reason is null)
-                    Reject(file, "The CAD reader returned no document.");
+                    Reject(file, Resources.BusinessLogicException.ImportMissingDocument);
                 continue;
             }
             ValidateAttributes(file);
@@ -107,7 +108,7 @@ internal sealed class ImportPackageValidator(IReadOnlyList<ImportPackageValidato
         foreach (var group in _files.Where(x => x.Document is not null && HasIdentity(x.Document))
                      .GroupBy(x => x.IdentityKey, StringComparer.Ordinal).Where(x => x.Count() > 1))
             foreach (var file in group)
-                Reject(file, "More than one package document has this PDM identity.");
+                Reject(file, Resources.BusinessLogicException.ImportDuplicateIdentity);
 
         _byFile.Clear();
         foreach (var file in _files)
@@ -147,18 +148,21 @@ internal sealed class ImportPackageValidator(IReadOnlyList<ImportPackageValidato
     {
         var d = file.Document!;
         var validation = VersionAttributeRules.Validate(d.Type, d.Name, d.Material, d.Mass);
-        var typeErrors = validation.Errors.Where(x => x is not "Name is required." and not "Name exceeds 512 characters."
-            and not "Material exceeds 256 characters." and not "Normalized standard part name exceeds 512 characters."
-            and not "Mass cannot be negative." and not "Mass must fit decimal(18,6).").ToArray();
+        var typeErrors = validation.Errors.Where(x => x != Resources.InputLogicException.PayloadNameRequired
+            && x != Resources.InputLogicException.PayloadNameTooLong
+            && x != Resources.InputLogicException.MaterialTooLong
+            && x != Resources.InputLogicException.StandardNameTooLong
+            && x != Resources.InputLogicException.MassNegative
+            && x != Resources.InputLogicException.MassOutOfRange).ToArray();
         foreach (var error in validation.Errors.Except(typeErrors))
             Reject(file, error);
         if (d.Type is PdmObjectType.Assembly or PdmObjectType.Part)
         {
             if (d.Designation is null || !ObjectIdentity.IsValidDesignation(d.Designation))
-                Reject(file, "A valid Cyrillic designation is required.");
+                Reject(file, Resources.InputLogicException.DesignationRequired);
         }
         else if (d.Type == PdmObjectType.StandardPart && d.Designation is not null)
-            Reject(file, "Standard parts must not have a designation.");
+            Reject(file, Resources.BusinessLogicException.StandardPartDesignationInvalid);
         foreach (var error in typeErrors)
             Reject(file, error);
         file.Warnings.AddRange(validation.Warnings);
@@ -168,18 +172,18 @@ internal sealed class ImportPackageValidator(IReadOnlyList<ImportPackageValidato
     {
         var d = file.Document!;
         if (d.Type != PdmObjectType.Assembly && d.Components.Count != 0)
-            Reject(file, "Only assemblies may contain components.");
+            Reject(file, Resources.InputLogicException.CompositionMustBeAssembly);
         var validRows = new List<(string Child, int Quantity)>();
         foreach (var component in d.Components)
         {
             if (string.IsNullOrWhiteSpace(component.File))
             {
-                Reject(file, "A component file name is empty.");
+                Reject(file, Resources.BusinessLogicException.ComponentFilenameRequired);
                 continue;
             }
             if (component.Count <= 0)
             {
-                Reject(file, $"Component '{component.File}' must have a positive count.");
+                Reject(file, string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.InputLogicException.ComponentCountPositive, component.File));
                 continue;
             }
             validRows.Add((component.File, component.Count));
@@ -190,7 +194,7 @@ internal sealed class ImportPackageValidator(IReadOnlyList<ImportPackageValidato
         foreach (var pair in normalized.Items)
             file.ComponentCounts[pair.Key] = pair.Value;
         if (normalized.Warnings.Count != 0 && file.Reason is null)
-            file.Warnings.Add("Repeated component rows were combined by file name.");
+            file.Warnings.Add(Resources.BusinessLogicException.RepeatedComponentRowsCombinedByFile);
     }
 
     private void RejectBadReferences()
@@ -205,13 +209,13 @@ internal sealed class ImportPackageValidator(IReadOnlyList<ImportPackageValidato
                 {
                     if (!_byFile.TryGetValue(componentName, out var child))
                     {
-                        Reject(file, $"Component file '{componentName}' is missing from this package.");
+                        Reject(file, string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.InputLogicException.ComponentFileMissing, componentName));
                         changed = true;
                         break;
                     }
                     if (!child.Accepted)
                     {
-                        Reject(file, $"Component file '{componentName}' was rejected.");
+                        Reject(file, string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.InputLogicException.ComponentFileRejected, componentName));
                         changed = true;
                         break;
                     }
@@ -246,7 +250,7 @@ internal sealed class ImportPackageValidator(IReadOnlyList<ImportPackageValidato
             }
         }
         foreach (var file in cyclic)
-            Reject(file, "The package component graph contains a cycle.");
+            Reject(file, Resources.BusinessLogicException.PackageCycle);
         RejectBadReferences();
     }
 
