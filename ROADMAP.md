@@ -39,9 +39,9 @@
 
 ## Этап 5 — фоновые задачи и завершение
 
-Дополнение: реализованы optional native launcher и self-contained bundles для Windows, Linux и macOS поверх существующего Docker backend; GitHub Actions workflow публикует артефакт на каждый RID. Скриптовая проверка выполнена, реальный native GUI запуск на целевых ОС пока не проверялся.
+Дополнение: реализованы optional native launcher и self-contained bundles для Windows, Linux и macOS поверх существующего Docker backend; GitHub Actions workflow публикует артефакт на каждый RID. На локальном macOS arm64 native окно запущено; GUI на Windows и Linux пока не проверялся.
 
-Дополнение: корневые `start.cmd`, `start.sh` и `start.command` собирают source Desktop внутри BuildKit, поэтому конечному пользователю не нужен установленный .NET SDK. CI проверяет native export для Linux x64 и Windows x64; локальные Docker export и native GUI по-прежнему не подтверждены.
+Дополнение: корневые `start.cmd`, `start.sh` и `start.command` собирают source Desktop внутри BuildKit, поэтому конечному пользователю не нужен установленный .NET SDK. Повторный запуск source launcher использует сохранённый Desktop и готовые backend образы, пока исходники сборки не изменились. На локальном macOS arm64 подтверждены Docker export, запуск native окна и быстрый повтор без пересборки; CI проверяет native export для Linux x64 и Windows x64, а GUI на них пока не проверялся.
 
 1. Подключить `ImportSourceRecovery` к запуску и периодическому выполнению API. **HTTP smoke на временной PostgreSQL подтвердил три миграции, startup cleanup, manual 202/Succeeded, 1 accepted + 11 conflicts под graph lock, persistent interval через API restart, повтор с интервалом в одну минуту и сохранность успешных исходников.**
 2. Реализовать страницу задач с расписанием, состоянием, последним результатом, ошибкой и ручным запуском. **Страница и команды реализованы и входят в headless preview/VM verification.**

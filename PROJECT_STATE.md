@@ -1,6 +1,6 @@
 # Состояние проекта
 
-Реализован native desktop запуск из исходников без установленного на host .NET SDK: Docker Buildx экспортирует self-contained Desktop для текущего host RID, после чего launcher поднимает Docker API/PostgreSQL/миграции, проверяет `/health` и открывает Avalonia. noVNC режим и volumes сохранены. Ранее self-contained publish прошёл для всех шести RIDs и проверена структура macOS bundle. CI добавляет Linux/Windows native-export smoke; локальный Docker-export и запуск GUI на целевых ОС ещё не проверялись.
+Реализован native desktop запуск из исходников без установленного на host .NET SDK: Docker Buildx экспортирует self-contained Desktop для текущего host RID, после чего launcher поднимает Docker API/PostgreSQL/миграции, проверяет `/health` и открывает Avalonia. Готовый Desktop теперь сохраняется, а повторный запуск использует его и готовый API без сборки. На локальном macOS arm64 проверены Docker-export, повторный запуск `start.command`, здоровый API и появление окна «Мини-PDM» на переднем плане; работа внутри окна ещё не проверялась. noVNC режим и volumes сохранены. Ранее self-contained publish прошёл для всех шести RIDs и проверена структура macOS bundle. CI добавляет Linux/Windows native-export smoke; запуск GUI на Windows и Linux ещё не проверялся.
 
 Нормативный источник: [PDM_RULES.md](PDM_RULES.md). План следующих шагов — в [ROADMAP.md](ROADMAP.md).
 

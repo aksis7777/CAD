@@ -1,6 +1,6 @@
 # Архитектура Мини-PDM
 
-Native запуск Avalonia из исходников собирается отдельной BuildKit `native-build` стадией для одного из шести Windows/Linux/macOS x64/arm64 RID и экспортируется на host без создания runtime образа. Затем используется тот же Docker backend, PostgreSQL и named volumes, что и noVNC режим; `compose.native.yml` публикует API только на localhost, а launcher ждёт `/health` перед открытием окна.
+Native запуск Avalonia из исходников собирается отдельной BuildKit `native-build` стадией для одного из шести Windows/Linux/macOS x64/arm64 RID и экспортируется на host без создания runtime образа. Launcher сохраняет Desktop в `artifacts/native/<RID>` и отмечает состав исходников сборки; при повторном запуске с тем же составом использует готовый Desktop и `docker compose up --no-build`. Затем используется тот же Docker backend, PostgreSQL и named volumes, что и noVNC режим; `compose.native.yml` публикует API только на localhost, а launcher ждёт `/health` перед открытием окна.
 
 Нормативные решения и статусы требований — в [PDM_RULES.md](PDM_RULES.md). Здесь приведена согласованная структура и назначение компонентов; новые правила здесь не вводятся.
 
