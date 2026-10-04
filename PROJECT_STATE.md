@@ -1,6 +1,6 @@
 # Состояние проекта
 
-Реализован дополнительный native desktop запуск: cross-platform launcher запускает Docker API/PostgreSQL/миграции, проверяет `/health` и открывает оконный Avalonia Desktop. Основной noVNC Compose режим сохранён. Self-contained publish прошёл для всех шести RIDs; macOS package layout, plist и исполняемые права проверены. Desktop GUI на целевых Windows/Linux/macOS системах ещё не проверен.
+Реализован native desktop запуск из исходников без установленного на host .NET SDK: Docker Buildx экспортирует self-contained Desktop для текущего host RID, после чего launcher поднимает Docker API/PostgreSQL/миграции, проверяет `/health` и открывает Avalonia. noVNC режим и volumes сохранены. Ранее self-contained publish прошёл для всех шести RIDs и проверена структура macOS bundle. CI добавляет Linux/Windows native-export smoke; локальный Docker-export и запуск GUI на целевых ОС ещё не проверялись.
 
 Нормативный источник: [PDM_RULES.md](PDM_RULES.md). План следующих шагов — в [ROADMAP.md](ROADMAP.md).
 

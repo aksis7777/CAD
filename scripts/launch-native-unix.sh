@@ -20,6 +20,11 @@ fail() {
   fi
   exit 1
 }
+cleanup_native_build() {
+  if [[ -n "${PDM_NATIVE_BUILD_DIR:-}" && -d "$PDM_NATIVE_BUILD_DIR" ]]; then
+    rm -rf -- "$PDM_NATIVE_BUILD_DIR"
+  fi
+}
 if ! command -v docker >/dev/null 2>&1 && [[ "$(uname -s)" == Darwin ]]; then
   for candidate in /usr/local/bin/docker /opt/homebrew/bin/docker /Applications/Docker.app/Contents/Resources/bin/docker; do
     if [[ -x "$candidate" ]]; then PATH="$(dirname "$candidate"):$PATH"; export PATH; break; fi
@@ -33,6 +38,26 @@ if ! docker info >/dev/null 2>&1 && [[ "$(uname -s)" == Darwin ]]; then
 fi
 docker info >/dev/null 2>&1 || fail 'Docker is installed but its daemon is unavailable. Start Docker and retry.'
 [[ -f "$BACKEND_DIR/docker-compose.yml" ]] || fail "Backend sources are missing: $BACKEND_DIR"
+
+if [[ "${PDM_BUILD_DESKTOP_IN_DOCKER:-}" == 1 ]]; then
+  case "$(uname -s):$(uname -m)" in
+    Linux:x86_64|Linux:amd64) rid=linux-x64 ;;
+    Linux:aarch64|Linux:arm64) rid=linux-arm64 ;;
+    Darwin:x86_64) rid=osx-x64 ;;
+    Darwin:arm64|Darwin:aarch64) rid=osx-arm64 ;;
+    *) fail "Unsupported host architecture: $(uname -s) $(uname -m). Supported: Linux/macOS x64 and arm64." ;;
+  esac
+  command -v docker >/dev/null 2>&1 && docker buildx version >/dev/null 2>&1 || fail 'Docker Buildx is required to build the native Desktop without installing the .NET SDK.'
+  mkdir -p "$BACKEND_DIR/artifacts/native"
+  native_dir="$(mktemp -d "$BACKEND_DIR/artifacts/native/$rid.XXXXXX")" || fail 'Could not create a temporary native build output directory.'
+  PDM_NATIVE_BUILD_DIR="$native_dir"
+  trap cleanup_native_build EXIT
+  docker buildx build --target native-export --build-arg "PDM_DESKTOP_RID=$rid" --output "type=local,dest=$native_dir" "$BACKEND_DIR" || fail 'Docker could not build the native Desktop. Existing backend services were not stopped.'
+  [[ -f "$native_dir/MiniPdm.Desktop" ]] || fail "Docker export did not produce the native executable for $rid."
+  chmod +x "$native_dir/MiniPdm.Desktop"
+  PDM_DESKTOP_EXECUTABLE="$native_dir/MiniPdm.Desktop"
+  export PDM_DESKTOP_EXECUTABLE
+fi
 
 compose_args=(--project-directory "$BACKEND_DIR" -p "$PROJECT_NAME" -f "$BACKEND_DIR/docker-compose.yml" -f "$BACKEND_DIR/compose.native.yml")
 [[ -f "$BACKEND_DIR/.env" ]] && compose_args+=(--env-file "$BACKEND_DIR/.env")
@@ -48,14 +73,13 @@ done
 
 unset PDM_BROWSER_PICKER
 export PDM_API_BASE_URL="$API_URL"
-if [[ -x "$HERE/desktop/MiniPdm.Desktop" ]]; then
+if [[ -n "${PDM_DESKTOP_EXECUTABLE:-}" && -x "$PDM_DESKTOP_EXECUTABLE" ]]; then
+  "$PDM_DESKTOP_EXECUTABLE" "$@"
+  exit $?
+elif [[ -x "$HERE/desktop/MiniPdm.Desktop" ]]; then
   exec "$HERE/desktop/MiniPdm.Desktop" "$@"
 elif [[ -x "$HERE/../Resources/desktop/MiniPdm.Desktop" ]]; then
   exec "$HERE/../Resources/desktop/MiniPdm.Desktop" "$@"
-elif [[ -n "${PDM_DESKTOP_PROJECT:-}" ]] && command -v dotnet >/dev/null 2>&1; then
-  exec dotnet run --project "$PDM_DESKTOP_PROJECT" -c Release -- "$@"
-elif [[ -f "$BACKEND_DIR/src/MiniPdm.Desktop/MiniPdm.Desktop.csproj" ]] && command -v dotnet >/dev/null 2>&1; then
-  exec dotnet run --project "$BACKEND_DIR/src/MiniPdm.Desktop/MiniPdm.Desktop.csproj" -c Release -- "$@"
 else
   fail 'Desktop application executable was not found in this distribution.'
 fi

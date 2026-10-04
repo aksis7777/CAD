@@ -7,6 +7,9 @@ on:
     paths:
       - 'scripts/package-desktop.sh'
       - 'scripts/launch-native*'
+      - 'start.cmd'
+      - 'start.sh'
+      - 'start.command'
       - 'compose.native.yml'
       - '.github/workflows/desktop-release.yml'
       - 'src/MiniPdm.Desktop/**'
@@ -14,6 +17,7 @@ on:
       - 'src/**'
       - 'MiniPdm.sln'
       - 'Dockerfile'
+      - '.dockerignore'
       - 'docker/**'
       - 'docker-compose.yml'
       - '.config/**'
@@ -24,6 +28,28 @@ permissions:
   contents: read
 
 jobs:
+  docker-native-export-smoke:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [linux-x64, win-x64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Export self-contained native executable
+        run: docker buildx build --target native-export --build-arg PDM_DESKTOP_RID=${{ matrix.rid }} --output type=local,dest=/tmp/minipdm-export-${{ matrix.rid }} .
+      - name: Verify exported application files
+        shell: bash
+        run: |
+          if [[ '${{ matrix.rid }}' == win-* ]]; then
+            test -f /tmp/minipdm-export-${{ matrix.rid }}/MiniPdm.Desktop.exe
+          else
+            test -x /tmp/minipdm-export-${{ matrix.rid }}/MiniPdm.Desktop
+          fi
+          test -f /tmp/minipdm-export-${{ matrix.rid }}/MiniPdm.Desktop.runtimeconfig.json
+          python3 -c 'import json,sys; x=json.load(open(sys.argv[1]))["runtimeOptions"]; assert x.get("includedFrameworks") and not x.get("framework") and not x.get("frameworks")' /tmp/minipdm-export-${{ matrix.rid }}/MiniPdm.Desktop.runtimeconfig.json
+
   package:
     runs-on: ubuntu-latest
     strategy:

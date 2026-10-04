@@ -4,6 +4,14 @@
 
 ## Быстрый запуск через Docker Compose
 
+### Native окно из исходников без .NET SDK на компьютере
+
+Для запуска нужен Docker Desktop (Windows/macOS) или работающий Docker Engine (Linux) с Buildx. Запустите из корня репозитория `start.cmd` в Windows, `./start.sh` в Linux или `start.command` в macOS. Launcher собирает self-contained окно Avalonia внутри Docker для архитектуры текущего компьютера, затем запускает API, PostgreSQL и миграции и открывает приложение. Первый запуск скачивает SDK/runtime пакеты и Docker образы; последующие сборки используют Docker build cache. .NET SDK на хосте не нужен. Linux требует графическую сессию X11/XWayland и системные библиотеки Avalonia. На macOS через Finder открывается Terminal, а ошибки сохраняются в `~/Library/Logs/MiniPdm/launcher.log`.
+
+Native backend использует project `cad`, существующие Docker volumes и loopback API `127.0.0.1:5000`; закрытие окна не останавливает базу и API. Исходная сборка повторяется при каждом запуске, чтобы применить изменённый код. Для существующего `.env` настройки репозитория используются автоматически. Для готовых self-contained RID bundles и отдельного noVNC режима см. инструкции ниже.
+
+### noVNC вариант
+
 Установите Docker Desktop и клонируйте репозиторий. Из его папки выполните одну команду:
 
 ```sh
@@ -18,7 +26,7 @@ docker compose up -d --build
 
 В GitHub откройте **Actions → Native desktop bundles**, выберите успешный запуск workflow и скачайте артефакт с вашим RID (`win-x64`, `win-arm64`, `linux-x64`, `linux-arm64`, `osx-x64` или `osx-arm64`). Распакуйте скачанный GitHub ZIP, затем распакуйте вложенный `.zip` на Windows или `.tar.gz` на Linux/macOS. Запустите `launch-native.cmd` в Windows, `launch-native.sh` в Linux или откройте `Mini-PDM.app` в macOS. Docker Desktop будет запущен автоматически на Windows/macOS, если он установлен и выключен; в Linux запустите Docker Engine самостоятельно. Linux требует графической сессии с X11/XWayland и системных библиотек Avalonia, включая fontconfig. macOS пакет не подписан; macOS может показать системное предупреждение при первом запуске. Первый запуск требует сети для загрузки Docker-образов. Сборка desktop artifacts также запускается вручную через workflow_dispatch.
 
-Для запуска из клона исходников нужны .NET SDK 10.0.100+ и Docker. Из корня репозитория используйте `scripts/launch-native.sh`; соответствующий PowerShell launcher находится в `scripts/launch-native.ps1`. Из исходников Desktop запускается через `dotnet run`. Пакеты содержат backend исходники без `.env` и локальных данных. Если нужно сохранить нестандартные настройки PostgreSQL из своего `.env`, скопируйте его в `backend` рядом с launcher (в macOS bundle: `Mini-PDM.app/Contents/Resources/backend`) до первого запуска; существующий `.env` не заменяйте. macOS показывает ошибки в диалоге, подробности записываются в `~/Library/Logs/MiniPdm/launcher.log`.
+Публикация готовых self-contained RID bundles из исходников требует .NET SDK 10.0.100+, `rsync`, `zip` и Docker; используйте `scripts/package-desktop.sh`. Эти скачиваемые bundles содержат backend исходники без `.env` и локальных данных. Чтобы применить свои нестандартные настройки PostgreSQL, положите личный `.env` в каталог `backend` рядом с launcher (в macOS bundle: `Mini-PDM.app/Contents/Resources/backend`) до первого запуска; существующий файл не заменяйте. macOS bundle показывает ошибки в диалоге и сохраняет их в `~/Library/Logs/MiniPdm/launcher.log`.
 
 В Desktop-контейнере включена UTF-8 locale и установлен шрифт DejaVu для корректного отображения кириллицы в заголовке Fluxbox/noVNC.
 

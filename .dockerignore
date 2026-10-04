@@ -14,6 +14,7 @@ data/**
 !.env.example
 cad-imports/**
 !cad-imports/.gitkeep
+artifacts/**
 **/*.user
 **/*.suo
 **/*.pfx

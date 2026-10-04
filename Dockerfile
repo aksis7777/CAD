@@ -1,5 +1,26 @@
 # syntax=docker/dockerfile:1.7
 
+# Native Desktop export is independent of the API/migration build. BuildKit
+# exports the published files to the host without creating a runtime image.
+FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS native-build
+ARG PDM_DESKTOP_RID
+WORKDIR /src
+RUN case "$PDM_DESKTOP_RID" in \
+      win-x64|win-arm64|linux-x64|linux-arm64|osx-x64|osx-arm64) ;; \
+      *) echo "Unsupported PDM_DESKTOP_RID: $PDM_DESKTOP_RID" >&2; exit 2 ;; \
+    esac
+COPY . .
+RUN dotnet publish src/MiniPdm.Desktop/MiniPdm.Desktop.csproj \
+      -c Release -r "$PDM_DESKTOP_RID" --self-contained true -m:1 -o /out/native && \
+    if [ "$PDM_DESKTOP_RID" = win-x64 ] || [ "$PDM_DESKTOP_RID" = win-arm64 ]; then \
+      test -f /out/native/MiniPdm.Desktop.exe; \
+    else \
+      test -f /out/native/MiniPdm.Desktop && chmod +x /out/native/MiniPdm.Desktop; \
+    fi
+
+FROM scratch AS native-export
+COPY --from=native-build /out/native/ /
+
 FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS build
 WORKDIR /src
 
